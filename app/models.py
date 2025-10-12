@@ -1,4 +1,5 @@
 from .extensions import db
+from flask_login import UserMixin
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from decimal import Decimal
@@ -8,7 +9,7 @@ class Role(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150))
@@ -26,6 +27,13 @@ class User(db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    @property
+    def is_active(self):
+        return bool(self.active)
+
+    def get_id(self):
+        return str(self.id)
 
 class Customer(db.Model):
     __tablename__ = "customers"
