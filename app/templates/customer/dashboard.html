@@ -1,7 +1,10 @@
 {% extends "layout.html" %}
 {% block title %}Customer Dashboard{% endblock %}
 {% block content %}
-<h1 class="text-2xl mb-4">لوحة العميل</h1>
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-2xl">لوحة العميل</h1>
+  <a href="{{ url_for('cust.invoices_list') }}" class="px-3 py-2 bg-slate-900/80 text-white rounded-2xl border border-slate-800">فواتيري</a>
+  </div>
 
 <form method="get" class="mb-6">
   <div class="flex gap-2 items-center">
