@@ -124,4 +124,5 @@ def users_new():
         flash("User created successfully.", "success")
         return redirect(url_for("admin.users_list"))
 
-    return render_template("admin/user_new.html", roles=roles)
+    # Ensure template always receives a form object (empty on initial GET)
+    return render_template("admin/user_new.html", roles=roles, form=request.form)
