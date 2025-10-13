@@ -11,16 +11,16 @@
   </head>
   <body>
     <div class="header">
-      <h2>Bill of Lading</h2>
+      <h2>{{ _('Bill of Lading') }}</h2>
     </div>
     <div>
-      <strong>BOL #: </strong>{{ bol.bol_number }}<br/>
-      <strong>Date: </strong>{{ bol.issue_date.strftime('%Y-%m-%d') if bol.issue_date else '' }}<br/>
-      <strong>Shipment: </strong>{{ bol.shipment.shipment_number if bol.shipment else '-' }}
+      <strong>{{ _('BOL #:') }} </strong>{{ bol.bol_number }}<br/>
+      <strong>{{ _('Date:') }} </strong>{{ bol.issue_date.strftime('%Y-%m-%d') if bol.issue_date else '' }}<br/>
+      <strong>{{ _('Shipment:') }} </strong>{{ bol.shipment.shipment_number if bol.shipment else '-' }}
     </div>
     <table class="items" style="margin-top:10px">
       <thead>
-        <tr><th>VIN</th><th>Make</th><th>Model</th><th>Year</th></tr>
+        <tr><th>{{ _('VIN') }}</th><th>{{ _('Make') }}</th><th>{{ _('Model') }}</th><th>{{ _('Year') }}</th></tr>
       </thead>
       <tbody>
         {% for v in vehicles %}

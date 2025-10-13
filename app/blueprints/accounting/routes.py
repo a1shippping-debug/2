@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, abort, current_app
+from flask_babel import gettext as _
 from flask_login import login_required
 from ...security import role_required
 from ...extensions import db, mail
@@ -83,7 +84,7 @@ def costs_list():
 def costs_edit(vehicle_id: int):
     vehicle = db.session.get(Vehicle, vehicle_id)
     if not vehicle:
-        flash('Vehicle not found', 'danger')
+        flash(_('Vehicle not found'), 'danger')
         return redirect(url_for('acct.costs_list'))
     cost = db.session.query(InternationalCost).filter_by(vehicle_id=vehicle.id).first()
     if request.method == 'POST':
@@ -104,11 +105,11 @@ def costs_edit(vehicle_id: int):
         cost.misc_omr = f('misc_omr')
         try:
             db.session.commit()
-            flash('Costs saved', 'success')
+            flash(_('Costs saved'), 'success')
             return redirect(url_for('acct.costs_list'))
         except Exception:
             db.session.rollback()
-            flash('Failed to save costs', 'danger')
+            flash(_('Failed to save costs'), 'danger')
     return render_template('accounting/costs_edit.html', vehicle=vehicle, cost=cost)
 
 
@@ -146,11 +147,11 @@ def invoices_new():
         inv.total_omr = total
         try:
             db.session.commit()
-            flash('Invoice created', 'success')
+            flash(_('Invoice created'), 'success')
             return redirect(url_for('acct.invoices_edit', invoice_id=inv.id))
         except Exception:
             db.session.rollback()
-            flash('Failed to create invoice', 'danger')
+            flash(_('Failed to create invoice'), 'danger')
     return render_template('accounting/invoices_form.html', customers=customers, vehicles=vehicles)
 
 
@@ -159,7 +160,7 @@ def invoices_new():
 def invoices_edit(invoice_id: int):
     invoice = db.session.get(Invoice, invoice_id)
     if not invoice:
-        flash('Invoice not found', 'danger')
+        flash(_('Invoice not found'), 'danger')
         return redirect(url_for('acct.invoices_list'))
     customers = db.session.query(Customer).order_by(Customer.company_name.asc()).all()
     if request.method == 'POST':
@@ -178,10 +179,10 @@ def invoices_edit(invoice_id: int):
         invoice.total_omr = total
         try:
             db.session.commit()
-            flash('Invoice updated', 'success')
+            flash(_('Invoice updated'), 'success')
         except Exception:
             db.session.rollback()
-            flash('Failed to update invoice', 'danger')
+            flash(_('Failed to update invoice'), 'danger')
     return render_template('accounting/invoices_edit.html', invoice=invoice, customers=customers)
 
 
@@ -190,15 +191,15 @@ def invoices_edit(invoice_id: int):
 def invoices_delete(invoice_id: int):
     inv = db.session.get(Invoice, invoice_id)
     if not inv:
-        flash('Not found', 'danger')
+        flash(_('Not found'), 'danger')
         return redirect(url_for('acct.invoices_list'))
     db.session.delete(inv)
     try:
         db.session.commit()
-        flash('Invoice deleted', 'success')
+        flash(_('Invoice deleted'), 'success')
     except Exception:
         db.session.rollback()
-        flash('Failed to delete invoice', 'danger')
+        flash(_('Failed to delete invoice'), 'danger')
     return redirect(url_for('acct.invoices_list'))
 
 
@@ -242,21 +243,21 @@ def invoices_export_xlsx(invoice_id: int):
 def invoices_email(invoice_id: int):
     inv = db.session.get(Invoice, invoice_id)
     if not inv or not inv.customer or not inv.customer.user:
-        flash('Missing customer email', 'danger')
+        flash(_('Missing customer email'), 'danger')
         return redirect(url_for('acct.invoices_list'))
     email = inv.customer.user.email
     # ensure pdf exists
     items = db.session.query(InvoiceItem).filter_by(invoice_id=inv.id).all()
     path = inv.pdf_path or render_invoice_pdf(inv, items)
     try:
-        msg = Message(subject=f"Invoice {inv.invoice_number}", recipients=[email])
-        msg.body = f"Please find attached invoice {inv.invoice_number}."
+        msg = Message(subject=_('Invoice %(n)s', n=inv.invoice_number), recipients=[email])
+        msg.body = _('Please find attached invoice %(n)s.', n=inv.invoice_number)
         with open(path, 'rb') as f:
             msg.attach(filename=f"{inv.invoice_number}.pdf", content_type='application/pdf', data=f.read())
         mail.send(msg)
-        flash('Email sent', 'success')
+        flash(_('Email sent'), 'success')
     except Exception:
-        flash('Failed to send email', 'danger')
+        flash(_('Failed to send email'), 'danger')
     return redirect(url_for('acct.invoices_edit', invoice_id=inv.id))
 
 
@@ -278,7 +279,7 @@ def payments_new():
     reference = request.form.get('reference')
     inv = db.session.get(Invoice, int(invoice_id)) if invoice_id else None
     if not inv:
-        flash('Invalid invoice', 'danger')
+        flash(_('Invalid invoice'), 'danger')
         return redirect(url_for('acct.payments_list'))
     try:
         amt = Decimal(str(amount or 0))
@@ -294,10 +295,10 @@ def payments_new():
         inv.status = 'Partial'
     try:
         db.session.commit()
-        flash('Payment recorded', 'success')
+        flash(_('Payment recorded'), 'success')
     except Exception:
         db.session.rollback()
-        flash('Failed to save payment', 'danger')
+        flash(_('Failed to save payment'), 'danger')
     return redirect(url_for('acct.payments_list'))
 
 
@@ -319,10 +320,10 @@ def bol_new():
     db.session.add(bol)
     try:
         db.session.commit()
-        flash('BOL created', 'success')
+        flash(_('BOL created'), 'success')
     except Exception:
         db.session.rollback()
-        flash('Failed to create BOL', 'danger')
+        flash(_('Failed to create BOL'), 'danger')
     return redirect(url_for('acct.bol_list'))
 
 
@@ -345,22 +346,22 @@ def bol_export(bol_id: int):
 def bol_email(bol_id: int):
     recipient = (request.form.get('email') or '').strip()
     if not recipient:
-        flash('Recipient email required', 'danger'); return redirect(url_for('acct.bol_list'))
+        flash(_('Recipient email required'), 'danger'); return redirect(url_for('acct.bol_list'))
     bol = db.session.get(BillOfLading, bol_id)
     if not bol:
-        flash('BOL not found', 'danger'); return redirect(url_for('acct.bol_list'))
+        flash(_('BOL not found'), 'danger'); return redirect(url_for('acct.bol_list'))
     vehicles = db.session.query(Vehicle).join(VehicleShipment, Vehicle.id == VehicleShipment.vehicle_id).\
         filter(VehicleShipment.shipment_id == bol.shipment_id).all()
     path = bol.pdf_path or render_bol_pdf(bol, vehicles)
     try:
-        msg = Message(subject=f"BOL {bol.bol_number}", recipients=[recipient])
-        msg.body = f"Please find attached Bill of Lading {bol.bol_number}."
+        msg = Message(subject=_('BOL %(n)s', n=bol.bol_number), recipients=[recipient])
+        msg.body = _('Please find attached Bill of Lading %(n)s.', n=bol.bol_number)
         with open(path, 'rb') as f:
             msg.attach(filename=f"{bol.bol_number}.pdf", content_type='application/pdf', data=f.read())
         mail.send(msg)
-        flash('Email sent', 'success')
+        flash(_('Email sent'), 'success')
     except Exception:
-        flash('Failed to send email', 'danger')
+        flash(_('Failed to send email'), 'danger')
     return redirect(url_for('acct.bol_list'))
 
 
@@ -369,10 +370,10 @@ def bol_email(bol_id: int):
 def bol_upload(bol_id: int):
     bol = db.session.get(BillOfLading, bol_id)
     if not bol:
-        flash('BOL not found', 'danger'); return redirect(url_for('acct.bol_list'))
+        flash(_('BOL not found'), 'danger'); return redirect(url_for('acct.bol_list'))
     f = request.files.get('file')
     if not f:
-        flash('No file uploaded', 'danger'); return redirect(url_for('acct.bol_list'))
+        flash(_('No file uploaded'), 'danger'); return redirect(url_for('acct.bol_list'))
     import os
     outdir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'bols')
     os.makedirs(outdir, exist_ok=True)
@@ -381,7 +382,7 @@ def bol_upload(bol_id: int):
     f.save(path)
     bol.pdf_path = path
     db.session.commit()
-    flash('BOL uploaded', 'success')
+    flash(_('BOL uploaded'), 'success')
     return redirect(url_for('acct.bol_list'))
 
 
@@ -420,14 +421,14 @@ def reports():
         if export == 'pdf':
             buf = BytesIO(); c = canvas.Canvas(buf, pagesize=A4)
             width, height = A4; y = height - 40
-            c.setFont('Helvetica-Bold', 16); c.drawString(40, y, 'Monthly Profit & Loss')
+            c.setFont('Helvetica-Bold', 16); c.drawString(40, y, _('Monthly Profit & Loss'))
             y -= 25; c.setFont('Helvetica-Bold', 11);
-            c.drawString(40, y, 'Month'); c.drawString(200, y, 'Revenue'); c.drawString(320, y, 'Expenses'); c.drawString(440, y, 'Profit')
+            c.drawString(40, y, _('Month')); c.drawString(200, y, _('Revenue')); c.drawString(320, y, _('Expenses')); c.drawString(440, y, _('Profit'))
             y -= 14; c.setFont('Helvetica', 10)
             for m, r, e in zip(labels, revenue, expenses):
                 if y < 40:
                     c.showPage(); y = height - 40; c.setFont('Helvetica-Bold', 11)
-                    c.drawString(40, y, 'Month'); c.drawString(200, y, 'Revenue'); c.drawString(320, y, 'Expenses'); c.drawString(440, y, 'Profit')
+                    c.drawString(40, y, _('Month')); c.drawString(200, y, _('Revenue')); c.drawString(320, y, _('Expenses')); c.drawString(440, y, _('Profit'))
                     y -= 14; c.setFont('Helvetica', 10)
                 c.drawString(40, y, m); c.drawRightString(300, y, f"{r:,.3f}"); c.drawRightString(420, y, f"{e:,.3f}"); c.drawRightString(540, y, f"{(r-e):,.3f}"); y -= 12
             c.showPage(); c.save(); buf.seek(0)
@@ -435,7 +436,7 @@ def reports():
         
         
     if report_type == 'monthly' and export == 'xlsx':
-        wb = Workbook(); ws = wb.active; ws.title = 'Monthly P&L'; ws.append(['Month','Revenue','Expenses','Profit'])
+        wb = Workbook(); ws = wb.active; ws.title = 'Monthly P&L'; ws.append([_('Month'),_('Revenue'),_('Expenses'),_('Profit')])
         for m, r, e in zip(labels, revenue, expenses): ws.append([m, r, e, r-e])
         buf = BytesIO(); wb.save(buf); buf.seek(0)
         return send_file(buf, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name='monthly_pl.xlsx')
@@ -446,14 +447,14 @@ def reports():
             join(Invoice, Invoice.customer_id == Customer.id, isouter=True).group_by(Customer.company_name).order_by(Customer.company_name.asc()).all()
         data = [(name or '-', float(total or 0)) for name, total in rows]
         if export == 'xlsx':
-            wb = Workbook(); ws = wb.active; ws.title = 'Invoices by Client'; ws.append(['Client', 'Total (OMR)'])
+            wb = Workbook(); ws = wb.active; ws.title = 'Invoices by Client'; ws.append([_('Client'), _('Total (OMR)')])
             for n, t in data: ws.append([n, t])
             buf = BytesIO(); wb.save(buf); buf.seek(0)
             return send_file(buf, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name='invoices_by_client.xlsx')
         if export == 'pdf':
             buf = BytesIO(); c = canvas.Canvas(buf, pagesize=A4)
             width, height = A4; y = height - 40
-            c.setFont('Helvetica-Bold', 16); c.drawString(40, y, 'Invoices by Client'); y -= 20; c.setFont('Helvetica', 10)
+            c.setFont('Helvetica-Bold', 16); c.drawString(40, y, _('Invoices by Client')); y -= 20; c.setFont('Helvetica', 10)
             for n, t in data:
                 if y < 40: c.showPage(); y = height - 40; c.setFont('Helvetica', 10)
                 c.drawString(40, y, n); c.drawRightString(550, y, f"{t:,.3f}"); y -= 14
@@ -478,14 +479,14 @@ def reports():
             else: dt = datetime(dt.year, dt.month - 1, 1)
         labels, customs_m, vat_m = list(reversed(labels)), list(reversed(customs_m)), list(reversed(vat_m))
         if export == 'xlsx':
-            wb = Workbook(); ws = wb.active; ws.title = 'Taxes'; ws.append(['Month', 'Customs (OMR)', 'VAT (OMR)'])
+            wb = Workbook(); ws = wb.active; ws.title = 'Taxes'; ws.append([_('Month'), _('Customs (OMR)'), _('VAT (OMR)')])
             for m, cst, vt in zip(labels, customs_m, vat_m): ws.append([m, cst, vt])
             buf = BytesIO(); wb.save(buf); buf.seek(0)
             return send_file(buf, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name='taxes.xlsx')
         if export == 'pdf':
             buf = BytesIO(); c = canvas.Canvas(buf, pagesize=A4)
             width, height = A4; y = height - 40
-            c.setFont('Helvetica-Bold', 16); c.drawString(40, y, 'Customs & VAT by Month'); y -= 20; c.setFont('Helvetica', 10)
+            c.setFont('Helvetica-Bold', 16); c.drawString(40, y, _('Customs & VAT by Month')); y -= 20; c.setFont('Helvetica', 10)
             for m, cst, vt in zip(labels, customs_m, vat_m):
                 if y < 40: c.showPage(); y = height - 40; c.setFont('Helvetica', 10)
                 c.drawString(40, y, m); c.drawRightString(320, y, f"{cst:,.3f}"); c.drawRightString(560, y, f"{vt:,.3f}"); y -= 14

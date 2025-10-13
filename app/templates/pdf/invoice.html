@@ -11,15 +11,15 @@
   </head>
   <body>
     <div class="header">
-      <h2>Commercial Invoice</h2>
+      <h2>{{ _('Commercial Invoice') }}</h2>
     </div>
     <div>
-      <strong>Invoice #: </strong>{{ invoice.invoice_number }}<br/>
-      <strong>Date: </strong>{{ invoice.created_at.strftime('%Y-%m-%d') }}
+      <strong>{{ _('Invoice #:') }} </strong>{{ invoice.invoice_number }}<br/>
+      <strong>{{ _('Date:') }} </strong>{{ invoice.created_at.strftime('%Y-%m-%d') }}
     </div>
     <table class="items" style="margin-top:10px">
       <thead>
-        <tr><th>Description</th><th>Amount (OMR)</th></tr>
+        <tr><th>{{ _('Description') }}</th><th>{{ _('Amount (OMR)') }}</th></tr>
       </thead>
       <tbody>
         {% for it in items %}
