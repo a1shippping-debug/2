@@ -8,11 +8,16 @@
   <input name="model" placeholder="Model" value="{{ vehicle.model if vehicle else '' }}" class="border p-2 rounded">
   <input name="year" placeholder="Year" value="{{ vehicle.year if vehicle else '' }}" class="border p-2 rounded">
 
-  <input name="lot_number" placeholder="Lot Number" class="border p-2 rounded">
+  <input name="lot_number" placeholder="Lot Number" value="{{ vehicle.auction.lot_number if vehicle and vehicle.auction else '' }}" class="border p-2 rounded">
   <select name="auction_type" class="border p-2 rounded">
     <option value="">Auction Type</option>
-    {% for a in ['Copart','IAAI'] %}<option>{{ a }}</option>{% endfor %}
+    {% for a in ['Copart','IAAI'] %}
+      <option value="{{ a }}" {% if vehicle and vehicle.auction and vehicle.auction.provider==a %}selected{% endif %}>{{ a }}</option>
+    {% endfor %}
   </select>
+
+  <input name="auction_url" placeholder="Auction Link" value="{{ vehicle.auction.auction_url if vehicle and vehicle.auction else '' }}" class="border p-2 rounded md:col-span-2">
+  <input name="current_location" placeholder="Current Location" value="{{ vehicle.current_location if vehicle else '' }}" class="border p-2 rounded">
 
   <input type="date" name="purchase_date" class="border p-2 rounded">
   <input name="purchase_price" placeholder="Purchase Price (USD)" class="border p-2 rounded">
