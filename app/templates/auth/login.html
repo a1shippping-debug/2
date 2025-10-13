@@ -1,17 +1,22 @@
 {% extends "layout.html" %}
-{% block title %}Login{% endblock %}
+{% block title %}{% if g.get('lang_code') == 'ar' %}تسجيل الدخول{% else %}Login{% endif %}{% endblock %}
 {% block content %}
 <div class="max-w-md mx-auto bg-white p-6 rounded shadow">
-  <h2 class="text-xl mb-4">Login</h2>
+  <h2 class="text-xl mb-4">{% if g.get('lang_code') == 'ar' %}تسجيل الدخول{% else %}Login{% endif %}</h2>
   <form method="post">
-    <label class="block mb-2">Email</label>
+    <label class="block mb-2">{% if g.get('lang_code') == 'ar' %}البريد الإلكتروني{% else %}Email{% endif %}</label>
     <input name="email" type="email" class="w-full p-2 border rounded mb-3" required>
-    <label class="block mb-2">Password</label>
+    <label class="block mb-2">{% if g.get('lang_code') == 'ar' %}كلمة المرور{% else %}Password{% endif %}</label>
     <input name="password" type="password" class="w-full p-2 border rounded mb-3" required>
-    <button class="w-full py-2 bg-blue-500 text-white rounded">Login</button>
+    <button class="w-full py-2 bg-blue-500 text-white rounded">{% if g.get('lang_code') == 'ar' %}دخول{% else %}Login{% endif %}</button>
   </form>
   <div class="mt-4 text-sm text-gray-600">
-    Use <strong>admin@example.com</strong> / <strong>admin123</strong> after visiting <a class="text-blue-500" href="{{ url_for('auth.init_sample') }}">/auth/init</a>
+    {% if g.get('lang_code') == 'ar' %}
+      استخدم <strong>admin@example.com</strong> / <strong>admin123</strong> بعد زيارة
+      <a class="text-blue-500" href="{{ url_for('auth.init_sample') }}">/auth/init</a>
+    {% else %}
+      Use <strong>admin@example.com</strong> / <strong>admin123</strong> after visiting <a class="text-blue-500" href="{{ url_for('auth.init_sample') }}">/auth/init</a>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

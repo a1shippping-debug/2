@@ -1,11 +1,11 @@
 {% extends "layout.html" %}
-{% block title %}Car Saved{% endblock %}
+{% block title %}{% if g.get('lang_code') == 'ar' %}تم حفظ المركبة{% else %}Car Saved{% endif %}{% endblock %}
 {% block content %}
 <div class="bg-green-50 border border-green-200 text-green-800 p-4 rounded">
-  Vehicle {{ vehicle.vin }} saved successfully.
+  {% if g.get('lang_code') == 'ar' %}تم حفظ المركبة {{ vehicle.vin }} بنجاح.{% else %}Vehicle {{ vehicle.vin }} saved successfully.{% endif %}
 </div>
 <div class="mt-4 space-x-3">
-  <a class="px-3 py-2 bg-blue-600 text-white rounded" href="{{ url_for('ops.cars_edit', vehicle_id=vehicle.id) }}">Edit</a>
-  <a class="px-3 py-2 bg-gray-800 text-white rounded" href="{{ url_for('ops.cars_list') }}">Back to list</a>
+  <a class="px-3 py-2 bg-blue-600 text-white rounded" href="{{ url_for('ops.cars_edit', vehicle_id=vehicle.id) }}">{% if g.get('lang_code') == 'ar' %}تعديل{% else %}Edit{% endif %}</a>
+  <a class="px-3 py-2 bg-gray-800 text-white rounded" href="{{ url_for('ops.cars_list') }}">{% if g.get('lang_code') == 'ar' %}عودة إلى القائمة{% else %}Back to list{% endif %}</a>
 </div>
 {% endblock %}

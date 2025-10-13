@@ -11,7 +11,7 @@
   </head>
   <body>
     <div class="header">
-      <h2>Bill of Lading</h2>
+      <h2>{% if g.get('lang_code') == 'ar' %}سند الشحن{% else %}Bill of Lading{% endif %}</h2>
     </div>
     <div>
       <strong>BOL #: </strong>{{ bol.bol_number }}<br/>

@@ -1,20 +1,20 @@
 {% extends "layout.html" %}
-{% block title %}{{ 'Edit Customer' if customer else 'Add Customer' }}{% endblock %}
+{% block title %}{% if g.get('lang_code') == 'ar' %}{{ 'تعديل عميل' if customer else 'إضافة عميل' }}{% else %}{{ 'Edit Customer' if customer else 'Add Customer' }}{% endif %}{% endblock %}
 {% block content %}
-<h1 class="text-xl font-semibold mb-4">{{ 'Edit Customer' if customer else 'Add Customer' }}</h1>
+<h1 class="text-xl font-semibold mb-4">{% if g.get('lang_code') == 'ar' %}{{ 'تعديل عميل' if customer else 'إضافة عميل' }}{% else %}{{ 'Edit Customer' if customer else 'Add Customer' }}{% endif %}</h1>
 <form method="post" class="bg-white p-4 rounded shadow grid grid-cols-1 md:grid-cols-2 gap-3">
-  <input name="company_name" placeholder="Company Name" value="{{ customer.company_name if customer else '' }}" class="border p-2 rounded">
-  <input name="full_name" placeholder="Full Name" value="{{ customer.full_name if customer else '' }}" class="border p-2 rounded">
-  <input name="account_number" placeholder="Account #" value="{{ customer.account_number if customer else '' }}" class="border p-2 rounded">
-  <input name="email" placeholder="Email" value="{{ customer.email if customer else '' }}" class="border p-2 rounded">
-  <input name="phone" placeholder="Phone" value="{{ customer.phone if customer else '' }}" class="border p-2 rounded">
-  <input name="country" placeholder="Country" value="{{ customer.country if customer else '' }}" class="border p-2 rounded">
-  <textarea name="address" placeholder="Address" class="border p-2 rounded md:col-span-2">{{ customer.address if customer else '' }}</textarea>
+  <input name="company_name" placeholder="{% if g.get('lang_code') == 'ar' %}اسم الشركة{% else %}Company Name{% endif %}" value="{{ customer.company_name if customer else '' }}" class="border p-2 rounded">
+  <input name="full_name" placeholder="{% if g.get('lang_code') == 'ar' %}الاسم الكامل{% else %}Full Name{% endif %}" value="{{ customer.full_name if customer else '' }}" class="border p-2 rounded">
+  <input name="account_number" placeholder="{% if g.get('lang_code') == 'ar' %}رقم الحساب{% else %}Account #{% endif %}" value="{{ customer.account_number if customer else '' }}" class="border p-2 rounded">
+  <input name="email" placeholder="{% if g.get('lang_code') == 'ar' %}البريد الإلكتروني{% else %}Email{% endif %}" value="{{ customer.email if customer else '' }}" class="border p-2 rounded">
+  <input name="phone" placeholder="{% if g.get('lang_code') == 'ar' %}الهاتف{% else %}Phone{% endif %}" value="{{ customer.phone if customer else '' }}" class="border p-2 rounded">
+  <input name="country" placeholder="{% if g.get('lang_code') == 'ar' %}الدولة{% else %}Country{% endif %}" value="{{ customer.country if customer else '' }}" class="border p-2 rounded">
+  <textarea name="address" placeholder="{% if g.get('lang_code') == 'ar' %}العنوان{% else %}Address{% endif %}" class="border p-2 rounded md:col-span-2">{{ customer.address if customer else '' }}</textarea>
   <div class="md:col-span-2">
-    <button class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+    <button class="px-4 py-2 bg-blue-600 text-white rounded">{% if g.get('lang_code') == 'ar' %}حفظ{% else %}Save{% endif %}</button>
   </div>
 </form>
 {% if saved %}
-<div class="mt-4 bg-green-50 text-green-800 border border-green-200 p-3 rounded">Customer saved.</div>
+<div class="mt-4 bg-green-50 text-green-800 border border-green-200 p-3 rounded">{% if g.get('lang_code') == 'ar' %}تم حفظ العميل.{% else %}Customer saved.{% endif %}</div>
 {% endif %}
 {% endblock %}

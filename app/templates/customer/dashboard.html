@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}Customer Dashboard{% endblock %}
+{% block title %}{% if g.get('lang_code') == 'ar' %}لوحة العميل{% else %}Customer Dashboard{% endif %}{% endblock %}
 {% block content %}
 <h1 class="text-2xl mb-4">لوحة العميل</h1>
 

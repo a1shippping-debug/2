@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ g.get('lang_code', 'en') }}" {% if g.get('lang_code') == 'ar' %}dir="rtl"{% endif %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -14,10 +14,13 @@
       <div>
         {% if current_user.is_authenticated %}
           <span class="mr-4">{{ current_user.name }}</span>
-          <a href="{{ url_for('auth.logout') }}" class="text-sm">Logout</a>
+          <a href="{{ url_for('auth.logout') }}" class="text-sm">{% if g.get('lang_code') == 'ar' %}تسجيل الخروج{% else %}Logout{% endif %}</a>
         {% else %}
-          <a href="{{ url_for('auth.login') }}">Login</a>
+          <a href="{{ url_for('auth.login') }}">{% if g.get('lang_code') == 'ar' %}تسجيل الدخول{% else %}Login{% endif %}</a>
         {% endif %}
+        <span class="mx-2 text-gray-300">|</span>
+        <a href="{{ request.path }}?lang=en" class="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">EN</a>
+        <a href="{{ request.path }}?lang=ar" class="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">العربية</a>
       </div>
     </div>
   </nav>
