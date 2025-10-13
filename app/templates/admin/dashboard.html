@@ -36,7 +36,7 @@
   <div class="bg-white rounded shadow p-4">
     <h2 class="font-semibold mb-2">Admin Tools</h2>
     <ul class="space-y-2 list-disc list-inside">
-      <li><a class="text-blue-600" href="#">Manage Users</a></li>
+      <li><a class="text-blue-600" href="{{ url_for('admin.users_list') }}">Manage Users</a></li>
       <li><a class="text-blue-600" href="#">Roles & Permissions</a></li>
       <li><a class="text-blue-600" href="#">System Backups</a></li>
       <li><a class="text-blue-600" href="#">Audit Logs</a></li>
