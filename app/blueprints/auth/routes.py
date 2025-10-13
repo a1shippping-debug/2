@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from ...extensions import db
-from ...models import User, Role
+from ...models import User, Role, AuditLog
+from ...extensions import db
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 
@@ -14,6 +15,12 @@ def login():
         user = User.query.filter_by(email=email).first()
         if user and user.check_password(pwd):
             login_user(user)
+            try:
+                db.session.add(AuditLog(user_id=user.id, action="login", target_type="Auth", target_id=user.id, meta={"email": user.email}))
+                user.last_login_at = db.func.now()
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
             role = user.role.name if user.role else "customer"
             if role == "admin":
                 return redirect(url_for("admin.dashboard"))

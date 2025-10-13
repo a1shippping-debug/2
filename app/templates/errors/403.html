@@ -1,0 +1,9 @@
+{% extends "base_admin.html" %}
+{% block title %}403{% endblock %}
+{% block header %}Forbidden{% endblock %}
+{% block content %}
+<div class="max-w-xl mx-auto mt-16 p-8 rounded-2xl bg-slate-900/60 border border-slate-800 text-center">
+  <div class="text-5xl font-bold text-primary mb-4">403</div>
+  <p class="text-slate-300 mb-6">You don't have permission to access this page.</p>
+  <a href="/" class="px-4 py-2 rounded bg-primary text-white">Go Home</a>
+{% endblock %}

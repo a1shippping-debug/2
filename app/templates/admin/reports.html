@@ -1,0 +1,34 @@
+{% extends "base_admin.html" %}
+{% block title %}Reports{% endblock %}
+{% block header %}Reports{% endblock %}
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
+    <h2 class="font-semibold mb-4">Monthly Financial Overview</h2>
+    <canvas id="monthlyFinancial" height="140"></canvas>
+  </div>
+  <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
+    <h2 class="font-semibold mb-4">Exports</h2>
+    <div class="space-y-2">
+      <a href="{{ url_for('admin.reports') }}?export=pdf" class="px-3 py-2 rounded bg-primary text-white text-sm">Export PDF</a>
+      <a href="{{ url_for('admin.reports') }}?export=xlsx" class="px-3 py-2 rounded bg-slate-800 text-white text-sm">Export Excel</a>
+    </div>
+  </div>
+</div>
+<script>
+  const mf = document.getElementById('monthlyFinancial');
+  if (mf && window.Chart) {
+    new Chart(mf, {
+      type: 'bar',
+      data: {
+        labels: {{ chart.months|tojson|safe if chart else "[]" }},
+        datasets: [
+          { label: 'Revenue (OMR)', data: {{ chart.revenue|tojson|safe if chart else "[]" }}, backgroundColor: '#3b82f6' },
+          { label: 'Expenses (OMR)', data: {{ chart.expenses|tojson|safe if chart else "[]" }}, backgroundColor: '#f59e0b' }
+        ]
+      },
+      options: { scales: { x: { ticks: { color: '#94a3b8' }}, y: { ticks: { color: '#94a3b8' }}} }
+    });
+  }
+</script>
+{% endblock %}
