@@ -1,0 +1,20 @@
+{% extends "base_accounting.html" %}
+{% block acct_content %}
+<h2 class="text-xl font-semibold mb-4">Financial Reports</h2>
+<div class="flex items-center gap-2 mb-4">
+  <a class="px-3 py-2 rounded bg-slate-800" href="?export=pdf">Export PDF</a>
+  <a class="px-3 py-2 rounded bg-slate-800" href="?export=xlsx">Export Excel</a>
+</div>
+<div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
+  <h3 class="font-semibold mb-2">Monthly Revenue vs Expenses</h3>
+  <canvas id="lineChart" height="120"></canvas>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('lineChart');
+new Chart(ctx, { type: 'line', data: { labels: {{ chart.months|tojson|safe }}, datasets: [
+  { label: 'Revenue', data: {{ chart.revenue|tojson|safe }}, borderColor: '#10b981', tension: 0.3 },
+  { label: 'Expenses', data: {{ chart.expenses|tojson|safe }}, borderColor: '#ef4444', tension: 0.3 }
+]}});
+</script>
+{% endblock %}

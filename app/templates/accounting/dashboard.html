@@ -1,6 +1,44 @@
-{% extends "layout.html" %}
-{% block title %}Accounting Dashboard{% endblock %}
-{% block content %}
-<h1 class="text-2xl mb-4">Accounting Dashboard</h1>
-<p>Invoices / Reports / CIF calculations.</p>
+{% extends "base_accounting.html" %}
+{% block acct_content %}
+<div class="grid md:grid-cols-4 gap-4 mb-4">
+  <div class="p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
+    <div class="text-sm text-slate-400">Total Revenue (OMR)</div>
+    <div class="text-2xl font-semibold">{{ '%.3f'|format(totals.revenue_omr or 0) }}</div>
+  </div>
+  <div class="p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
+    <div class="text-sm text-slate-400">Total Expenses (OMR)</div>
+    <div class="text-2xl font-semibold">{{ '%.3f'|format(totals.expenses_omr or 0) }}</div>
+  </div>
+  <div class="p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
+    <div class="text-sm text-slate-400">Net Profit (OMR)</div>
+    <div class="text-2xl font-semibold">{{ '%.3f'|format(totals.net_omr or 0) }}</div>
+  </div>
+  <div class="p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
+    <div class="text-sm text-slate-400">Invoices</div>
+    <div class="text-2xl font-semibold">{{ counts.invoices }}</div>
+  </div>
+  <div class="p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
+    <div class="text-sm text-slate-400">Vehicles Priced</div>
+    <div class="text-2xl font-semibold">{{ counts.vehicles_priced }}</div>
+  </div>
+</div>
+
+<div class="grid md:grid-cols-3 gap-4">
+  <div class="md:col-span-2 bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
+    <h3 class="font-semibold mb-2">Monthly Revenue</h3>
+    <canvas id="revChart" height="120"></canvas>
+  </div>
+  <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
+    <h3 class="font-semibold mb-2">Expenses by Category</h3>
+    <canvas id="expPie" height="120"></canvas>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const rc = document.getElementById('revChart');
+new Chart(rc, { type: 'bar', data: { labels: {{ chart.months|tojson|safe }}, datasets: [{ label: 'Revenue', data: {{ chart.revenue|tojson|safe }}, backgroundColor: '#3b82f6' }] }, options: { plugins: { legend: { display: false } } } });
+const pc = document.getElementById('expPie');
+new Chart(pc, { type: 'pie', data: { labels: {{ chart.exp_labels|tojson|safe }}, datasets: [{ data: {{ chart.exp_values|tojson|safe }}, backgroundColor: ['#f59e0b','#10b981','#ef4444','#8b5cf6','#06b6d4'] }] } });
+</script>
 {% endblock %}
