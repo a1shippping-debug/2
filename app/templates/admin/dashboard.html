@@ -15,6 +15,14 @@
   <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">Backups</div><div class="text-2xl font-semibold">{{ counts.backups }}</div></div>
 </div>
 
+<!-- Vehicle status cards (Arabic labels) -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">سيارات لا تزال في المزاد</div><div class="text-2xl font-semibold">{{ counts.vehicles_in_auction }}</div></div>
+  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">سيارات وصلت إلى المستودع</div><div class="text-2xl font-semibold">{{ counts.vehicles_in_warehouse }}</div></div>
+  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">سيارات بدون تايتل</div><div class="text-2xl font-semibold">{{ counts.vehicles_no_title }}</div></div>
+  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">سيارات تم شحنها</div><div class="text-2xl font-semibold">{{ counts.vehicles_shipped }}</div></div>
+</div>
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
   <div class="bg-white rounded shadow p-4">
     <div class="flex items-center justify-between mb-2">

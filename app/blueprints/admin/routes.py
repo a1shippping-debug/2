@@ -31,6 +31,13 @@ def dashboard():
             .filter(Role.name == "customer", User.active.is_(True)).count(),
         "vehicles": db.session.query(Vehicle).count(),
         "vehicles_shipping": db.session.query(Vehicle).filter(Vehicle.status == "In Shipping").count(),
+        # vehicle status breakdown for admin cards
+        "vehicles_in_auction": db.session.query(Vehicle).filter(Vehicle.status == "In Auction").count(),
+        "vehicles_in_warehouse": db.session.query(Vehicle).filter(Vehicle.status.in_(["In Warehouse", "Arrived Warehouse"]))
+            .count(),
+        "vehicles_no_title": db.session.query(Vehicle).filter(Vehicle.status == "No Title").count(),
+        "vehicles_shipped": db.session.query(Vehicle).filter(Vehicle.status.in_(["In Shipping", "Shipped"]))
+            .count(),
         "auctions": db.session.query(Auction).count(),
         "shipments": db.session.query(Shipment).count(),
         "open_shipments": db.session.query(Shipment).filter(Shipment.status == "Open").count(),
