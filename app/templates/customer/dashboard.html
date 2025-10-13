@@ -1,7 +1,10 @@
 {% extends "layout.html" %}
 {% block title %}Customer Dashboard{% endblock %}
 {% block content %}
-<h1 class="text-2xl mb-4">لوحة العميل</h1>
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-2xl">لوحة العميل</h1>
+  <a href="{{ url_for('cust.invoices_list') }}" class="px-3 py-2 bg-slate-900/80 text-white rounded-2xl border border-slate-800">فواتيري</a>
+  </div>
 
 <form method="get" class="mb-6">
   <div class="flex gap-2 items-center">
@@ -18,6 +21,7 @@
 
 {% if results is defined %}
   {% if results %}
+    <h2 class="text-xl font-semibold mb-3">سياراتي</h2>
     <div class="space-y-4">
       {% for r in results %}
         {% set v = r.vehicle %}
@@ -61,7 +65,10 @@
     {% if q %}
       <div class="p-4 bg-yellow-50 border border-yellow-200 rounded">لا توجد نتائج مطابقة.</div>
     {% else %}
-      <div class="text-gray-500">استخدم البحث لعرض حالة مركبتك.</div>
+      <div class="p-4 bg-slate-900/40 border border-slate-800 rounded-2xl text-slate-300">
+        لا توجد مركبات مرتبطة بحسابك حالياً.
+        <div class="text-sm text-slate-400 mt-1">عند إضافة مركبات إلى حسابك ستظهر هنا تحت قسم "سياراتي". يمكنك أيضاً استخدام البحث أعلاه برقم اللوت أو رقم الشاصي.</div>
+      </div>
     {% endif %}
   {% endif %}
 {% endif %}

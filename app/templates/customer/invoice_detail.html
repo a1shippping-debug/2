@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+{% block title %}تفاصيل الفاتورة{% endblock %}
+{% block content %}
+<h1 class="text-2xl mb-4">تفاصيل الفاتورة</h1>
+<div class="bg-white rounded shadow p-4">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <div class="font-semibold">رقم الفاتورة: {{ invoice.invoice_number }}</div>
+      <div class="text-sm text-gray-500">التاريخ: {{ invoice.created_at.strftime('%Y-%m-%d') if invoice.created_at else '-' }}</div>
+      <div class="text-sm text-gray-500">الحالة: {{ invoice.status or '-' }}</div>
+    </div>
+    <div>
+      <a class="px-3 py-2 bg-blue-600 text-white rounded" href="{{ url_for('cust.invoice_pdf', invoice_id=invoice.id) }}">تنزيل PDF</a>
+    </div>
+  </div>
+  <div>
+    <div class="font-semibold mb-2">العناصر</div>
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr class="text-left text-gray-600">
+          <th class="px-3 py-2">الوصف</th>
+          <th class="px-3 py-2">المبلغ (ر.ع)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in invoice.items %}
+        <tr class="border-t">
+          <td class="px-3 py-2">{{ it.description }}</td>
+          <td class="px-3 py-2">{{ '%.3f'|format(it.amount_omr or 0) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="2" class="px-3 py-6 text-center text-gray-500">لا توجد عناصر.</td></tr>
+        {% endfor %}
+        <tr class="border-t bg-gray-50 font-semibold">
+          <td class="px-3 py-2">الإجمالي</td>
+          <td class="px-3 py-2">{{ '%.3f'|format(invoice.total_omr or 0) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="mt-4">
+  <a class="text-blue-600" href="{{ url_for('cust.invoices_list') }}">العودة إلى الفواتير</a>
+</div>
+{% endblock %}
