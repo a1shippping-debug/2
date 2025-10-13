@@ -1,21 +1,21 @@
 {% extends "base_admin.html" %}
-{% block title %}Activity Log{% endblock %}
-{% block header %}Activity Log{% endblock %}
+{% block title %}{{ _('Activity Log') }}{% endblock %}
+{% block header %}{{ _('Activity Log') }}{% endblock %}
 {% block content %}
 <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
   <div class="flex justify-between items-center mb-3">
-    <h2 class="font-semibold">Recent Activity</h2>
+    <h2 class="font-semibold">{{ _('Recent Activity') }}</h2>
     <div>
-      <a href="{{ url_for('admin.activity_log') }}?export=pdf" class="px-3 py-2 text-sm rounded bg-primary text-white">Export PDF</a>
+      <a href="{{ url_for('admin.activity_log') }}?export=pdf" class="px-3 py-2 text-sm rounded bg-primary text-white">{{ _('Export PDF') }}</a>
     </div>
   </div>
   <table class="w-full text-sm">
     <thead>
       <tr class="text-left text-slate-400">
-        <th class="p-2">Time</th>
-        <th class="p-2">User</th>
-        <th class="p-2">Action</th>
-        <th class="p-2">Target</th>
+        <th class="p-2">{{ _('Time') }}</th>
+        <th class="p-2">{{ _('User') }}</th>
+        <th class="p-2">{{ _('Action') }}</th>
+        <th class="p-2">{{ _('Target') }}</th>
       </tr>
     </thead>
     <tbody>
@@ -28,7 +28,7 @@
       </tr>
       {% else %}
       <tr>
-        <td colspan="4" class="p-3 text-slate-500">No activity yet</td>
+        <td colspan="4" class="p-3 text-slate-500">{{ _('No activity yet') }}</td>
       </tr>
       {% endfor %}
     </tbody>

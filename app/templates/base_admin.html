@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{% block title %}Admin{% endblock %}</title>
+  <title>{% block title %}{{ _('Admin') }}{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
@@ -35,16 +35,16 @@
 <body class="h-full bg-slateBg text-slate-100">
   <div class="min-h-screen flex">
     <aside class="w-64 hidden md:flex flex-col bg-slate-900/70 backdrop-blur border-r border-slate-800">
-      <div class="h-16 flex items-center px-4 text-primary text-xl font-bold tracking-wide">Car Admin</div>
+      <div class="h-16 flex items-center px-4 text-primary text-xl font-bold tracking-wide">{{ _('Car Admin') }}</div>
       <nav class="px-3 py-4 space-y-1 text-sm">
-        <a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint=='admin.dashboard' %}bg-slate-800{% endif %}">Dashboard</a>
-        <a href="{{ url_for('admin.users_list') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('admin.users') %}bg-slate-800{% endif %}">Users</a>
-        <a href="{{ url_for('ops.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800">Cars Management</a>
-        <a href="{{ url_for('ops.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800">Shipments</a>
-        <a href="{{ url_for('acct.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800">Invoices</a>
-        <a href="{{ url_for('admin.reports') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('admin.reports') %}bg-slate-800{% endif %}">Reports</a>
-        <a href="{{ url_for('admin.settings') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint=='admin.settings' %}bg-slate-800{% endif %}">Settings</a>
-        <a href="{{ url_for('admin.activity_log') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('admin.activity_log') %}bg-slate-800{% endif %}">Activity Log</a>
+        <a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint=='admin.dashboard' %}bg-slate-800{% endif %}">{{ _('Dashboard') }}</a>
+        <a href="{{ url_for('admin.users_list') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('admin.users') %}bg-slate-800{% endif %}">{{ _('Users') }}</a>
+        <a href="{{ url_for('ops.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800">{{ _('Cars Management') }}</a>
+        <a href="{{ url_for('ops.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800">{{ _('Shipments') }}</a>
+        <a href="{{ url_for('acct.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800">{{ _('Invoices') }}</a>
+        <a href="{{ url_for('admin.reports') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('admin.reports') %}bg-slate-800{% endif %}">{{ _('Reports') }}</a>
+        <a href="{{ url_for('admin.settings') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint=='admin.settings' %}bg-slate-800{% endif %}">{{ _('Settings') }}</a>
+        <a href="{{ url_for('admin.activity_log') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('admin.activity_log') %}bg-slate-800{% endif %}">{{ _('Activity Log') }}</a>
       </nav>
     </aside>
 
@@ -54,10 +54,10 @@
         <div class="flex items-center gap-3">
           {% if current_user.is_authenticated %}
             <span class="text-sm text-slate-300">{{ current_user.name }}</span>
-            <a href="{{ url_for('auth.logout') }}" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">Logout</a>
+            <a href="{{ url_for('auth.logout') }}" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">{{ _('Logout') }}</a>
           {% endif %}
           <a href="{{ request.path }}?lang=en" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">EN</a>
-          <a href="{{ request.path }}?lang=ar" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">AR</a>
+          <a href="{{ request.path }}?lang=ar" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">العربية</a>
           <button id="themeToggle" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">🌙</button>
         </div>
       </header>

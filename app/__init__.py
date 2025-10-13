@@ -27,10 +27,12 @@ def create_app():
             return None
     # i18n
     def select_locale():
-        lang = request.args.get("lang") or request.cookies.get("lang")
-        if lang in ("ar", "en"):
+        supported = app.config.get("BABEL_SUPPORTED_LOCALES", ["en", "ar"]) or ["en", "ar"]
+        # normalize & strip
+        lang = (request.args.get("lang") or request.cookies.get("lang") or "").strip()
+        if lang in supported:
             return lang
-        return request.accept_languages.best_match(["ar", "en"]) or "en"
+        return request.accept_languages.best_match(supported) or app.config.get("BABEL_DEFAULT_LOCALE", "en")
 
     babel.init_app(app, locale_selector=select_locale)
     mail.init_app(app)
@@ -48,6 +50,18 @@ def create_app():
             g.lang_code = select_locale()
         except Exception:
             g.lang_code = "en"
+
+    @app.after_request
+    def persist_lang_cookie(response):
+        try:
+            supported = app.config.get("BABEL_SUPPORTED_LOCALES", ["en", "ar"]) or ["en", "ar"]
+            lang = (request.args.get("lang") or "").strip()
+            if lang in supported:
+                # persist for 1 year
+                response.set_cookie("lang", lang, max_age=60 * 60 * 24 * 365, samesite="Lax")
+        except Exception:
+            pass
+        return response
 
     @app.errorhandler(403)
     def forbidden(_e):

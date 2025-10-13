@@ -1,0 +1,408 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: cartrade\n"
+"POT-Creation-Date: 2025-10-13 00:00+0000\n"
+"PO-Revision-Date: 2025-10-13 00:00+0000\n"
+"Last-Translator: AUTO <auto@example.com>\n"
+"Language-Team: Arabic\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0?0:n==1?1:n==2?2:n%100>=3 && n%100<=10?3:n%100>=11 && n%100<=99?4:5;\n"
+
+#: app/templates/base_admin.html
+msgid "Admin"
+msgstr "لوحة التحكم"
+
+#: app/templates/base_admin.html
+msgid "Car Admin"
+msgstr "إدارة السيارات"
+
+#: app/templates/base_admin.html
+msgid "Dashboard"
+msgstr "لوحة التحكم"
+
+#: app/templates/base_admin.html app/templates/admin/dashboard.html
+msgid "Users"
+msgstr "المستخدمون"
+
+#: app/templates/base_admin.html
+msgid "Cars Management"
+msgstr "إدارة السيارات"
+
+#: app/templates/base_admin.html app/templates/admin/dashboard.html
+msgid "Shipments"
+msgstr "الشحنات"
+
+#: app/templates/base_admin.html app/templates/admin/dashboard.html
+msgid "Invoices"
+msgstr "الفواتير"
+
+#: app/templates/base_admin.html app/templates/admin/reports.html
+msgid "Reports"
+msgstr "التقارير"
+
+#: app/templates/base_admin.html app/templates/admin/settings.html
+msgid "Settings"
+msgstr "الإعدادات"
+
+#: app/templates/base_admin.html app/templates/admin/activity_log.html
+msgid "Activity Log"
+msgstr "سجل النشاط"
+
+#: app/templates/base_admin.html
+msgid "Logout"
+msgstr "تسجيل الخروج"
+
+#: app/templates/admin/dashboard.html
+msgid "Admin Dashboard"
+msgstr "لوحة تحكم المشرف"
+
+#: app/templates/admin/dashboard.html
+msgid "Customers"
+msgstr "العملاء"
+
+#: app/templates/admin/dashboard.html
+msgid "Vehicles"
+msgstr "المركبات"
+
+#: app/templates/admin/dashboard.html
+msgid "Auctions"
+msgstr "المزادات"
+
+#: app/templates/admin/dashboard.html
+msgid "Cost Items"
+msgstr "بنود التكلفة"
+
+#: app/templates/admin/dashboard.html
+msgid "Backups"
+msgstr "النسخ الاحتياطية"
+
+#: app/templates/admin/dashboard.html
+msgid "Overview"
+msgstr "نظرة عامة"
+
+#: app/templates/admin/dashboard.html
+msgid "Revenue (OMR)"
+msgstr "الإيرادات (ر.ع)"
+
+#: app/templates/admin/dashboard.html
+msgid "Quick Links"
+msgstr "روابط سريعة"
+
+#: app/templates/admin/dashboard.html
+msgid "Init sample roles/users"
+msgstr "تهيئة أدوار/مستخدمين تجريبية"
+
+#: app/templates/admin/dashboard.html
+msgid "Operations"
+msgstr "العمليات"
+
+#: app/templates/admin/dashboard.html
+msgid "Accounting"
+msgstr "المحاسبة"
+
+#: app/templates/admin/dashboard.html
+msgid "Customer portal"
+msgstr "بوابة العميل"
+
+#: app/templates/admin/dashboard.html
+msgid "Admin Tools"
+msgstr "أدوات الإدارة"
+
+#: app/templates/admin/dashboard.html
+msgid "Manage Users"
+msgstr "إدارة المستخدمين"
+
+#: app/templates/admin/dashboard.html
+msgid "Roles & Permissions"
+msgstr "الأدوار والصلاحيات"
+
+#: app/templates/admin/dashboard.html
+msgid "System Backups"
+msgstr "نسخ النظام الاحتياطية"
+
+#: app/templates/admin/dashboard.html app/templates/admin/dashboard.html
+msgid "Audit Logs"
+msgstr "سجلات التدقيق"
+
+#: app/templates/admin/dashboard.html
+msgid "Recent Vehicles"
+msgstr "المركبات الحديثة"
+
+#: app/templates/admin/dashboard.html
+msgid "VIN"
+msgstr "رقم الهيكل"
+
+#: app/templates/admin/dashboard.html
+msgid "Make"
+msgstr "الشركة المصنعة"
+
+#: app/templates/admin/dashboard.html
+msgid "Model"
+msgstr "الطراز"
+
+#: app/templates/admin/dashboard.html
+msgid "Year"
+msgstr "السنة"
+
+#: app/templates/admin/dashboard.html
+msgid "No vehicles yet"
+msgstr "لا توجد مركبات بعد"
+
+#: app/templates/admin/dashboard.html
+msgid "Recent Shipments"
+msgstr "الشحنات الحديثة"
+
+#: app/templates/admin/dashboard.html
+msgid "Origin"
+msgstr "المنشأ"
+
+#: app/templates/admin/dashboard.html
+msgid "Destination"
+msgstr "الوجهة"
+
+#: app/templates/admin/dashboard.html app/templates/admin/dashboard.html
+msgid "Status"
+msgstr "الحالة"
+
+#: app/templates/admin/dashboard.html
+msgid "No shipments yet"
+msgstr "لا توجد شحنات بعد"
+
+#: app/templates/admin/dashboard.html
+msgid "Recent Invoices"
+msgstr "الفواتير الحديثة"
+
+#: app/templates/admin/dashboard.html
+msgid "Customer"
+msgstr "العميل"
+
+#: app/templates/admin/dashboard.html
+msgid "Total (OMR)"
+msgstr "الإجمالي (ر.ع)"
+
+#: app/templates/admin/dashboard.html
+msgid "No invoices yet"
+msgstr "لا توجد فواتير بعد"
+
+#: app/templates/admin/dashboard.html
+msgid "Recent Users"
+msgstr "المستخدمون الحديثون"
+
+#: app/templates/admin/dashboard.html
+msgid "Name"
+msgstr "الاسم"
+
+#: app/templates/admin/dashboard.html
+msgid "Email"
+msgstr "البريد الإلكتروني"
+
+#: app/templates/admin/dashboard.html
+msgid "Role"
+msgstr "الدور"
+
+#: app/templates/admin/dashboard.html
+msgid "No users yet"
+msgstr "لا يوجد مستخدمون بعد"
+
+#: app/templates/admin/dashboard.html
+msgid "When"
+msgstr "الوقت"
+
+#: app/templates/admin/dashboard.html
+msgid "User"
+msgstr "المستخدم"
+
+#: app/templates/admin/dashboard.html
+msgid "Action"
+msgstr "الإجراء"
+
+#: app/templates/admin/dashboard.html
+msgid "Target"
+msgstr "الهدف"
+
+#: app/templates/admin/dashboard.html
+msgid "No audit logs yet"
+msgstr "لا توجد سجلات تدقيق بعد"
+
+#: app/templates/admin/dashboard.html
+msgid "Monthly Revenue"
+msgstr "الإيرادات الشهرية"
+
+#: app/templates/admin/dashboard.html
+msgid "Shipment Status"
+msgstr "حالة الشحن"
+
+#: app/templates/admin/users.html
+msgid "New User"
+msgstr "مستخدم جديد"
+
+#: app/templates/admin/users.html app/templates/admin/user_form.html
+msgid "Phone"
+msgstr "الهاتف"
+
+#: app/templates/admin/users.html app/templates/admin/user_form.html
+msgid "Last Login"
+msgstr "آخر تسجيل دخول"
+
+#: app/templates/admin/users.html app/templates/admin/user_form.html
+msgid "Active"
+msgstr "نشط"
+
+#: app/templates/admin/users.html
+msgid "Created"
+msgstr "تاريخ الإنشاء"
+
+#: app/templates/admin/users.html
+msgid "Actions"
+msgstr "الإجراءات"
+
+#: app/templates/admin/users.html
+msgid "Yes"
+msgstr "نعم"
+
+#: app/templates/admin/users.html
+msgid "No"
+msgstr "لا"
+
+#: app/templates/admin/users.html
+msgid "Edit"
+msgstr "تعديل"
+
+#: app/templates/admin/users.html
+msgid "Delete user?"
+msgstr "حذف المستخدم؟"
+
+#: app/templates/admin/users.html
+msgid "Delete"
+msgstr "حذف"
+
+#: app/templates/admin/users.html
+msgid "No users found"
+msgstr "لا يوجد مستخدمون"
+
+#: app/templates/admin/user_form.html
+msgid "Edit User"
+msgstr "تعديل المستخدم"
+
+#: app/templates/admin/user_form.html
+msgid "Password"
+msgstr "كلمة المرور"
+
+#: app/templates/admin/user_form.html
+msgid "leave blank to keep"
+msgstr "اتركه فارغًا للإبقاء عليه"
+
+#: app/templates/admin/user_form.html
+msgid "Select Role"
+msgstr "اختر الدور"
+
+#: app/templates/admin/user_form.html
+msgid "Save"
+msgstr "حفظ"
+
+#: app/templates/admin/user_form.html
+msgid "Create"
+msgstr "إنشاء"
+
+#: app/templates/admin/user_form.html
+msgid "Cancel"
+msgstr "إلغاء"
+
+#: app/blueprints/admin/routes.py
+msgid "Settings updated"
+msgstr "تم تحديث الإعدادات"
+
+#: app/blueprints/admin/routes.py
+msgid "Failed to update settings"
+msgstr "فشل تحديث الإعدادات"
+
+#: app/blueprints/admin/routes.py
+msgid "No roles found. Initialize roles first from Admin Dashboard Quick Links."
+msgstr "لا توجد أدوار. قم بالتهيئة من روابط لوحة التحكم السريعة."
+
+#: app/blueprints/admin/routes.py
+msgid "Please fill in all required fields."
+msgstr "يرجى تعبئة جميع الحقول المطلوبة."
+
+#: app/blueprints/admin/routes.py
+msgid "Email already exists."
+msgstr "البريد الإلكتروني مستخدم بالفعل."
+
+#: app/blueprints/admin/routes.py
+msgid "Invalid role selection."
+msgstr "اختيار دور غير صالح."
+
+#: app/blueprints/admin/routes.py
+msgid "Selected role not found."
+msgstr "لم يتم العثور على الدور المحدد."
+
+#: app/blueprints/admin/routes.py
+msgid "Failed to create user. Please try again."
+msgstr "فشل إنشاء المستخدم. حاول مرة أخرى."
+
+#: app/blueprints/admin/routes.py
+msgid "User created successfully."
+msgstr "تم إنشاء المستخدم بنجاح."
+
+#: app/blueprints/admin/routes.py
+msgid "Failed to update user."
+msgstr "فشل تحديث المستخدم."
+
+#: app/blueprints/admin/routes.py
+msgid "User updated successfully."
+msgstr "تم تحديث المستخدم بنجاح."
+
+#: app/blueprints/admin/routes.py
+msgid "Failed to delete user."
+msgstr "فشل حذف المستخدم."
+
+#: app/blueprints/admin/routes.py
+msgid "User deleted."
+msgstr "تم حذف المستخدم."
+
+#: app/templates/admin/activity_log.html app/templates/admin/reports.html
+msgid "Export PDF"
+msgstr "تصدير PDF"
+
+#: app/templates/admin/activity_log.html
+msgid "Recent Activity"
+msgstr "النشاط الأخير"
+
+#: app/templates/admin/activity_log.html
+msgid "Time"
+msgstr "الوقت"
+
+#: app/templates/admin/activity_log.html app/templates/admin/dashboard.html
+msgid "Target"
+msgstr "الهدف"
+
+#: app/templates/admin/activity_log.html
+msgid "No activity yet"
+msgstr "لا يوجد نشاط بعد"
+
+#: app/templates/admin/reports.html
+msgid "Monthly Financial Overview"
+msgstr "نظرة عامة مالية شهرية"
+
+#: app/templates/admin/reports.html
+msgid "Exports"
+msgstr "التصديرات"
+
+#: app/templates/admin/reports.html
+msgid "Export Excel"
+msgstr "تصدير إكسل"
+
+#: app/templates/admin/settings.html
+msgid "Customs Rate (%)"
+msgstr "نسبة الجمارك (%)"
+
+#: app/templates/admin/settings.html
+msgid "VAT (%)"
+msgstr "ضريبة القيمة المضافة (%)"
+
+#: app/templates/admin/settings.html
+msgid "Shipping Fee (OMR)"
+msgstr "رسوم الشحن (ر.ع)"

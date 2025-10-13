@@ -1,0 +1,408 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: cartrade\n"
+"POT-Creation-Date: 2025-10-13 00:00+0000\n"
+"PO-Revision-Date: 2025-10-13 00:00+0000\n"
+"Last-Translator: AUTO <auto@example.com>\n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# English acts as identity translations; included for completeness
+#: app/templates/base_admin.html
+msgid "Admin"
+msgstr "Admin"
+
+#: app/templates/base_admin.html
+msgid "Car Admin"
+msgstr "Car Admin"
+
+#: app/templates/base_admin.html
+msgid "Dashboard"
+msgstr "Dashboard"
+
+#: app/templates/base_admin.html app/templates/admin/dashboard.html
+msgid "Users"
+msgstr "Users"
+
+#: app/templates/base_admin.html
+msgid "Cars Management"
+msgstr "Cars Management"
+
+#: app/templates/base_admin.html app/templates/admin/dashboard.html
+msgid "Shipments"
+msgstr "Shipments"
+
+#: app/templates/base_admin.html app/templates/admin/dashboard.html
+msgid "Invoices"
+msgstr "Invoices"
+
+#: app/templates/base_admin.html app/templates/admin/reports.html
+msgid "Reports"
+msgstr "Reports"
+
+#: app/templates/base_admin.html app/templates/admin/settings.html
+msgid "Settings"
+msgstr "Settings"
+
+#: app/templates/base_admin.html app/templates/admin/activity_log.html
+msgid "Activity Log"
+msgstr "Activity Log"
+
+#: app/templates/base_admin.html
+msgid "Logout"
+msgstr "Logout"
+
+#: app/templates/admin/dashboard.html
+msgid "Admin Dashboard"
+msgstr "Admin Dashboard"
+
+#: app/templates/admin/dashboard.html
+msgid "Customers"
+msgstr "Customers"
+
+#: app/templates/admin/dashboard.html
+msgid "Vehicles"
+msgstr "Vehicles"
+
+#: app/templates/admin/dashboard.html
+msgid "Auctions"
+msgstr "Auctions"
+
+#: app/templates/admin/dashboard.html
+msgid "Cost Items"
+msgstr "Cost Items"
+
+#: app/templates/admin/dashboard.html
+msgid "Backups"
+msgstr "Backups"
+
+#: app/templates/admin/dashboard.html
+msgid "Overview"
+msgstr "Overview"
+
+#: app/templates/admin/dashboard.html
+msgid "Revenue (OMR)"
+msgstr "Revenue (OMR)"
+
+#: app/templates/admin/dashboard.html
+msgid "Quick Links"
+msgstr "Quick Links"
+
+#: app/templates/admin/dashboard.html
+msgid "Init sample roles/users"
+msgstr "Init sample roles/users"
+
+#: app/templates/admin/dashboard.html
+msgid "Operations"
+msgstr "Operations"
+
+#: app/templates/admin/dashboard.html
+msgid "Accounting"
+msgstr "Accounting"
+
+#: app/templates/admin/dashboard.html
+msgid "Customer portal"
+msgstr "Customer portal"
+
+#: app/templates/admin/dashboard.html
+msgid "Admin Tools"
+msgstr "Admin Tools"
+
+#: app/templates/admin/dashboard.html
+msgid "Manage Users"
+msgstr "Manage Users"
+
+#: app/templates/admin/dashboard.html
+msgid "Roles & Permissions"
+msgstr "Roles & Permissions"
+
+#: app/templates/admin/dashboard.html
+msgid "System Backups"
+msgstr "System Backups"
+
+#: app/templates/admin/dashboard.html app/templates/admin/dashboard.html
+msgid "Audit Logs"
+msgstr "Audit Logs"
+
+#: app/templates/admin/dashboard.html
+msgid "Recent Vehicles"
+msgstr "Recent Vehicles"
+
+#: app/templates/admin/dashboard.html
+msgid "VIN"
+msgstr "VIN"
+
+#: app/templates/admin/dashboard.html
+msgid "Make"
+msgstr "Make"
+
+#: app/templates/admin/dashboard.html
+msgid "Model"
+msgstr "Model"
+
+#: app/templates/admin/dashboard.html
+msgid "Year"
+msgstr "Year"
+
+#: app/templates/admin/dashboard.html
+msgid "No vehicles yet"
+msgstr "No vehicles yet"
+
+#: app/templates/admin/dashboard.html
+msgid "Recent Shipments"
+msgstr "Recent Shipments"
+
+#: app/templates/admin/dashboard.html
+msgid "Origin"
+msgstr "Origin"
+
+#: app/templates/admin/dashboard.html
+msgid "Destination"
+msgstr "Destination"
+
+#: app/templates/admin/dashboard.html app/templates/admin/dashboard.html
+msgid "Status"
+msgstr "Status"
+
+#: app/templates/admin/dashboard.html
+msgid "No shipments yet"
+msgstr "No shipments yet"
+
+#: app/templates/admin/dashboard.html
+msgid "Recent Invoices"
+msgstr "Recent Invoices"
+
+#: app/templates/admin/dashboard.html
+msgid "Customer"
+msgstr "Customer"
+
+#: app/templates/admin/dashboard.html
+msgid "Total (OMR)"
+msgstr "Total (OMR)"
+
+#: app/templates/admin/dashboard.html
+msgid "No invoices yet"
+msgstr "No invoices yet"
+
+#: app/templates/admin/dashboard.html
+msgid "Recent Users"
+msgstr "Recent Users"
+
+#: app/templates/admin/dashboard.html
+msgid "Name"
+msgstr "Name"
+
+#: app/templates/admin/dashboard.html
+msgid "Email"
+msgstr "Email"
+
+#: app/templates/admin/dashboard.html
+msgid "Role"
+msgstr "Role"
+
+#: app/templates/admin/dashboard.html
+msgid "No users yet"
+msgstr "No users yet"
+
+#: app/templates/admin/dashboard.html
+msgid "When"
+msgstr "When"
+
+#: app/templates/admin/dashboard.html
+msgid "User"
+msgstr "User"
+
+#: app/templates/admin/dashboard.html
+msgid "Action"
+msgstr "Action"
+
+#: app/templates/admin/dashboard.html
+msgid "Target"
+msgstr "Target"
+
+#: app/templates/admin/dashboard.html
+msgid "No audit logs yet"
+msgstr "No audit logs yet"
+
+#: app/templates/admin/dashboard.html
+msgid "Monthly Revenue"
+msgstr "Monthly Revenue"
+
+#: app/templates/admin/dashboard.html
+msgid "Shipment Status"
+msgstr "Shipment Status"
+
+#: app/templates/admin/users.html
+msgid "New User"
+msgstr "New User"
+
+#: app/templates/admin/users.html app/templates/admin/user_form.html
+msgid "Phone"
+msgstr "Phone"
+
+#: app/templates/admin/users.html app/templates/admin/user_form.html
+msgid "Last Login"
+msgstr "Last Login"
+
+#: app/templates/admin/users.html app/templates/admin/user_form.html
+msgid "Active"
+msgstr "Active"
+
+#: app/templates/admin/users.html
+msgid "Created"
+msgstr "Created"
+
+#: app/templates/admin/users.html
+msgid "Actions"
+msgstr "Actions"
+
+#: app/templates/admin/users.html
+msgid "Yes"
+msgstr "Yes"
+
+#: app/templates/admin/users.html
+msgid "No"
+msgstr "No"
+
+#: app/templates/admin/users.html
+msgid "Edit"
+msgstr "Edit"
+
+#: app/templates/admin/users.html
+msgid "Delete user?"
+msgstr "Delete user?"
+
+#: app/templates/admin/users.html
+msgid "Delete"
+msgstr "Delete"
+
+#: app/templates/admin/users.html
+msgid "No users found"
+msgstr "No users found"
+
+#: app/templates/admin/user_form.html
+msgid "Edit User"
+msgstr "Edit User"
+
+#: app/templates/admin/user_form.html
+msgid "Password"
+msgstr "Password"
+
+#: app/templates/admin/user_form.html
+msgid "leave blank to keep"
+msgstr "leave blank to keep"
+
+#: app/templates/admin/user_form.html
+msgid "Select Role"
+msgstr "Select Role"
+
+#: app/templates/admin/user_form.html
+msgid "Save"
+msgstr "Save"
+
+#: app/templates/admin/user_form.html
+msgid "Create"
+msgstr "Create"
+
+#: app/templates/admin/user_form.html
+msgid "Cancel"
+msgstr "Cancel"
+
+#: app/blueprints/admin/routes.py
+msgid "Settings updated"
+msgstr "Settings updated"
+
+#: app/blueprints/admin/routes.py
+msgid "Failed to update settings"
+msgstr "Failed to update settings"
+
+#: app/blueprints/admin/routes.py
+msgid "No roles found. Initialize roles first from Admin Dashboard Quick Links."
+msgstr "No roles found. Initialize roles first from Admin Dashboard Quick Links."
+
+#: app/blueprints/admin/routes.py
+msgid "Please fill in all required fields."
+msgstr "Please fill in all required fields."
+
+#: app/blueprints/admin/routes.py
+msgid "Email already exists."
+msgstr "Email already exists."
+
+#: app/blueprints/admin/routes.py
+msgid "Invalid role selection."
+msgstr "Invalid role selection."
+
+#: app/blueprints/admin/routes.py
+msgid "Selected role not found."
+msgstr "Selected role not found."
+
+#: app/blueprints/admin/routes.py
+msgid "Failed to create user. Please try again."
+msgstr "Failed to create user. Please try again."
+
+#: app/blueprints/admin/routes.py
+msgid "User created successfully."
+msgstr "User created successfully."
+
+#: app/blueprints/admin/routes.py
+msgid "Failed to update user."
+msgstr "Failed to update user."
+
+#: app/blueprints/admin/routes.py
+msgid "User updated successfully."
+msgstr "User updated successfully."
+
+#: app/blueprints/admin/routes.py
+msgid "Failed to delete user."
+msgstr "Failed to delete user."
+
+#: app/blueprints/admin/routes.py
+msgid "User deleted."
+msgstr "User deleted."
+
+#: app/templates/admin/activity_log.html app/templates/admin/reports.html
+msgid "Export PDF"
+msgstr "Export PDF"
+
+#: app/templates/admin/activity_log.html
+msgid "Recent Activity"
+msgstr "Recent Activity"
+
+#: app/templates/admin/activity_log.html
+msgid "Time"
+msgstr "Time"
+
+#: app/templates/admin/activity_log.html app/templates/admin/dashboard.html
+msgid "Target"
+msgstr "Target"
+
+#: app/templates/admin/activity_log.html
+msgid "No activity yet"
+msgstr "No activity yet"
+
+#: app/templates/admin/reports.html
+msgid "Monthly Financial Overview"
+msgstr "Monthly Financial Overview"
+
+#: app/templates/admin/reports.html
+msgid "Exports"
+msgstr "Exports"
+
+#: app/templates/admin/reports.html
+msgid "Export Excel"
+msgstr "Export Excel"
+
+#: app/templates/admin/settings.html
+msgid "Customs Rate (%)"
+msgstr "Customs Rate (%)"
+
+#: app/templates/admin/settings.html
+msgid "VAT (%)"
+msgstr "VAT (%)"
+
+#: app/templates/admin/settings.html
+msgid "Shipping Fee (OMR)"
+msgstr "Shipping Fee (OMR)"
