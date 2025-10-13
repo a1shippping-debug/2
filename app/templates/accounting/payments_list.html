@@ -1,0 +1,62 @@
+{% extends "base_accounting.html" %}
+{% block acct_content %}
+<div class="grid md:grid-cols-3 gap-4">
+  <div class="md:col-span-2">
+    <h2 class="text-xl font-semibold mb-3">Payments</h2>
+    <table class="min-w-full text-sm bg-slate-900/40 rounded-2xl overflow-hidden">
+      <thead class="bg-slate-900/60 text-slate-300">
+        <tr>
+          <th class="px-3 py-2 text-left">Invoice</th>
+          <th class="px-3 py-2 text-left">Amount (OMR)</th>
+          <th class="px-3 py-2 text-left">Method</th>
+          <th class="px-3 py-2 text-left">Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in payments %}
+        <tr class="border-t border-slate-800">
+          <td class="px-3 py-2">{{ p.invoice.invoice_number if p.invoice else '-' }}</td>
+          <td class="px-3 py-2">{{ '%.3f'|format(p.amount_omr or 0) }}</td>
+          <td class="px-3 py-2">{{ p.method }}</td>
+          <td class="px-3 py-2">{{ p.received_at.strftime('%Y-%m-%d') if p.received_at else '' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="px-3 py-4 text-center text-slate-400">No payments.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3 class="font-semibold mb-2">Record Payment</h3>
+    <form method="post" action="{{ url_for('acct.payments_new') }}" class="space-y-2 bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
+      <div>
+        <label class="block text-sm mb-1">Invoice</label>
+        <select name="invoice_id" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
+          {% for inv in invoices %}
+          <option value="{{ inv.id }}">{{ inv.invoice_number }} - {{ '%.3f'|format(inv.total_omr or 0) }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Amount (OMR)</label>
+        <input name="amount" class="w-full bg-slate-900 border border-slate-700 rounded p-2" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Method</label>
+        <select name="method" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
+          <option>Cash</option>
+          <option>Bank Transfer</option>
+          <option>Card</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Reference</label>
+        <input name="reference" class="w-full bg-slate-900 border border-slate-700 rounded p-2" />
+      </div>
+      <div class="pt-2">
+        <button class="px-3 py-2 rounded bg-primary text-white">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

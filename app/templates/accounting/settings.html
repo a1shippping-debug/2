@@ -1,0 +1,25 @@
+{% extends "base_accounting.html" %}
+{% block acct_content %}
+<h2 class="text-xl font-semibold mb-4">Accounting Settings</h2>
+<form method="post" class="max-w-xl bg-slate-900/40 p-4 rounded-2xl border border-slate-800 space-y-3">
+  <div>
+    <label class="block text-sm mb-1">Customs Rate (%)</label>
+    <input name="customs_rate" value="{{ settings.customs_rate or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" />
+  </div>
+  <div>
+    <label class="block text-sm mb-1">VAT (%)</label>
+    <input name="vat_rate" value="{{ settings.vat_rate or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" />
+  </div>
+  <div>
+    <label class="block text-sm mb-1">Local Shipping Fee (OMR)</label>
+    <input name="shipping_fee" value="{{ settings.shipping_fee or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" />
+  </div>
+  <div>
+    <label class="block text-sm mb-1">Insurance Rate (%)</label>
+    <input name="insurance_rate" value="{{ settings.insurance_rate or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" />
+  </div>
+  <div class="pt-2">
+    <button class="px-4 py-2 rounded bg-primary text-white">Save</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base_accounting.html" %}
+{% block acct_content %}
+<h2 class="text-xl font-semibold mb-4">New Invoice</h2>
+<form method="post" class="space-y-4">
+  <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
+    <label class="block text-sm mb-1">Customer</label>
+    <select name="customer_id" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
+      <option value="">-- Select --</option>
+      {% for c in customers %}
+      <option value="{{ c.id }}">{{ c.company_name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
+    <div class="flex items-center justify-between mb-2"><div class="font-semibold">Items</div><button type="button" class="px-2 py-1 bg-slate-800 rounded" onclick="addRow()">Add</button></div>
+    <div id="items">
+      <div class="grid grid-cols-1 md:grid-cols-6 gap-2 mb-2">
+        <input name="item_description" placeholder="Description" class="md:col-span-4 bg-slate-900 border border-slate-700 rounded p-2" />
+        <input name="item_amount" placeholder="Amount (OMR)" class="md:col-span-2 bg-slate-900 border border-slate-700 rounded p-2" />
+      </div>
+    </div>
+  </div>
+  <div>
+    <button class="px-4 py-2 rounded bg-primary text-white">Create</button>
+    <a href="{{ url_for('acct.invoices_list') }}" class="ml-2 px-4 py-2 rounded bg-slate-800">Cancel</a>
+  </div>
+</form>
+<script>
+function addRow(){
+  const div = document.createElement('div');
+  div.className='grid grid-cols-1 md:grid-cols-6 gap-2 mb-2';
+  div.innerHTML = '<input name="item_description" placeholder="Description" class="md:col-span-4 bg-slate-900 border border-slate-700 rounded p-2" />\
+  <input name="item_amount" placeholder="Amount (OMR)" class="md:col-span-2 bg-slate-900 border border-slate-700 rounded p-2" />';
+  document.getElementById('items').appendChild(div);
+}
+</script>
+{% endblock %}

@@ -108,6 +108,20 @@ class Invoice(db.Model):
     pdf_path = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     customer = db.relationship("Customer")
+    items = db.relationship("InvoiceItem", backref="invoice", cascade="all, delete-orphan")
+    payments = db.relationship("Payment", backref="invoice", cascade="all, delete-orphan")
+
+    def calculate_total(self) -> Decimal:
+        total = Decimal("0")
+        for it in self.items or []:
+            total += Decimal(it.amount_omr or 0)
+        return total
+
+    def paid_total(self) -> Decimal:
+        paid = Decimal("0")
+        for p in self.payments or []:
+            paid += Decimal(p.amount_omr or 0)
+        return paid
 
 
 class Setting(db.Model):
@@ -116,6 +130,7 @@ class Setting(db.Model):
     customs_rate = db.Column(db.Numeric(5,2))
     vat_rate = db.Column(db.Numeric(5,2))
     shipping_fee = db.Column(db.Numeric(12,3))
+    insurance_rate = db.Column(db.Numeric(5,2))
 
 class AuditLog(db.Model):
     __tablename__ = "audit_logs"
@@ -132,3 +147,59 @@ class Backup(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     path = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class InvoiceItem(db.Model):
+    __tablename__ = "invoice_items"
+    id = db.Column(db.Integer, primary_key=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey("invoices.id"), index=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey("vehicles.id"), nullable=True)
+    description = db.Column(db.String(255))
+    amount_omr = db.Column(db.Numeric(12,3))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Payment(db.Model):
+    __tablename__ = "payments"
+    id = db.Column(db.Integer, primary_key=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey("invoices.id"), index=True)
+    amount_omr = db.Column(db.Numeric(12,3))
+    method = db.Column(db.String(50))  # Cash / Bank Transfer / Card
+    reference = db.Column(db.String(100))
+    received_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class InternationalCost(db.Model):
+    __tablename__ = "international_costs"
+    id = db.Column(db.Integer, primary_key=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey("vehicles.id"), unique=True)
+    freight_usd = db.Column(db.Numeric(12,2))
+    insurance_usd = db.Column(db.Numeric(12,2))
+    auction_fees_usd = db.Column(db.Numeric(12,2))
+    customs_omr = db.Column(db.Numeric(12,3))
+    vat_omr = db.Column(db.Numeric(12,3))
+    local_transport_omr = db.Column(db.Numeric(12,3))
+    misc_omr = db.Column(db.Numeric(12,3))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    vehicle = db.relationship("Vehicle", backref=db.backref("international_cost", uselist=False))
+
+    @property
+    def cif_usd(self) -> Decimal:
+        cost = Decimal(self.vehicle.purchase_price_usd or 0)
+        freight = Decimal(self.freight_usd or 0)
+        insurance = Decimal(self.insurance_usd or 0)
+        return cost + insurance + freight
+
+
+class BillOfLading(db.Model):
+    __tablename__ = "bills_of_lading"
+    id = db.Column(db.Integer, primary_key=True)
+    bol_number = db.Column(db.String(100), unique=True)
+    shipment_id = db.Column(db.Integer, db.ForeignKey("shipments.id"))
+    issue_date = db.Column(db.DateTime, default=datetime.utcnow)
+    pdf_path = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    shipment = db.relationship("Shipment")

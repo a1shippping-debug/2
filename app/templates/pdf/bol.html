@@ -11,19 +11,25 @@
   </head>
   <body>
     <div class="header">
-      <h2>Commercial Invoice</h2>
+      <h2>Bill of Lading</h2>
     </div>
     <div>
-      <strong>Invoice #: </strong>{{ invoice.invoice_number }}<br/>
-      <strong>Date: </strong>{{ invoice.created_at.strftime('%Y-%m-%d') }}
+      <strong>BOL #: </strong>{{ bol.bol_number }}<br/>
+      <strong>Date: </strong>{{ bol.issue_date.strftime('%Y-%m-%d') if bol.issue_date else '' }}<br/>
+      <strong>Shipment: </strong>{{ bol.shipment.shipment_number if bol.shipment else '-' }}
     </div>
     <table class="items" style="margin-top:10px">
       <thead>
-        <tr><th>Description</th><th>Amount (OMR)</th></tr>
+        <tr><th>VIN</th><th>Make</th><th>Model</th><th>Year</th></tr>
       </thead>
       <tbody>
-        {% for it in items %}
-        <tr><td>{{ it.description }}</td><td>{{ '%.3f'|format(it.amount_omr or 0) }}</td></tr>
+        {% for v in vehicles %}
+        <tr>
+          <td>{{ v.vin }}</td>
+          <td>{{ v.make }}</td>
+          <td>{{ v.model }}</td>
+          <td>{{ v.year }}</td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>

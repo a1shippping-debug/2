@@ -137,6 +137,7 @@ def upgrade():
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
+    # ### end Alembic commands ###
 
 
 def downgrade():

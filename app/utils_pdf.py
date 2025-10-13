@@ -10,3 +10,13 @@ def render_invoice_pdf(invoice, items, template='pdf/invoice.html'):
     outpath = os.path.join(outdir, filename)
     HTML(string=html).write_pdf(outpath)
     return outpath
+
+
+def render_bol_pdf(bol, vehicles, template='pdf/bol.html'):
+    html = render_template(template, bol=bol, vehicles=vehicles)
+    outdir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'pdfs')
+    os.makedirs(outdir, exist_ok=True)
+    filename = f"bol_{bol.bol_number}.pdf"
+    outpath = os.path.join(outdir, filename)
+    HTML(string=html).write_pdf(outpath)
+    return outpath
