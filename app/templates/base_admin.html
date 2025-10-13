@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="{{ g.get('lang_code', 'en') }}" {% if g.get('lang_code') == 'ar' %}dir="rtl"{% endif %} class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Admin{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { slateBg: '#0f172a', primary: '#3b82f6' },
+          boxShadow: { soft: '0 8px 24px rgba(2,6,23,0.35)' },
+          borderRadius: { '2xl': '1rem' }
+        }
+      }
+    };
+    (function(){
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root { --bg: #0f172a; }
+    body { font-family: Inter, Tajawal, ui-sans-serif, system-ui; }
+  </style>
+</head>
+<body class="h-full bg-slateBg text-slate-100">
+  <div class="min-h-screen flex">
+    <aside class="w-64 hidden md:flex flex-col bg-slate-900/70 backdrop-blur border-r border-slate-800">
+      <div class="h-16 flex items-center px-4 text-primary text-xl font-bold tracking-wide">Car Admin</div>
+      <nav class="px-3 py-4 space-y-1 text-sm">
+        <a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint=='admin.dashboard' %}bg-slate-800{% endif %}">Dashboard</a>
+        <a href="{{ url_for('admin.users_list') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('admin.users') %}bg-slate-800{% endif %}">Users</a>
+        <a href="{{ url_for('ops.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800">Cars Management</a>
+        <a href="{{ url_for('ops.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800">Shipments</a>
+        <a href="{{ url_for('acct.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800">Invoices</a>
+        <a href="{{ url_for('admin.reports') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('admin.reports') %}bg-slate-800{% endif %}">Reports</a>
+        <a href="{{ url_for('admin.settings') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint=='admin.settings' %}bg-slate-800{% endif %}">Settings</a>
+        <a href="{{ url_for('admin.activity_log') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('admin.activity_log') %}bg-slate-800{% endif %}">Activity Log</a>
+      </nav>
+    </aside>
+
+    <div class="flex-1 flex flex-col min-w-0">
+      <header class="h-16 flex items-center justify-between px-4 border-b border-slate-800 bg-slate-900/50">
+        <div class="text-lg font-semibold">{% block header %}{% endblock %}</div>
+        <div class="flex items-center gap-3">
+          {% if current_user.is_authenticated %}
+            <span class="text-sm text-slate-300">{{ current_user.name }}</span>
+            <a href="{{ url_for('auth.logout') }}" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">Logout</a>
+          {% endif %}
+          <a href="{{ request.path }}?lang=en" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">EN</a>
+          <a href="{{ request.path }}?lang=ar" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">AR</a>
+          <button id="themeToggle" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">🌙</button>
+        </div>
+      </header>
+
+      <div class="px-4 pt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for cat, msg in messages %}
+              <div class="mb-4 p-3 rounded-2xl shadow-soft border {{ 'bg-emerald-900/40 border-emerald-700' if cat=='success' else 'bg-rose-900/40 border-rose-700' }}">{{ msg }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+      </div>
+
+      <main class="p-4">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('themeToggle')?.addEventListener('click', function(){
+      const root = document.documentElement;
+      const darkNow = root.classList.toggle('dark');
+      localStorage.setItem('theme', darkNow ? 'dark' : 'light');
+    });
+  </script>
+</body>
+</html>

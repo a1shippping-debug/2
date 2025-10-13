@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, request, g, render_template
 from .config import Config
 from .extensions import db, migrate, login_manager, babel, mail
 from .blueprints.auth.routes import auth_bp
@@ -25,7 +25,14 @@ def create_app():
             return User.query.get(int(user_id))
         except (ValueError, TypeError):
             return None
-    babel.init_app(app)
+    # i18n
+    def select_locale():
+        lang = request.args.get("lang") or request.cookies.get("lang")
+        if lang in ("ar", "en"):
+            return lang
+        return request.accept_languages.best_match(["ar", "en"]) or "en"
+
+    babel.init_app(app, locale_selector=select_locale)
     mail.init_app(app)
 
     # register blueprints
@@ -34,6 +41,17 @@ def create_app():
     app.register_blueprint(ops_bp, url_prefix="/ops")
     app.register_blueprint(acct_bp, url_prefix="/acct")
     app.register_blueprint(cust_bp, url_prefix="/customer")
+
+    @app.before_request
+    def inject_lang_to_g():
+        try:
+            g.lang_code = select_locale()
+        except Exception:
+            g.lang_code = "en"
+
+    @app.errorhandler(403)
+    def forbidden(_e):
+        return render_template("errors/403.html"), 403
 
     @app.shell_context_processor
     def make_shell_context():

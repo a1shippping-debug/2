@@ -1,5 +1,6 @@
-{% extends "layout.html" %}
+{% extends "base_admin.html" %}
 {% block title %}Admin Dashboard{% endblock %}
+{% block header %}Dashboard{% endblock %}
 {% block content %}
 <h1 class="text-2xl mb-4">Admin Dashboard</h1>
 
@@ -113,6 +114,35 @@
       {% endfor %}
       </tbody>
     </table>
+  <!-- Charts -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+  <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
+    <h2 class="font-semibold mb-2">Monthly Revenue</h2>
+    <canvas id="revenueChart" height="120"></canvas>
+  </div>
+  <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
+    <h2 class="font-semibold mb-2">Shipment Status</h2>
+    <canvas id="shipmentPie" height="120"></canvas>
+  </div>
   </div>
 </div>
+<script>
+  // Demo chart data (replace via API/templating if available)
+  const months = {{ chart.months|tojson|safe if chart else "[]" }};
+  const revenue = {{ chart.revenue|tojson|safe if chart else "[]" }};
+  const ctx = document.getElementById('revenueChart');
+  if (ctx && window.Chart) {
+    new Chart(ctx, {
+      type: 'line', data: { labels: months, datasets: [{ label: 'OMR', data: revenue, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.2)', tension: 0.35, fill: true }] },
+      options: { plugins: { legend: { display: true }}, scales: { x: { ticks: { color: '#94a3b8' }}, y: { ticks: { color: '#94a3b8' }}} }
+    });
+  }
+  const pieEl = document.getElementById('shipmentPie');
+  if (pieEl && window.Chart) {
+    new Chart(pieEl, {
+      type: 'pie', data: { labels: {{ chart.shipment_status_labels|tojson|safe if chart else "[]" }}, datasets: [{ data: {{ chart.shipment_status_values|tojson|safe if chart else "[]" }}, backgroundColor: ['#f59e0b','#3b82f6','#10b981'] }] },
+      options: { plugins: { legend: { labels: { color: '#cbd5e1' }}} }
+    });
+  }
+</script>
 {% endblock %}

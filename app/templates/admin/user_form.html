@@ -1,0 +1,43 @@
+{% extends "base_admin.html" %}
+{% block title %}{{ 'Edit User' if user else 'New User' }}{% endblock %}
+{% block header %}{{ 'Edit User' if user else 'New User' }}{% endblock %}
+{% block content %}
+<form method="post" class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 max-w-2xl">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm text-slate-300">Name</label>
+      <input name="name" value="{{ form.name or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" required>
+    </div>
+    <div>
+      <label class="block text-sm text-slate-300">Email</label>
+      <input type="email" name="email" value="{{ form.email or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" required>
+    </div>
+    <div>
+      <label class="block text-sm text-slate-300">Phone</label>
+      <input name="phone" value="{{ form.phone or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
+    </div>
+    <div>
+      <label class="block text-sm text-slate-300">Role</label>
+      <select name="role_id" class="w-full bg-slate-900 border border-slate-700 rounded p-2" required>
+        <option value="">-- Select Role --</option>
+        {% for r in roles %}
+          <option value="{{ r.id }}" {% if form.role_id == r.id|string %}selected{% endif %}>{{ r.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="md:col-span-2">
+      <label class="block text-sm text-slate-300">Password {% if user %}<span class="text-slate-400">(leave blank to keep)</span>{% endif %}</label>
+      <input type="password" name="password" class="w-full bg-slate-900 border border-slate-700 rounded p-2" {% if not user %}required{% endif %}>
+    </div>
+    <div class="flex items-center mt-2">
+      <input type="checkbox" name="active" {% if form.active %}checked{% endif %} class="mr-2">
+      <span class="text-sm text-slate-300">Active</span>
+    </div>
+  </div>
+
+  <div class="mt-6 flex items-center gap-3">
+    <button class="px-4 py-2 bg-primary text-white rounded" type="submit">{{ 'Save' if user else 'Create' }}</button>
+    <a href="{{ url_for('admin.users_list') }}" class="text-slate-300">Cancel</a>
+  </div>
+</form>
+{% endblock %}

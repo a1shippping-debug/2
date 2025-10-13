@@ -19,6 +19,7 @@ class User(db.Model, UserMixin):
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id"))
     active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login_at = db.Column(db.DateTime)
 
     role = db.relationship("Role")
 
@@ -107,6 +108,14 @@ class Invoice(db.Model):
     pdf_path = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     customer = db.relationship("Customer")
+
+
+class Setting(db.Model):
+    __tablename__ = "settings"
+    id = db.Column(db.Integer, primary_key=True)
+    customs_rate = db.Column(db.Numeric(5,2))
+    vat_rate = db.Column(db.Numeric(5,2))
+    shipping_fee = db.Column(db.Numeric(12,3))
 
 class AuditLog(db.Model):
     __tablename__ = "audit_logs"

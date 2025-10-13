@@ -1,0 +1,49 @@
+{% extends "base_admin.html" %}
+{% block title %}Users{% endblock %}
+{% block header %}Users{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-2xl">Users</h1>
+  <a href="{{ url_for('admin.users_new') }}" class="px-3 py-2 text-sm bg-primary text-white rounded">+ New User</a>
+  </div>
+
+<div class="bg-slate-900/60 border border-slate-800 rounded-2xl">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="text-left text-slate-400">
+        <th class="p-2">Name</th>
+        <th class="p-2">Email</th>
+        <th class="p-2">Phone</th>
+        <th class="p-2">Role</th>
+        <th class="p-2">Last Login</th>
+        <th class="p-2">Active</th>
+        <th class="p-2">Created</th>
+        <th class="p-2">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr class="border-t border-slate-800">
+        <td class="p-2">{{ u.name }}</td>
+        <td class="p-2">{{ u.email }}</td>
+        <td class="p-2">{{ u.phone or '-' }}</td>
+        <td class="p-2">{{ u.role.name if u.role else '-' }}</td>
+        <td class="p-2">{{ u.last_login_at or '-' }}</td>
+        <td class="p-2">{{ 'Yes' if u.active else 'No' }}</td>
+        <td class="p-2">{{ u.created_at }}</td>
+        <td class="p-2">
+          <a href="{{ url_for('admin.users_edit', user_id=u.id) }}" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">Edit</a>
+          <form action="{{ url_for('admin.users_delete', user_id=u.id) }}" method="post" style="display:inline" onsubmit="return confirm('Delete user?');">
+            <button class="text-xs px-2 py-1 rounded bg-rose-700 hover:bg-rose-600 text-white">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="7" class="p-3 text-slate-500">No users found</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
