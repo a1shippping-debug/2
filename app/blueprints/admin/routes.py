@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, abort, request, redirect, url_for, flash, send_file
+from flask_babel import gettext as _
 from flask_login import login_required, current_user
 from ...security import role_required
 from ...extensions import db
@@ -223,10 +224,10 @@ def settings():
             settings_row.vat_rate = float(vat_rate)
             settings_row.shipping_fee = float(shipping_fee)
             db.session.commit()
-            flash("Settings updated", "success")
+            flash(_("Settings updated"), "success")
         except Exception:
             db.session.rollback()
-            flash("Failed to update settings", "danger")
+            flash(_("Failed to update settings"), "danger")
 
     return render_template("admin/settings.html", settings=settings_row)
 
@@ -284,7 +285,7 @@ def users_new():
     roles = db.session.query(Role).order_by(Role.name.asc()).all()
     if not roles:
         flash(
-            "No roles found. Initialize roles first from Admin Dashboard Quick Links.",
+            _("No roles found. Initialize roles first from Admin Dashboard Quick Links."),
             "danger",
         )
 
@@ -298,23 +299,23 @@ def users_new():
 
         # basic validation
         if not name or not email or not password or not role_id_raw:
-            flash("Please fill in all required fields.", "danger")
+            flash(_("Please fill in all required fields."), "danger")
             return render_template("admin/user_form.html", roles=roles, form=request.form)
 
         # ensure email is unique
         if db.session.query(User).filter_by(email=email).first():
-            flash("Email already exists.", "danger")
+            flash(_("Email already exists."), "danger")
             return render_template("admin/user_form.html", roles=roles, form=request.form)
 
         try:
             role_id = int(role_id_raw)
         except (TypeError, ValueError):
-            flash("Invalid role selection.", "danger")
+            flash(_("Invalid role selection."), "danger")
             return render_template("admin/user_form.html", roles=roles, form=request.form)
 
         role = db.session.get(Role, role_id)
         if not role:
-            flash("Selected role not found.", "danger")
+            flash(_("Selected role not found."), "danger")
             return render_template("admin/user_form.html", roles=roles, form=request.form)
 
         # create user
@@ -325,10 +326,10 @@ def users_new():
             db.session.commit()
         except Exception:  # pragma: no cover
             db.session.rollback()
-            flash("Failed to create user. Please try again.", "danger")
+            flash(_("Failed to create user. Please try again."), "danger")
             return render_template("admin/user_form.html", roles=roles, form=request.form)
 
-        flash("User created successfully.", "success")
+        flash(_("User created successfully."), "success")
         log_action("create", "User", user.id, {"email": user.email})
         return redirect(url_for("admin.users_list"))
 
@@ -353,23 +354,23 @@ def users_edit(user_id: int):
         active = request.form.get("active") == "on"
 
         if not name or not email or not role_id_raw:
-            flash("Please fill in all required fields.", "danger")
+            flash(_("Please fill in all required fields."), "danger")
             return render_template("admin/user_form.html", roles=roles, form=request.form, user=user)
 
         dup = db.session.query(User).filter(User.email == email, User.id != user.id).first()
         if dup:
-            flash("Email already exists.", "danger")
+            flash(_("Email already exists."), "danger")
             return render_template("admin/user_form.html", roles=roles, form=request.form, user=user)
 
         try:
             role_id = int(role_id_raw)
         except (TypeError, ValueError):
-            flash("Invalid role selection.", "danger")
+            flash(_("Invalid role selection."), "danger")
             return render_template("admin/user_form.html", roles=roles, form=request.form, user=user)
 
         role = db.session.get(Role, role_id)
         if not role:
-            flash("Selected role not found.", "danger")
+            flash(_("Selected role not found."), "danger")
             return render_template("admin/user_form.html", roles=roles, form=request.form, user=user)
 
         user.name = name
@@ -383,10 +384,10 @@ def users_edit(user_id: int):
             db.session.commit()
         except Exception:
             db.session.rollback()
-            flash("Failed to update user.", "danger")
+            flash(_("Failed to update user."), "danger")
             return render_template("admin/user_form.html", roles=roles, form=request.form, user=user)
 
-        flash("User updated successfully.", "success")
+        flash(_("User updated successfully."), "success")
         log_action("update", "User", user.id, {"email": user.email})
         return redirect(url_for("admin.users_list"))
 
@@ -411,8 +412,8 @@ def users_delete(user_id: int):
         db.session.commit()
     except Exception:
         db.session.rollback()
-        flash("Failed to delete user.", "danger")
+        flash(_("Failed to delete user."), "danger")
         return redirect(url_for("admin.users_list"))
-    flash("User deleted.", "success")
+    flash(_("User deleted."), "success")
     log_action("delete", "User", user.id, {"email": user.email})
     return redirect(url_for("admin.users_list"))

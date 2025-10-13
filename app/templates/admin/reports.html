@@ -1,17 +1,17 @@
 {% extends "base_admin.html" %}
-{% block title %}Reports{% endblock %}
-{% block header %}Reports{% endblock %}
+{% block title %}{{ _('Reports') }}{% endblock %}
+{% block header %}{{ _('Reports') }}{% endblock %}
 {% block content %}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
-    <h2 class="font-semibold mb-4">Monthly Financial Overview</h2>
+    <h2 class="font-semibold mb-4">{{ _('Monthly Financial Overview') }}</h2>
     <canvas id="monthlyFinancial" height="140"></canvas>
   </div>
   <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
-    <h2 class="font-semibold mb-4">Exports</h2>
+    <h2 class="font-semibold mb-4">{{ _('Exports') }}</h2>
     <div class="space-y-2">
-      <a href="{{ url_for('admin.reports') }}?export=pdf" class="px-3 py-2 rounded bg-primary text-white text-sm">Export PDF</a>
-      <a href="{{ url_for('admin.reports') }}?export=xlsx" class="px-3 py-2 rounded bg-slate-800 text-white text-sm">Export Excel</a>
+      <a href="{{ url_for('admin.reports') }}?export=pdf" class="px-3 py-2 rounded bg-primary text-white text-sm">{{ _('Export PDF') }}</a>
+      <a href="{{ url_for('admin.reports') }}?export=xlsx" class="px-3 py-2 rounded bg-slate-800 text-white text-sm">{{ _('Export Excel') }}</a>
     </div>
   </div>
 </div>

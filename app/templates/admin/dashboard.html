@@ -1,18 +1,18 @@
 {% extends "base_admin.html" %}
-{% block title %}Admin Dashboard{% endblock %}
-{% block header %}Dashboard{% endblock %}
+{% block title %}{{ _('Admin Dashboard') }}{% endblock %}
+{% block header %}{{ _('Dashboard') }}{% endblock %}
 {% block content %}
-<h1 class="text-2xl mb-4">Admin Dashboard</h1>
+<h1 class="text-2xl mb-4">{{ _('Admin Dashboard') }}</h1>
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">Users</div><div class="text-2xl font-semibold">{{ counts.users }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">Customers</div><div class="text-2xl font-semibold">{{ counts.customers }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">Vehicles</div><div class="text-2xl font-semibold">{{ counts.vehicles }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">Auctions</div><div class="text-2xl font-semibold">{{ counts.auctions }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">Shipments</div><div class="text-2xl font-semibold">{{ counts.shipments }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">Invoices</div><div class="text-2xl font-semibold">{{ counts.invoices }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">Cost Items</div><div class="text-2xl font-semibold">{{ counts.cost_items }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">Backups</div><div class="text-2xl font-semibold">{{ counts.backups }}</div></div>
+  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Users') }}</div><div class="text-2xl font-semibold">{{ counts.users }}</div></div>
+  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Customers') }}</div><div class="text-2xl font-semibold">{{ counts.customers }}</div></div>
+  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Vehicles') }}</div><div class="text-2xl font-semibold">{{ counts.vehicles }}</div></div>
+  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Auctions') }}</div><div class="text-2xl font-semibold">{{ counts.auctions }}</div></div>
+  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Shipments') }}</div><div class="text-2xl font-semibold">{{ counts.shipments }}</div></div>
+  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Invoices') }}</div><div class="text-2xl font-semibold">{{ counts.invoices }}</div></div>
+  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Cost Items') }}</div><div class="text-2xl font-semibold">{{ counts.cost_items }}</div></div>
+  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Backups') }}</div><div class="text-2xl font-semibold">{{ counts.backups }}</div></div>
 </div>
 
 <!-- Vehicle status cards (Arabic labels) -->
@@ -26,110 +26,110 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
   <div class="bg-white rounded shadow p-4">
     <div class="flex items-center justify-between mb-2">
-      <h2 class="font-semibold">Overview</h2>
-      <div class="text-sm text-gray-500">Revenue (OMR)</div>
+      <h2 class="font-semibold">{{ _('Overview') }}</h2>
+      <div class="text-sm text-gray-500">{{ _('Revenue (OMR)') }}</div>
     </div>
     <div class="text-3xl font-bold">{{ '%.3f'|format(totals.revenue_omr or 0) }}</div>
   </div>
 
   <div class="bg-white rounded shadow p-4">
-    <h2 class="font-semibold mb-2">Quick Links</h2>
+    <h2 class="font-semibold mb-2">{{ _('Quick Links') }}</h2>
     <ul class="space-y-2 list-disc list-inside text-blue-600">
-      <li><a href="{{ url_for('auth.init_sample') }}">Init sample roles/users</a></li>
-      <li><a href="{{ url_for('ops.dashboard') }}">Operations</a></li>
-      <li><a href="{{ url_for('acct.dashboard') }}">Accounting</a></li>
-      <li><a href="{{ url_for('cust.dashboard') }}">Customer portal</a></li>
+      <li><a href="{{ url_for('auth.init_sample') }}">{{ _('Init sample roles/users') }}</a></li>
+      <li><a href="{{ url_for('ops.dashboard') }}">{{ _('Operations') }}</a></li>
+      <li><a href="{{ url_for('acct.dashboard') }}">{{ _('Accounting') }}</a></li>
+      <li><a href="{{ url_for('cust.dashboard') }}">{{ _('Customer portal') }}</a></li>
     </ul>
   </div>
 
   <div class="bg-white rounded shadow p-4">
-    <h2 class="font-semibold mb-2">Admin Tools</h2>
+    <h2 class="font-semibold mb-2">{{ _('Admin Tools') }}</h2>
     <ul class="space-y-2 list-disc list-inside">
-      <li><a class="text-blue-600" href="{{ url_for('admin.users_list') }}">Manage Users</a></li>
-      <li><a class="text-blue-600" href="#">Roles & Permissions</a></li>
-      <li><a class="text-blue-600" href="#">System Backups</a></li>
-      <li><a class="text-blue-600" href="#">Audit Logs</a></li>
+      <li><a class="text-blue-600" href="{{ url_for('admin.users_list') }}">{{ _('Manage Users') }}</a></li>
+      <li><a class="text-blue-600" href="#">{{ _('Roles & Permissions') }}</a></li>
+      <li><a class="text-blue-600" href="#">{{ _('System Backups') }}</a></li>
+      <li><a class="text-blue-600" href="#">{{ _('Audit Logs') }}</a></li>
     </ul>
   </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
   <div class="bg-white rounded shadow p-4">
-    <h2 class="font-semibold mb-3">Recent Vehicles</h2>
+    <h2 class="font-semibold mb-3">{{ _('Recent Vehicles') }}</h2>
     <table class="w-full text-sm">
-      <thead><tr class="text-left text-gray-500"><th>VIN</th><th>Make</th><th>Model</th><th>Year</th></tr></thead>
+      <thead><tr class="text-left text-gray-500"><th>{{ _('VIN') }}</th><th>{{ _('Make') }}</th><th>{{ _('Model') }}</th><th>{{ _('Year') }}</th></tr></thead>
       <tbody>
       {% for v in recent.vehicles %}
         <tr class="border-t"><td class="py-1">{{ v.vin }}</td><td>{{ v.make }}</td><td>{{ v.model }}</td><td>{{ v.year }}</td></tr>
       {% else %}
-        <tr><td colspan="4" class="py-2 text-gray-400">No vehicles yet</td></tr>
+        <tr><td colspan="4" class="py-2 text-gray-400">{{ _('No vehicles yet') }}</td></tr>
       {% endfor %}
       </tbody>
     </table>
   </div>
 
   <div class="bg-white rounded shadow p-4">
-    <h2 class="font-semibold mb-3">Recent Shipments</h2>
+    <h2 class="font-semibold mb-3">{{ _('Recent Shipments') }}</h2>
     <table class="w-full text-sm">
-      <thead><tr class="text-left text-gray-500"><th>#</th><th>Origin</th><th>Destination</th><th>Status</th></tr></thead>
+      <thead><tr class="text-left text-gray-500"><th>#</th><th>{{ _('Origin') }}</th><th>{{ _('Destination') }}</th><th>{{ _('Status') }}</th></tr></thead>
       <tbody>
       {% for s in recent.shipments %}
         <tr class="border-t"><td class="py-1">{{ s.shipment_number }}</td><td>{{ s.origin_port }}</td><td>{{ s.destination_port }}</td><td>{{ s.status }}</td></tr>
       {% else %}
-        <tr><td colspan="4" class="py-2 text-gray-400">No shipments yet</td></tr>
+        <tr><td colspan="4" class="py-2 text-gray-400">{{ _('No shipments yet') }}</td></tr>
       {% endfor %}
       </tbody>
     </table>
   </div>
 
   <div class="bg-white rounded shadow p-4">
-    <h2 class="font-semibold mb-3">Recent Invoices</h2>
+    <h2 class="font-semibold mb-3">{{ _('Recent Invoices') }}</h2>
     <table class="w-full text-sm">
-      <thead><tr class="text-left text-gray-500"><th>#</th><th>Customer</th><th>Total (OMR)</th><th>Status</th></tr></thead>
+      <thead><tr class="text-left text-gray-500"><th>#</th><th>{{ _('Customer') }}</th><th>{{ _('Total (OMR)') }}</th><th>{{ _('Status') }}</th></tr></thead>
       <tbody>
       {% for inv in recent.invoices %}
         <tr class="border-t"><td class="py-1">{{ inv.invoice_number }}</td><td>{{ inv.customer.company_name if inv.customer else '-' }}</td><td>{{ '%.3f'|format(inv.total_omr or 0) }}</td><td>{{ inv.status }}</td></tr>
       {% else %}
-        <tr><td colspan="4" class="py-2 text-gray-400">No invoices yet</td></tr>
+        <tr><td colspan="4" class="py-2 text-gray-400">{{ _('No invoices yet') }}</td></tr>
       {% endfor %}
       </tbody>
     </table>
   </div>
 
   <div class="bg-white rounded shadow p-4">
-    <h2 class="font-semibold mb-3">Recent Users</h2>
+    <h2 class="font-semibold mb-3">{{ _('Recent Users') }}</h2>
     <table class="w-full text-sm">
-      <thead><tr class="text-left text-gray-500"><th>Name</th><th>Email</th><th>Role</th></tr></thead>
+      <thead><tr class="text-left text-gray-500"><th>{{ _('Name') }}</th><th>{{ _('Email') }}</th><th>{{ _('Role') }}</th></tr></thead>
       <tbody>
       {% for u in recent.users %}
         <tr class="border-t"><td class="py-1">{{ u.name }}</td><td>{{ u.email }}</td><td>{{ u.role.name if u.role else '-' }}</td></tr>
       {% else %}
-        <tr><td colspan="3" class="py-2 text-gray-400">No users yet</td></tr>
+        <tr><td colspan="3" class="py-2 text-gray-400">{{ _('No users yet') }}</td></tr>
       {% endfor %}
       </tbody>
     </table>
   </div>
 
   <div class="bg-white rounded shadow p-4 lg:col-span-2">
-    <h2 class="font-semibold mb-3">Audit Logs</h2>
+    <h2 class="font-semibold mb-3">{{ _('Audit Logs') }}</h2>
     <table class="w-full text-sm">
-      <thead><tr class="text-left text-gray-500"><th>When</th><th>User</th><th>Action</th><th>Target</th></tr></thead>
+      <thead><tr class="text-left text-gray-500"><th>{{ _('When') }}</th><th>{{ _('User') }}</th><th>{{ _('Action') }}</th><th>{{ _('Target') }}</th></tr></thead>
       <tbody>
       {% for a in recent.audit_logs %}
         <tr class="border-t"><td class="py-1">{{ a.timestamp }}</td><td>{{ a.user_id }}</td><td>{{ a.action }}</td><td>{{ a.target_type }}#{{ a.target_id }}</td></tr>
       {% else %}
-        <tr><td colspan="4" class="py-2 text-gray-400">No audit logs yet</td></tr>
+        <tr><td colspan="4" class="py-2 text-gray-400">{{ _('No audit logs yet') }}</td></tr>
       {% endfor %}
       </tbody>
     </table>
   <!-- Charts -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
   <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
-    <h2 class="font-semibold mb-2">Monthly Revenue</h2>
+    <h2 class="font-semibold mb-2">{{ _('Monthly Revenue') }}</h2>
     <canvas id="revenueChart" height="120"></canvas>
   </div>
   <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
-    <h2 class="font-semibold mb-2">Shipment Status</h2>
+    <h2 class="font-semibold mb-2">{{ _('Shipment Status') }}</h2>
     <canvas id="shipmentPie" height="120"></canvas>
   </div>
   </div>
