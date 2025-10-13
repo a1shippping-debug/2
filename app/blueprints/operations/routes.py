@@ -181,6 +181,8 @@ def cars_new():
         year = request.form.get('year')
         auction_type = (request.form.get('auction_type') or '').strip()
         lot_number = (request.form.get('lot_number') or '').strip()
+        auction_url = (request.form.get('auction_url') or '').strip()
+        current_location = (request.form.get('current_location') or '').strip()
         purchase_date = request.form.get('purchase_date')
         purchase_price = request.form.get('purchase_price')
         auction_fees = request.form.get('auction_fees')
@@ -190,15 +192,18 @@ def cars_new():
 
         # ensure auction record
         auc = None
-        if auction_type or lot_number:
+        if auction_type or lot_number or auction_url:
             auc = db.session.query(Auction).filter(
                 db.func.lower(Auction.provider) == auction_type.lower(),
                 Auction.lot_number == lot_number
             ).first()
             if not auc:
-                auc = Auction(provider=auction_type or None, lot_number=lot_number or None)
+                auc = Auction(provider=auction_type or None, lot_number=lot_number or None, auction_url=auction_url or None)
                 db.session.add(auc)
                 db.session.flush()
+            else:
+                if auction_url:
+                    auc.auction_url = auction_url
 
         v = Vehicle(
             vin=vin or None,
@@ -208,6 +213,7 @@ def cars_new():
             auction_id=auc.id if auc else None,
             owner_customer_id=int(client_id) if client_id else None,
             status=status_val,
+            current_location=current_location or None,
         )
         if purchase_price:
             try:
@@ -261,12 +267,33 @@ def cars_edit(vehicle_id: int):
             v.year = int(request.form.get('year') or v.year or 0) or v.year
         except Exception:
             pass
+        loc_val = (request.form.get('current_location') or '').strip()
+        if loc_val:
+            v.current_location = loc_val
         status_val = (request.form.get('status') or '').strip()
         if status_val and status_val != v.status:
             v.status = status_val
             notify(f"Vehicle {v.vin} status updated to {v.status}", 'Vehicle', v.id)
         client_id = request.form.get('client_id')
         v.owner_customer_id = int(client_id) if client_id else None
+        # update auction fields if vehicle has auction
+        auc_type = (request.form.get('auction_type') or '').strip()
+        lot_number = (request.form.get('lot_number') or '').strip()
+        auction_url = (request.form.get('auction_url') or '').strip()
+        if auc_type or lot_number or auction_url:
+            auc = v.auction
+            if not auc:
+                auc = Auction(provider=auc_type or None, lot_number=lot_number or None, auction_url=auction_url or None)
+                db.session.add(auc)
+                db.session.flush()
+                v.auction_id = auc.id
+            else:
+                if auc_type:
+                    auc.provider = auc_type
+                if lot_number:
+                    auc.lot_number = lot_number
+                if auction_url:
+                    auc.auction_url = auction_url
         try:
             db.session.commit()
         except Exception:
