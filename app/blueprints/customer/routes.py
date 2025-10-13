@@ -8,29 +8,36 @@ cust_bp = Blueprint("cust", __name__, template_folder="templates/customer")
 @cust_bp.route("/dashboard")
 @login_required
 def dashboard():
-    """Customer dashboard with VIN/lot search and stage indicators."""
+    """Customer dashboard with VIN/lot search and 'My Cars' listing."""
     query_text = (request.args.get("q") or "").strip()
 
-    vehicles = []
-    if query_text:
-        # base query, outer-join auction to allow filtering by lot number
-        q = db.session.query(Vehicle).join(Auction, Vehicle.auction_id == Auction.id, isouter=True)
+    # Resolve current customer's profile (if any)
+    cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
 
+    vehicles = []
+    # Base query with auction outer-joined (for filtering by lot number and avoiding N+1)
+    base_q = db.session.query(Vehicle).join(Auction, Vehicle.auction_id == Auction.id, isouter=True)
+
+    if query_text:
         like_val = f"%{query_text}%"
         # case-insensitive contains match for VIN or lot number
-        q = q.filter(
+        q = base_q.filter(
             db.or_(
                 db.func.lower(Vehicle.vin).like(db.func.lower(like_val)),
                 db.func.lower(Auction.lot_number).like(db.func.lower(like_val)),
             )
         )
-
-        # restrict to vehicles owned by the current customer, if applicable
-        cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
         if cust:
             q = q.filter(Vehicle.owner_customer_id == cust.id)
-
         vehicles = q.order_by(Vehicle.created_at.desc()).all()
+    else:
+        # No search: show all vehicles owned by the logged-in customer
+        if cust:
+            vehicles = (
+                base_q.filter(Vehicle.owner_customer_id == cust.id)
+                .order_by(Vehicle.created_at.desc())
+                .all()
+            )
 
     def compute_stages(v: Vehicle):
         """Derive stage completion booleans from available data."""
