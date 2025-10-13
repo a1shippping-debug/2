@@ -42,7 +42,11 @@ class Customer(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     account_number = db.Column(db.String(50), unique=True)
     company_name = db.Column(db.String(200))
+    full_name = db.Column(db.String(200))
+    email = db.Column(db.String(180))
+    phone = db.Column(db.String(50))
     address = db.Column(db.Text)
+    country = db.Column(db.String(100))
     user = db.relationship("User", backref="customer_profile")
 
 class Auction(db.Model):
@@ -65,6 +69,7 @@ class Vehicle(db.Model):
     owner_customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=True)
     status = db.Column(db.String(50), default="New")
     purchase_price_usd = db.Column(db.Numeric(12,2))
+    purchase_date = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     auction = db.relationship("Auction")
@@ -82,7 +87,10 @@ class Shipment(db.Model):
     arrival_date = db.Column(db.DateTime)
     status = db.Column(db.String(50))
     cost_freight_usd = db.Column(db.Numeric(12,2))
+    cost_insurance_usd = db.Column(db.Numeric(12,2))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    shipping_company = db.Column(db.String(200))
+    container_number = db.Column(db.String(100))
 
 class VehicleShipment(db.Model):
     __tablename__ = "vehicle_shipments"
@@ -203,3 +211,24 @@ class BillOfLading(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     shipment = db.relationship("Shipment")
+
+
+class Document(db.Model):
+    __tablename__ = "documents"
+    id = db.Column(db.Integer, primary_key=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey("vehicles.id"), nullable=True, index=True)
+    shipment_id = db.Column(db.Integer, db.ForeignKey("shipments.id"), nullable=True, index=True)
+    doc_type = db.Column(db.String(100))
+    file_path = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Notification(db.Model):
+    __tablename__ = "notifications"
+    id = db.Column(db.Integer, primary_key=True)
+    message = db.Column(db.String(255))
+    level = db.Column(db.String(20), default="info")
+    target_type = db.Column(db.String(50))  # Vehicle / Shipment / Document
+    target_id = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    read = db.Column(db.Boolean, default=False, nullable=False)

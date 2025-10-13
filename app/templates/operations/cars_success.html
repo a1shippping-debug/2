@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+{% block title %}Car Saved{% endblock %}
+{% block content %}
+<div class="bg-green-50 border border-green-200 text-green-800 p-4 rounded">
+  Vehicle {{ vehicle.vin }} saved successfully.
+</div>
+<div class="mt-4 space-x-3">
+  <a class="px-3 py-2 bg-blue-600 text-white rounded" href="{{ url_for('ops.cars_edit', vehicle_id=vehicle.id) }}">Edit</a>
+  <a class="px-3 py-2 bg-gray-800 text-white rounded" href="{{ url_for('ops.cars_list') }}">Back to list</a>
+</div>
+{% endblock %}

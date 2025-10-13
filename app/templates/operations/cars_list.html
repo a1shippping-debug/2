@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+{% block title %}Cars{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-xl font-semibold">Cars</h1>
+  <a href="{{ url_for('ops.cars_new') }}" class="px-3 py-2 bg-blue-600 text-white rounded">Add Car</a>
+</div>
+<form method="get" class="bg-white p-3 rounded shadow mb-4 grid grid-cols-1 md:grid-cols-4 gap-2">
+  <input name="vin" value="{{ request.args.get('vin','') }}" placeholder="VIN" class="border p-2 rounded">
+  <select name="status" class="border p-2 rounded">
+    <option value="">Status</option>
+    {% for s in ['Purchased','Shipped','In Transit','Arrived','Cleared','Delivered'] %}
+      <option value="{{s}}" {% if request.args.get('status')==s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <select name="client_id" class="border p-2 rounded">
+    <option value="">Client</option>
+    {% for c in customers %}
+      <option value="{{c.id}}" {% if request.args.get('client_id')==(c.id|string) %}selected{% endif %}>{{ c.company_name or c.full_name }}</option>
+    {% endfor %}
+  </select>
+  <button class="px-3 py-2 bg-gray-800 text-white rounded">Filter</button>
+</form>
+<div class="bg-white rounded shadow overflow-x-auto">
+  <table class="min-w-full text-sm">
+    <thead>
+      <tr class="text-left text-gray-500">
+        <th class="py-2 px-3">VIN</th>
+        <th class="py-2 px-3">Make</th>
+        <th class="py-2 px-3">Model</th>
+        <th class="py-2 px-3">Client</th>
+        <th class="py-2 px-3">Status</th>
+        <th class="py-2 px-3">Shipment</th>
+        <th class="py-2 px-3">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in cars %}
+      <tr class="border-t">
+        <td class="py-2 px-3">{{ v.vin }}</td>
+        <td class="py-2 px-3">{{ v.make }}</td>
+        <td class="py-2 px-3">{{ v.model }}</td>
+        <td class="py-2 px-3">{{ v.owner.company_name if v.owner else '-' }}</td>
+        <td class="py-2 px-3">{{ v.status }}</td>
+        <td class="py-2 px-3">-</td>
+        <td class="py-2 px-3 space-x-2">
+          <a href="{{ url_for('ops.cars_edit', vehicle_id=v.id) }}" class="text-blue-600">Edit</a>
+          <form action="{{ url_for('ops.cars_delete', vehicle_id=v.id) }}" method="post" class="inline" onsubmit="return confirm('Delete?')">
+            <button class="text-red-600">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="mt-4">
+  <a href="{{ url_for('ops.cars_export') }}" class="text-sm text-gray-600 underline">Export CSV</a>
+</div>
+{% endblock %}

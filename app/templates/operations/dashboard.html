@@ -1,6 +1,109 @@
 {% extends "layout.html" %}
 {% block title %}Operations Dashboard{% endblock %}
 {% block content %}
-<h1 class="text-2xl mb-4">Operations Dashboard</h1>
-<p>Forms to add vehicles, create shipments, and upload docs will be here.</p>
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-semibold">Operations Dashboard</h1>
+  <div x-data="notificationsDropdown()" class="relative">
+    <button @click="toggle()" class="relative inline-flex items-center px-3 py-2 bg-white shadow rounded">
+      <span class="material-icons mr-1">notifications</span>
+      <span>Notifications</span>
+      <span x-show="unreadCount>0" class="ml-2 inline-flex items-center justify-center text-xs bg-red-500 text-white rounded-full w-5 h-5" x-text="unreadCount"></span>
+    </button>
+    <div x-show="open" @click.outside="open=false" class="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded p-2 z-10">
+      <template x-for="n in items" :key="n.id">
+        <div class="p-2 border-b last:border-0 flex items-start">
+          <div class="flex-1">
+            <div class="text-sm" x-text="n.message"></div>
+            <div class="text-xs text-gray-500" x-text="n.created_at"></div>
+          </div>
+          <button x-show="!n.read" @click="markRead(n)" class="text-xs text-blue-600">Mark read</button>
+        </div>
+      </template>
+      <div x-show="items.length===0" class="text-sm text-gray-500 p-2">No notifications</div>
+    </div>
+  </div>
+  <script>
+    function notificationsDropdown(){
+      return {
+        open:false, items: [], unreadCount: 0,
+        toggle(){ this.open = !this.open },
+        async fetch(){
+          try{ const r = await fetch('{{ url_for('ops.notifications_feed') }}'); const data = await r.json(); this.items = data; this.unreadCount = data.filter(x=>!x.read).length; }catch(e){}
+        },
+        async markRead(n){ try{ await fetch(`{{ url_for('ops.notifications_mark_read', nid=0) }}`.replace('/0/read','/'+n.id+'/read'), {method:'POST'}); n.read=true; this.unreadCount = this.items.filter(x=>!x.read).length; }catch(e){} },
+        init(){ this.fetch(); setInterval(()=>this.fetch(), 15000) }
+      }
+    }
+  </script>
+</div>
+
+<!-- Summary cards -->
+<div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+  <div class="bg-white rounded shadow p-4"><div class="text-xs uppercase text-gray-500">Total Cars</div><div class="text-2xl font-semibold">{{ counts.total_cars }}</div></div>
+  <div class="bg-white rounded shadow p-4"><div class="text-xs uppercase text-gray-500">In Transit</div><div class="text-2xl font-semibold">{{ counts.in_transit_cars }}</div></div>
+  <div class="bg-white rounded shadow p-4"><div class="text-xs uppercase text-gray-500">Arrived</div><div class="text-2xl font-semibold">{{ counts.arrived_cars }}</div></div>
+  <div class="bg-white rounded shadow p-4"><div class="text-xs uppercase text-gray-500">Open Shipments</div><div class="text-2xl font-semibold">{{ counts.open_shipments }}</div></div>
+  <div class="bg-white rounded shadow p-4"><div class="text-xs uppercase text-gray-500">Customers</div><div class="text-2xl font-semibold">{{ counts.customers }}</div></div>
+  
+</div>
+
+<!-- Chart + Recent table -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 bg-white rounded shadow p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="font-semibold">Monthly Shipped Cars</h2>
+    </div>
+    <canvas id="shippedChart" height="100"></canvas>
+  </div>
+  <div class="bg-white rounded shadow p-4">
+    <h2 class="font-semibold mb-2">Latest Vehicles</h2>
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead>
+          <tr class="text-left text-gray-500">
+            <th class="py-2 pr-2">VIN</th>
+            <th class="py-2 pr-2">Make</th>
+            <th class="py-2 pr-2">Model</th>
+            <th class="py-2 pr-2">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in recent %}
+          <tr class="border-t">
+            <td class="py-2 pr-2">{{ v.vin }}</td>
+            <td class="py-2 pr-2">{{ v.make }}</td>
+            <td class="py-2 pr-2">{{ v.model }}</td>
+            <td class="py-2 pr-2">{{ v.status }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('shippedChart').getContext('2d');
+  const shippedChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: {{ chart.months|tojson }},
+      datasets: [{
+        label: 'Shipped',
+        data: {{ chart.shipped|tojson }},
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+        fill: true,
+        tension: 0.3,
+      }]
+    },
+    options: {
+      scales: { y: { beginAtZero: true, precision: 0 } },
+      plugins: { legend: { display: false } }
+    }
+  });
+</script>
+
 {% endblock %}
