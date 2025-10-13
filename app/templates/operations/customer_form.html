@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block title %}{{ 'Edit Customer' if customer else 'Add Customer' }}{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">{{ 'Edit Customer' if customer else 'Add Customer' }}</h1>
+<form method="post" class="bg-white p-4 rounded shadow grid grid-cols-1 md:grid-cols-2 gap-3">
+  <input name="company_name" placeholder="Company Name" value="{{ customer.company_name if customer else '' }}" class="border p-2 rounded">
+  <input name="full_name" placeholder="Full Name" value="{{ customer.full_name if customer else '' }}" class="border p-2 rounded">
+  <input name="account_number" placeholder="Account #" value="{{ customer.account_number if customer else '' }}" class="border p-2 rounded">
+  <input name="email" placeholder="Email" value="{{ customer.email if customer else '' }}" class="border p-2 rounded">
+  <input name="phone" placeholder="Phone" value="{{ customer.phone if customer else '' }}" class="border p-2 rounded">
+  <input name="country" placeholder="Country" value="{{ customer.country if customer else '' }}" class="border p-2 rounded">
+  <textarea name="address" placeholder="Address" class="border p-2 rounded md:col-span-2">{{ customer.address if customer else '' }}</textarea>
+  <div class="md:col-span-2">
+    <button class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+  </div>
+</form>
+{% if saved %}
+<div class="mt-4 bg-green-50 text-green-800 border border-green-200 p-3 rounded">Customer saved.</div>
+{% endif %}
+{% endblock %}

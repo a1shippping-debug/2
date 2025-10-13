@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+{% block title %}Shipments{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-xl font-semibold">Shipments</h1>
+  <a href="{{ url_for('ops.shipments_new') }}" class="px-3 py-2 bg-blue-600 text-white rounded">Create Shipment</a>
+</div>
+<div class="bg-white rounded shadow overflow-x-auto">
+  <table class="min-w-full text-sm">
+    <thead>
+      <tr class="text-left text-gray-500">
+        <th class="py-2 px-3">Shipment No</th>
+        <th class="py-2 px-3">Type</th>
+        <th class="py-2 px-3">Port From</th>
+        <th class="py-2 px-3">Port To</th>
+        <th class="py-2 px-3">Departure</th>
+        <th class="py-2 px-3">Status</th>
+        <th class="py-2 px-3">Cars</th>
+        <th class="py-2 px-3">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in shipments %}
+      <tr class="border-t">
+        <td class="py-2 px-3">{{ s.shipment_number }}</td>
+        <td class="py-2 px-3">{{ s.type }}</td>
+        <td class="py-2 px-3">{{ s.origin_port }}</td>
+        <td class="py-2 px-3">{{ s.destination_port }}</td>
+        <td class="py-2 px-3">{{ s.departure_date.strftime('%Y-%m-%d') if s.departure_date else '-' }}</td>
+        <td class="py-2 px-3">{{ s.status }}</td>
+        <td class="py-2 px-3">{{ cars_count.get(s.id, 0) }}</td>
+        <td class="py-2 px-3 space-x-2">
+          <a href="{{ url_for('ops.shipments_edit', shipment_id=s.id) }}" class="text-blue-600">Edit</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="mt-4">
+  <a href="{{ url_for('ops.shipments_export') }}" class="text-sm text-gray-600 underline">Export CSV</a>
+</div>
+{% endblock %}

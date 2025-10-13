@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+{% block title %}{{ 'Edit Shipment' if shipment else 'Create Shipment' }}{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">{{ 'Edit Shipment' if shipment else 'Create Shipment' }}</h1>
+<form method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow grid grid-cols-1 md:grid-cols-3 gap-3">
+  <input name="shipment_number" placeholder="Shipment No" value="{{ shipment.shipment_number if shipment else '' }}" class="border p-2 rounded" {% if shipment %}readonly{% endif %}>
+  <select name="type" class="border p-2 rounded">
+    {% for t in ['RORO','Container'] %}<option value="{{t}}" {% if shipment and shipment.type==t %}selected{% endif %}>{{ t }}</option>{% endfor %}
+  </select>
+  <input name="shipping_company" placeholder="Shipping Company" value="{{ shipment.shipping_company if shipment else '' }}" class="border p-2 rounded">
+  <input name="origin_port" placeholder="Port From" value="{{ shipment.origin_port if shipment else '' }}" class="border p-2 rounded">
+  <input name="destination_port" placeholder="Port To" value="{{ shipment.destination_port if shipment else '' }}" class="border p-2 rounded">
+  <input type="date" name="departure_date" value="{{ shipment.departure_date.strftime('%Y-%m-%d') if shipment and shipment.departure_date else '' }}" class="border p-2 rounded">
+  <input type="date" name="arrival_date" value="{{ shipment.arrival_date.strftime('%Y-%m-%d') if shipment and shipment.arrival_date else '' }}" class="border p-2 rounded">
+  <input name="container_number" placeholder="Container No." value="{{ shipment.container_number if shipment else '' }}" class="border p-2 rounded">
+  <input name="cost_freight_usd" placeholder="Freight (USD)" value="{{ shipment.cost_freight_usd if shipment else '' }}" class="border p-2 rounded">
+  <input name="cost_insurance_usd" placeholder="Insurance (USD)" value="{{ shipment.cost_insurance_usd if shipment else '' }}" class="border p-2 rounded">
+  <select name="status" class="border p-2 rounded">
+    {% for s in ['Open','In Transit','Arrived','Delivered'] %}<option value="{{s}}" {% if shipment and shipment.status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+  </select>
+
+  <div class="md:col-span-3">
+    <label class="block text-sm mb-1">Attach Vehicles</label>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-2 max-h-48 overflow-auto border rounded p-2">
+      {% for v in vehicles %}
+        <label class="inline-flex items-center space-x-2"><input type="checkbox" name="vehicle_ids" value="{{ v.id }}"> <span>{{ v.vin }} - {{ v.make }} {{ v.model }}</span></label>
+      {% endfor %}
+    </div>
+    {% if shipment %}<input type="hidden" name="update_vehicles" value="1">{% endif %}
+  </div>
+
+  <div class="md:col-span-3">
+    <label class="block text-sm mb-1">Upload BOL (PDF)</label>
+    <input type="file" name="bol" accept="application/pdf" class="border p-2 rounded w-full">
+  </div>
+
+  <div class="md:col-span-3">
+    <button class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+  </div>
+</form>
+
+{% if saved %}
+<div class="mt-4 bg-green-50 text-green-800 border border-green-200 p-3 rounded">Shipment saved.</div>
+{% endif %}
+
+{% endblock %}

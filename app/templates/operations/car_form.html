@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+{% block title %}{{ 'Edit Car' if vehicle else 'Add Car' }}{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">{{ 'Edit Car' if vehicle else 'Add Car' }}</h1>
+<form method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow grid grid-cols-1 md:grid-cols-3 gap-3">
+  <input name="vin" placeholder="VIN" value="{{ vehicle.vin if vehicle else '' }}" class="border p-2 rounded md:col-span-1" {% if vehicle %}readonly{% endif %}>
+  <input name="make" placeholder="Make" value="{{ vehicle.make if vehicle else '' }}" class="border p-2 rounded">
+  <input name="model" placeholder="Model" value="{{ vehicle.model if vehicle else '' }}" class="border p-2 rounded">
+  <input name="year" placeholder="Year" value="{{ vehicle.year if vehicle else '' }}" class="border p-2 rounded">
+
+  <input name="lot_number" placeholder="Lot Number" class="border p-2 rounded">
+  <select name="auction_type" class="border p-2 rounded">
+    <option value="">Auction Type</option>
+    {% for a in ['Copart','IAAI'] %}<option>{{ a }}</option>{% endfor %}
+  </select>
+
+  <input type="date" name="purchase_date" class="border p-2 rounded">
+  <input name="purchase_price" placeholder="Purchase Price (USD)" class="border p-2 rounded">
+  <input name="auction_fees" placeholder="Auction Fees" class="border p-2 rounded">
+  <input name="local_transport" placeholder="Local Transport Cost" class="border p-2 rounded">
+
+  <select name="client_id" class="border p-2 rounded">
+    <option value="">Client</option>
+    {% for c in customers %}
+      <option value="{{c.id}}" {% if vehicle and vehicle.owner_customer_id==c.id %}selected{% endif %}>{{ c.company_name or c.full_name }}</option>
+    {% endfor %}
+  </select>
+  <select name="status" class="border p-2 rounded">
+    {% for s in ['Purchased','Shipped','In Transit','Arrived','Cleared','Delivered'] %}
+      <option value="{{s}}" {% if vehicle and vehicle.status==s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+
+  {% if not vehicle %}
+  <div class="md:col-span-3">
+    <label class="block text-sm mb-1">Upload Photos</label>
+    <input type="file" name="photos" multiple class="border p-2 rounded w-full">
+  </div>
+  {% endif %}
+
+  <div class="md:col-span-3">
+    <button class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+  </div>
+</form>
+{% if vehicle %}
+<form action="{{ url_for('ops.cars_upload', vehicle_id=vehicle.id) }}" method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow mt-4">
+  <div class="mb-2"><label class="text-sm">Upload Documents</label></div>
+  <input type="file" name="files" multiple class="border p-2 rounded w-full mb-2">
+  <button class="px-3 py-2 bg-gray-800 text-white rounded">Upload</button>
+</form>
+{% endif %}
+{% endblock %}
