@@ -1,6 +1,82 @@
-{% extends "layout.html" %}
-{% block title %}Operations Dashboard{% endblock %}
+{% extends "base_admin.html" %}
+{% block title %}Operations | Dashboard{% endblock %}
+{% block header %}Operations Dashboard{% endblock %}
 {% block content %}
-<h1 class="text-2xl mb-4">Operations Dashboard</h1>
-<p>Forms to add vehicles, create shipments, and upload docs will be here.</p>
+<div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+  <div class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+    <div class="text-sm text-slate-400">Total Vehicles</div>
+    <div class="text-2xl font-semibold">{{ kpi.total_vehicles }}</div>
+  </div>
+  <div class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+    <div class="text-sm text-slate-400">In Transit</div>
+    <div class="text-2xl font-semibold">{{ kpi.in_transit }}</div>
+  </div>
+  <div class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+    <div class="text-sm text-slate-400">Arrived</div>
+    <div class="text-2xl font-semibold">{{ kpi.arrived }}</div>
+  </div>
+  <div class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+    <div class="text-sm text-slate-400">Open Shipments</div>
+    <div class="text-2xl font-semibold">{{ kpi.open_shipments }}</div>
+  </div>
+  <div class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+    <div class="text-sm text-slate-400">Customers</div>
+    <div class="text-2xl font-semibold">{{ kpi.customers }}</div>
+  </div>
+  
+  <div class="md:col-span-3 p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+    <div class="mb-2 font-medium">Shipped Vehicles per Month</div>
+    <canvas id="shippedChart" height="110"></canvas>
+  </div>
+  <div class="md:col-span-2 p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+    <div class="mb-2 font-medium">Latest Vehicles</div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="text-slate-400">
+          <tr>
+            <th class="text-left py-1">VIN</th>
+            <th class="text-left py-1">Make</th>
+            <th class="text-left py-1">Model</th>
+            <th class="text-left py-1">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in latest_vehicles %}
+          <tr class="border-t border-slate-800">
+            <td class="py-1">{{ v.vin }}</td>
+            <td class="py-1">{{ v.make }}</td>
+            <td class="py-1">{{ v.model }}</td>
+            <td class="py-1">{{ v.status }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  const ctx = document.getElementById('shippedChart').getContext('2d');
+  const shippedChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: {{ chart.months | tojson }},
+      datasets: [{
+        label: 'Vehicles Shipped',
+        data: {{ chart.shipped_counts | tojson }},
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      plugins: { legend: { labels: { color: '#cbd5e1' } } },
+      scales: {
+        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.1)' } },
+        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.1)' } }
+      }
+    }
+  });
+</script>
 {% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base_admin.html" %}
+{% block title %}Operations | Customers{% endblock %}
+{% block header %}Customers{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <form class="flex gap-2" method="get">
+    <input class="px-3 py-2 rounded bg-slate-900/50 border border-slate-800" type="text" name="name" placeholder="Company name" value="{{ request.args.get('name','') }}">
+    <input class="px-3 py-2 rounded bg-slate-900/50 border border-slate-800" type="text" name="email" placeholder="Email" value="{{ request.args.get('email','') }}">
+    <button class="px-4 py-2 rounded bg-primary hover:bg-blue-500">Search</button>
+  </form>
+  <a href="{{ url_for('ops.customers_new') }}" class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500">+ Add Customer</a>
+</div>
+<div class="overflow-x-auto rounded-2xl border border-slate-800">
+  <table class="min-w-full text-sm">
+    <thead class="bg-slate-900/60 text-slate-300">
+      <tr>
+        <th class="text-left px-3 py-2">Account #</th>
+        <th class="text-left px-3 py-2">Company</th>
+        <th class="text-left px-3 py-2">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in customers %}
+      <tr class="border-t border-slate-800">
+        <td class="px-3 py-2">{{ c.account_number }}</td>
+        <td class="px-3 py-2">{{ c.company_name }}</td>
+        <td class="px-3 py-2 space-x-2">
+          <a class="text-blue-400 hover:underline" href="{{ url_for('ops.customers_edit', customer_id=c.id) }}">Edit</a>
+          <a class="text-slate-300 hover:underline" href="{{ url_for('ops.customers_vehicles', customer_id=c.id) }}">Vehicles</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if not customers %}
+  <div class="p-4 text-center text-slate-400">No customers found.</div>
+  {% endif %}
+</div>
+{% endblock %}

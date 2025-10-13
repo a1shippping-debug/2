@@ -53,6 +53,25 @@ def create_app():
     def forbidden(_e):
         return render_template("errors/403.html"), 403
 
+    # notifications context for header dropdowns
+    @app.context_processor
+    def inject_notifications():
+        try:
+            from .extensions import db
+            from .models import Notification
+            from flask_login import current_user
+            role = getattr(getattr(current_user, 'role', None), 'name', '').lower() if getattr(current_user, 'is_authenticated', False) else None
+            if role:
+                unread = db.session.query(Notification).filter(
+                    (Notification.audience_role == role) | (Notification.recipient_user_id == getattr(current_user, 'id', None)),
+                    Notification.read_at.is_(None)
+                ).order_by(Notification.created_at.desc()).limit(10).all()
+            else:
+                unread = []
+        except Exception:
+            unread = []
+        return {"header_notifications": unread}
+
     @app.shell_context_processor
     def make_shell_context():
         from .models import User, Role, Customer, Vehicle, Auction, Shipment

@@ -1,0 +1,42 @@
+{% extends "base_admin.html" %}
+{% block title %}Operations | Shipments{% endblock %}
+{% block header %}Shipments{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <div></div>
+  <a href="{{ url_for('ops.shipments_new') }}" class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500">+ Create Shipment</a>
+</div>
+<div class="overflow-x-auto rounded-2xl border border-slate-800">
+  <table class="min-w-full text-sm">
+    <thead class="bg-slate-900/60 text-slate-300">
+      <tr>
+        <th class="text-left px-3 py-2">Shipment No</th>
+        <th class="text-left px-3 py-2">Type</th>
+        <th class="text-left px-3 py-2">Port From</th>
+        <th class="text-left px-3 py-2">Port To</th>
+        <th class="text-left px-3 py-2">Departure</th>
+        <th class="text-left px-3 py-2">Status</th>
+        <th class="text-left px-3 py-2">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in shipments %}
+      <tr class="border-t border-slate-800">
+        <td class="px-3 py-2 font-mono">{{ s.shipment_number }}</td>
+        <td class="px-3 py-2">{{ s.type }}</td>
+        <td class="px-3 py-2">{{ s.origin_port }}</td>
+        <td class="px-3 py-2">{{ s.destination_port }}</td>
+        <td class="px-3 py-2">{{ s.departure_date and s.departure_date.strftime('%Y-%m-%d') }}</td>
+        <td class="px-3 py-2">{{ s.status }}</td>
+        <td class="px-3 py-2 space-x-2">
+          <a class="text-blue-400 hover:underline" href="{{ url_for('ops.shipments_edit', shipment_id=s.id) }}">Edit</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if not shipments %}
+  <div class="p-4 text-center text-slate-400">No shipments found.</div>
+  {% endif %}
+</div>
+{% endblock %}

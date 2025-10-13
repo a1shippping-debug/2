@@ -1,0 +1,30 @@
+{% extends "base_admin.html" %}
+{% block title %}Operations | Customer Vehicles{% endblock %}
+{% block header %}{{ customer.company_name }} • Vehicles{% endblock %}
+{% block content %}
+<div class="overflow-x-auto rounded-2xl border border-slate-800">
+  <table class="min-w-full text-sm">
+    <thead class="bg-slate-900/60 text-slate-300">
+      <tr>
+        <th class="text-left px-3 py-2">VIN</th>
+        <th class="text-left px-3 py-2">Make</th>
+        <th class="text-left px-3 py-2">Model</th>
+        <th class="text-left px-3 py-2">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in vehicles %}
+      <tr class="border-t border-slate-800">
+        <td class="px-3 py-2">{{ v.vin }}</td>
+        <td class="px-3 py-2">{{ v.make }}</td>
+        <td class="px-3 py-2">{{ v.model }}</td>
+        <td class="px-3 py-2">{{ v.status }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if not vehicles %}
+  <div class="p-4 text-center text-slate-400">No vehicles found for this customer.</div>
+  {% endif %}
+</div>
+{% endblock %}

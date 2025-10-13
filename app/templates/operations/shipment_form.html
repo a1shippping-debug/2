@@ -1,0 +1,94 @@
+{% extends "base_admin.html" %}
+{% block title %}Operations | Shipment{% endblock %}
+{% block header %}{{ 'Edit Shipment' if shipment else 'Create Shipment' }}{% endblock %}
+{% block content %}
+<form method="post" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800 space-y-3">
+    <div>
+      <label class="block text-sm mb-1">Shipment No</label>
+      <input name="shipment_number" value="{{ shipment and shipment.shipment_number or '' }}" class="w-full px-3 py-2 rounded bg-slate-900/50 border border-slate-800" {% if shipment %}readonly{% endif %}>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm mb-1">Type</label>
+        <select name="type" class="w-full px-3 py-2 rounded bg-slate-900/50 border border-slate-800">
+          {% for t in ['RORO','Container'] %}
+          <option value="{{ t }}" {% if (shipment and shipment.type)==t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Shipping Company</label>
+        <input name="shipping_company" value="{{ shipment and shipment.shipping_company or '' }}" class="w-full px-3 py-2 rounded bg-slate-900/50 border border-slate-800">
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm mb-1">Port From</label>
+        <input name="origin_port" value="{{ shipment and shipment.origin_port or '' }}" class="w-full px-3 py-2 rounded bg-slate-900/50 border border-slate-800">
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Port To</label>
+        <input name="destination_port" value="{{ shipment and shipment.destination_port or '' }}" class="w-full px-3 py-2 rounded bg-slate-900/50 border border-slate-800">
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm mb-1">Departure</label>
+        <input type="date" name="departure_date" value="{{ shipment and shipment.departure_date and shipment.departure_date.strftime('%Y-%m-%d') or '' }}" class="w-full px-3 py-2 rounded bg-slate-900/50 border border-slate-800">
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Arrival</label>
+        <input type="date" name="arrival_date" value="{{ shipment and shipment.arrival_date and shipment.arrival_date.strftime('%Y-%m-%d') or '' }}" class="w-full px-3 py-2 rounded bg-slate-900/50 border border-slate-800">
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm mb-1">Container No.</label>
+        <input name="container_no" value="{{ shipment and shipment.container_no or '' }}" class="w-full px-3 py-2 rounded bg-slate-900/50 border border-slate-800">
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Status</label>
+        <select name="status" class="w-full px-3 py-2 rounded bg-slate-900/50 border border-slate-800">
+          {% for s in ['Open','In Transit','Arrived','Delivered'] %}
+          <option value="{{ s }}" {% if (shipment and shipment.status)==s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm mb-1">Freight (USD)</label>
+        <input type="number" step="0.01" name="cost_freight_usd" value="{{ shipment and shipment.cost_freight_usd or '' }}" class="w-full px-3 py-2 rounded bg-slate-900/50 border border-slate-800">
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Insurance (USD)</label>
+        <input type="number" step="0.01" name="cost_insurance_usd" value="{{ shipment and shipment.cost_insurance_usd or '' }}" class="w-full px-3 py-2 rounded bg-slate-900/50 border border-slate-800">
+      </div>
+    </div>
+  </div>
+  <div class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800 space-y-3">
+    <div>
+      <label class="block text-sm mb-1">Attach Vehicles</label>
+      <div class="max-h-64 overflow-y-auto border border-slate-800 rounded p-2">
+        {% for v in vehicles %}
+        {% set checked = (attached_ids and (v.id in attached_ids)) %}
+        <label class="flex items-center gap-2 py-1">
+          <input type="checkbox" name="vehicle_ids" value="{{ v.id }}" {% if checked %}checked{% endif %}>
+          <span class="font-mono text-xs">{{ v.vin }}</span>
+          <span class="text-xs text-slate-400">{{ v.make }} {{ v.model }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm mb-1">Bill of Lading (PDF)</label>
+      <input type="file" name="bill_of_lading" class="w-full text-sm">
+    </div>
+  </div>
+  <div class="md:col-span-2 flex justify-end gap-2">
+    <a href="{{ url_for('ops.shipments_list') }}" class="px-4 py-2 rounded bg-slate-800">Cancel</a>
+    <button class="px-4 py-2 rounded bg-primary hover:bg-blue-500">Save</button>
+  </div>
+</form>
+{% endblock %}

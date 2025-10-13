@@ -63,8 +63,14 @@ class Vehicle(db.Model):
     year = db.Column(db.Integer)
     auction_id = db.Column(db.Integer, db.ForeignKey("auctions.id"))
     owner_customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=True)
-    status = db.Column(db.String(50), default="New")
+    # Operations fields
+    lot_number = db.Column(db.String(100))
+    auction_type = db.Column(db.String(50))  # Copart / IAAI
+    purchase_date = db.Column(db.DateTime)
     purchase_price_usd = db.Column(db.Numeric(12,2))
+    auction_fees_usd = db.Column(db.Numeric(12,2))
+    local_transport_cost_usd = db.Column(db.Numeric(12,2))
+    status = db.Column(db.String(50), default="Purchased")  # Purchased / Shipped / Arrived / Cleared / Delivered
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     auction = db.relationship("Auction")
@@ -81,7 +87,10 @@ class Shipment(db.Model):
     departure_date = db.Column(db.DateTime)
     arrival_date = db.Column(db.DateTime)
     status = db.Column(db.String(50))
+    shipping_company = db.Column(db.String(200))
+    container_no = db.Column(db.String(100))
     cost_freight_usd = db.Column(db.Numeric(12,2))
+    cost_insurance_usd = db.Column(db.Numeric(12,2))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class VehicleShipment(db.Model):
@@ -131,4 +140,27 @@ class Backup(db.Model):
     __tablename__ = "backups"
     id = db.Column(db.Integer, primary_key=True)
     path = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Document(db.Model):
+    __tablename__ = "documents"
+    id = db.Column(db.Integer, primary_key=True)
+    entity_type = db.Column(db.String(50))  # 'vehicle' or 'shipment'
+    entity_id = db.Column(db.Integer)
+    doc_type = db.Column(db.String(100))  # Purchase Invoice, Bill of Lading, Export Certificate, Vehicle Photos
+    file_path = db.Column(db.Text)
+    uploaded_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Notification(db.Model):
+    __tablename__ = "notifications"
+    id = db.Column(db.Integer, primary_key=True)
+    message = db.Column(db.String(300))
+    level = db.Column(db.String(20), default="info")  # info/success/warn/error
+    url = db.Column(db.String(500))
+    audience_role = db.Column(db.String(50))  # e.g., 'employee'
+    recipient_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    read_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

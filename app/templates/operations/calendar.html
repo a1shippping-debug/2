@@ -1,0 +1,27 @@
+{% extends "base_admin.html" %}
+{% block title %}Operations | Calendar{% endblock %}
+{% block header %}Operations Calendar{% endblock %}
+{% block content %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.js'></script>
+<div id='calendar' class="rounded-2xl bg-slate-900/50 border border-slate-800 p-4"></div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      height: 'auto',
+      events: async function(fetchInfo, successCallback, failureCallback) {
+        try {
+          const res = await fetch('{{ url_for('ops.calendar_feed') }}');
+          const data = await res.json();
+          successCallback(data.events || []);
+        } catch (e) {
+          failureCallback(e);
+        }
+      }
+    });
+    calendar.render();
+  });
+</script>
+{% endblock %}

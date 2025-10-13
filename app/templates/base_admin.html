@@ -39,8 +39,9 @@
       <nav class="px-3 py-4 space-y-1 text-sm">
         <a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint=='admin.dashboard' %}bg-slate-800{% endif %}">Dashboard</a>
         <a href="{{ url_for('admin.users_list') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('admin.users') %}bg-slate-800{% endif %}">Users</a>
-        <a href="{{ url_for('ops.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800">Cars Management</a>
-        <a href="{{ url_for('ops.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800">Shipments</a>
+        <a href="{{ url_for('ops.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('ops.') %}bg-slate-800{% endif %}">Operations</a>
+        <a href="{{ url_for('ops.cars_list') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('ops.cars') %}bg-slate-800{% endif %}">Cars Management</a>
+        <a href="{{ url_for('ops.shipments_list') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('ops.shipments') %}bg-slate-800{% endif %}">Shipments</a>
         <a href="{{ url_for('acct.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800">Invoices</a>
         <a href="{{ url_for('admin.reports') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('admin.reports') %}bg-slate-800{% endif %}">Reports</a>
         <a href="{{ url_for('admin.settings') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint=='admin.settings' %}bg-slate-800{% endif %}">Settings</a>
@@ -56,6 +57,27 @@
             <span class="text-sm text-slate-300">{{ current_user.name }}</span>
             <a href="{{ url_for('auth.logout') }}" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">Logout</a>
           {% endif %}
+          <div x-data="{open:false}" class="relative">
+            <button @click="open=!open" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">
+              🔔 <span class="ml-1 text-amber-400">{{ header_notifications|length }}</span>
+            </button>
+            <div x-show="open" @click.outside="open=false" class="absolute right-0 mt-2 w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-soft p-2 z-10">
+              <div class="text-sm text-slate-400 mb-2">Notifications</div>
+              <div class="max-h-72 overflow-y-auto space-y-2">
+                {% for n in header_notifications %}
+                <div class="p-2 rounded bg-slate-800 text-sm">
+                  <div class="font-medium">{{ n.message }}</div>
+                  {% if n.url %}<a class="text-blue-400 text-xs" href="{{ n.url }}">Open</a>{% endif %}
+                </div>
+                {% else %}
+                <div class="p-2 text-slate-500 text-sm">No new notifications</div>
+                {% endfor %}
+              </div>
+              <form method="post" action="{{ url_for('ops.notifications_mark_all') }}" class="mt-2 text-right">
+                <button class="text-xs text-slate-300 hover:underline">Mark all as read</button>
+              </form>
+            </div>
+          </div>
           <a href="{{ request.path }}?lang=en" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">EN</a>
           <a href="{{ request.path }}?lang=ar" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">AR</a>
           <button id="themeToggle" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">🌙</button>

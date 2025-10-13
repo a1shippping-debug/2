@@ -1,0 +1,61 @@
+{% extends "base_admin.html" %}
+{% block title %}Operations | Cars{% endblock %}
+{% block header %}Cars Management{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <form class="flex gap-2" method="get">
+    <input class="px-3 py-2 rounded bg-slate-900/50 border border-slate-800" type="text" name="vin" placeholder="VIN" value="{{ request.args.get('vin','') }}">
+    <select class="px-3 py-2 rounded bg-slate-900/50 border border-slate-800" name="status">
+      <option value="">All Status</option>
+      {% for s in ['Purchased','Shipped','Arrived','Cleared','Delivered'] %}
+      <option value="{{ s }}" {% if request.args.get('status')==s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <select class="px-3 py-2 rounded bg-slate-900/50 border border-slate-800" name="customer_id">
+      <option value="">All Customers</option>
+      {% for c in customers %}
+      <option value="{{ c.id }}" {% if request.args.get('customer_id')==c.id|string %}selected{% endif %}>{{ c.company_name }}</option>
+      {% endfor %}
+    </select>
+    <button class="px-4 py-2 rounded bg-primary hover:bg-blue-500">Filter</button>
+  </form>
+  <a href="{{ url_for('ops.cars_new') }}" class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500">+ Add Vehicle</a>
+</div>
+
+<div class="overflow-x-auto rounded-2xl border border-slate-800">
+  <table class="min-w-full text-sm">
+    <thead class="bg-slate-900/60 text-slate-300">
+      <tr>
+        <th class="text-left px-3 py-2">VIN</th>
+        <th class="text-left px-3 py-2">Make</th>
+        <th class="text-left px-3 py-2">Model</th>
+        <th class="text-left px-3 py-2">Client</th>
+        <th class="text-left px-3 py-2">Status</th>
+        <th class="text-left px-3 py-2">Shipment</th>
+        <th class="text-left px-3 py-2">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in vehicles %}
+      <tr class="border-t border-slate-800">
+        <td class="px-3 py-2 font-mono">{{ v.vin }}</td>
+        <td class="px-3 py-2">{{ v.make }}</td>
+        <td class="px-3 py-2">{{ v.model }}</td>
+        <td class="px-3 py-2">{{ v.owner.company_name if v.owner else '-' }}</td>
+        <td class="px-3 py-2">{{ v.status }}</td>
+        <td class="px-3 py-2">-</td>
+        <td class="px-3 py-2 space-x-2">
+          <a class="text-blue-400 hover:underline" href="{{ url_for('ops.cars_edit', vehicle_id=v.id) }}">Edit</a>
+          <form class="inline" method="post" action="{{ url_for('ops.cars_delete', vehicle_id=v.id) }}" onsubmit="return confirm('Delete vehicle?')">
+            <button class="text-rose-400 hover:underline">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if not vehicles %}
+  <div class="p-4 text-center text-slate-400">No vehicles found.</div>
+  {% endif %}
+</div>
+{% endblock %}
