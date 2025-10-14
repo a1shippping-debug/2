@@ -5,6 +5,10 @@
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-semibold">{{ _('Operations Dashboard') }}</h1>
   <div class="flex items-center gap-2">
+    <a href="{{ url_for('cust.dashboard') }}" class="px-3 py-2 bg-emerald-600 text-white rounded inline-flex items-center">
+      <span class="material-icons mr-1">dashboard</span>
+      <span>لوحة العميل</span>
+    </a>
     <a href="{{ url_for('ops.cars_new') }}" class="px-3 py-2 bg-blue-600 text-white rounded inline-flex items-center">
       <span class="material-icons mr-1">add</span>
       <span>{{ _('Add Car') }}</span>
