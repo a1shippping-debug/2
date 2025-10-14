@@ -134,24 +134,34 @@ def create_app():
 
             completed_map = {
                 "New car": True,
-                "Cashier Payment": bool(vehicle.purchase_price_usd and float(vehicle.purchase_price_usd) > 0),
-                "Auction Payment": bool(vehicle.purchase_date),
+                # Consider explicit status names as authoritative fallbacks
+                "Cashier Payment": bool(vehicle.purchase_price_usd and float(vehicle.purchase_price_usd) > 0)
+                or norm_status == "cashier payment",
+                "Auction Payment": bool(vehicle.purchase_date) or norm_status == "auction payment",
                 # Consider vehicle status for posting/shipping lifecycle too
-                "Posted": bool(shipments) or norm_status in {"in shipping", "shipped", "delivered", "arrived", "in transit"},
-                "Towing": any(k in norm_status for k in ["picked", "towing", "tow"]),
+                "Posted": bool(shipments)
+                or norm_status in {"in shipping", "shipped", "delivered", "arrived", "in transit"}
+                or norm_status == "posted",
+                "Towing": any(k in norm_status for k in ["picked", "towing", "tow"]) or norm_status == "towing",
                 # Treat customs-cleared/warehouse statuses as Warehouse stage
-                "Warehouse": ("warehouse" in norm_status) or ("cleared" in norm_status),
-                # If shipments exist and not yet departed -> Loading; otherwise, shipped status implies past loading
-                "Loading": bool(shipments and not departed) or ("shipped" in norm_status) or ("in shipping" in norm_status),
-                # Shipping-related stages can also be driven by status
-                "Shipping": bool(departed) or ("shipped" in norm_status) or ("in shipping" in norm_status),
-                "Port": bool(departed) or ("shipped" in norm_status) or ("in shipping" in norm_status),
+                "Warehouse": ("warehouse" in norm_status) or ("cleared" in norm_status) or norm_status == "warehouse",
+                # If shipments exist and not yet departed -> Loading; otherwise, explicit status or shipped/in shipping implies
+                "Loading": bool(shipments and not departed)
+                or ("shipped" in norm_status)
+                or ("in shipping" in norm_status)
+                or norm_status == "loading",
+                # Shipping-related stages can also be driven by explicit status
+                "Shipping": bool(departed)
+                or ("shipped" in norm_status)
+                or ("in shipping" in norm_status)
+                or norm_status == "shipping",
+                "Port": bool(departed) or ("shipped" in norm_status) or ("in shipping" in norm_status) or norm_status == "port",
                 # In transit can mark On way even if arrival not yet known
-                "On way": bool(departed and not arrived) or ("in transit" in norm_status),
+                "On way": bool(departed and not arrived) or ("in transit" in norm_status) or norm_status == "on way",
                 # Mark Arrived if either shipment arrived or vehicle status says arrived
-                "Arrived": bool(arrived) or ("arrived" in norm_status),
+                "Arrived": bool(arrived) or ("arrived" in norm_status) or norm_status == "arrived",
                 # Delivered from shipment state or vehicle status
-                "Delivered": bool(shipment_delivered or "delivered" in norm_status),
+                "Delivered": bool(shipment_delivered or "delivered" in norm_status or norm_status == "delivered"),
             }
 
             date_map = {
