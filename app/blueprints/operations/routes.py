@@ -169,8 +169,64 @@ def cars_list():
         except Exception:
             pass
     cars = q.order_by(Vehicle.created_at.desc()).limit(200).all()
+
+    # Precompute a current tracking stage for each vehicle
+    tracking_stage = {}
+    if cars:
+        vehicle_ids = [v.id for v in cars]
+        rows = (
+            db.session.query(VehicleShipment.vehicle_id, Shipment)
+            .join(Shipment, Shipment.id == VehicleShipment.shipment_id)
+            .filter(VehicleShipment.vehicle_id.in_(vehicle_ids))
+            .order_by(Shipment.created_at.asc())
+            .all()
+        )
+        shipments_by_vehicle = {}
+        for vid, shp in rows:
+            shipments_by_vehicle.setdefault(vid, []).append(shp)
+
+        order = [
+            "New car",
+            "Cashier Payment",
+            "Auction Payment",
+            "Posted",
+            "Towing",
+            "Warehouse",
+            "Loading",
+            "Shipping",
+            "Port",
+            "On way",
+            "Arrived",
+            "Delivered",
+        ]
+
+        for v in cars:
+            shps = shipments_by_vehicle.get(v.id, [])
+            primary = shps[0] if shps else None
+            departed = bool(primary and primary.departure_date)
+            arrived = bool(primary and primary.arrival_date)
+            shipment_status = (primary.status or '').strip().lower() if primary else ''
+            norm_status = (v.status or '').strip().lower()
+
+            completed_map = {
+                "New car": True,
+                "Cashier Payment": bool(v.purchase_price_usd and float(v.purchase_price_usd) > 0),
+                "Auction Payment": bool(v.purchase_date),
+                "Posted": bool(shps) or norm_status in {"in shipping", "shipped", "delivered", "arrived", "in transit"},
+                "Towing": any(k in norm_status for k in ["picked", "towing", "tow"]),
+                "Warehouse": "warehouse" in norm_status,
+                "Loading": bool(shps and not departed),
+                "Shipping": bool(departed),
+                "Port": bool(departed),
+                "On way": bool(departed and not arrived),
+                "Arrived": bool(arrived),
+                "Delivered": bool((shipment_status == "delivered") or ("delivered" in norm_status)),
+            }
+            current = next((name for name in reversed(order) if completed_map.get(name)), None)
+            tracking_stage[v.id] = current or "-"
+
     customers = db.session.query(Customer).order_by(Customer.company_name.asc()).all()
-    return render_template('operations/cars_list.html', cars=cars, customers=customers)
+    return render_template('operations/cars_list.html', cars=cars, customers=customers, tracking_stage=tracking_stage)
 
 
 @ops_bp.route('/cars/new', methods=['GET', 'POST'])
@@ -626,3 +682,116 @@ def calendar_events():
                 'start': s.arrival_date.strftime('%Y-%m-%d'),
             })
     return jsonify(events)
+
+
+# Vehicle tracking timeline view for Operations (staff access)
+@ops_bp.route('/cars/<int:vehicle_id>/tracking')
+@role_required('employee', 'admin')
+def vehicle_tracking(vehicle_id: int):
+    from datetime import timedelta
+    v = db.session.get(Vehicle, vehicle_id)
+    if not v:
+        return ("Not found", 404)
+
+    # Gather shipments for this vehicle
+    shipments = (
+        db.session.query(Shipment)
+        .join(VehicleShipment, Shipment.id == VehicleShipment.shipment_id)
+        .filter(VehicleShipment.vehicle_id == v.id)
+        .order_by(Shipment.created_at.asc())
+        .all()
+    )
+    primary = shipments[0] if shipments else None
+
+    departed = bool(primary and primary.departure_date)
+    arrived = bool(primary and primary.arrival_date)
+    shipment_status = (primary.status or "").strip().lower() if primary else ""
+    delivered = shipment_status == "delivered"
+
+    norm_status = (v.status or "").strip().lower()
+
+    def fmt_dt(dt):
+        try:
+            return dt.strftime("%d-%m-%Y") if dt else ""
+        except Exception:
+            return ""
+
+    completed_map = {
+        "New car": True,
+        "Cashier Payment": bool(v.purchase_price_usd and float(v.purchase_price_usd) > 0),
+        "Auction Payment": bool(v.purchase_date),
+        "Posted": bool(shipments) or norm_status in {"in shipping", "shipped", "delivered", "arrived", "in transit"},
+        "Towing": any(k in norm_status for k in ["picked", "towing", "tow"]),
+        "Warehouse": "warehouse" in norm_status,
+        "Loading": bool(shipments and not departed),
+        "Shipping": bool(departed),
+        "Port": bool(departed),
+        "On way": bool(departed and not arrived),
+        "Arrived": bool(arrived),
+        "Delivered": bool(delivered or ("delivered" in norm_status)),
+    }
+
+    date_map = {
+        "New car": fmt_dt(v.created_at),
+        "Cashier Payment": fmt_dt(v.purchase_date) or fmt_dt(v.created_at),
+        "Auction Payment": fmt_dt(v.purchase_date),
+        "Posted": fmt_dt(v.created_at),
+        "Towing": "",
+        "Warehouse": "",
+        "Loading": fmt_dt(primary.departure_date - timedelta(days=1)) if departed and primary else "",
+        "Shipping": fmt_dt(primary.departure_date) if primary else "",
+        "Port": fmt_dt(primary.departure_date) if primary else "",
+        "On way": fmt_dt(primary.departure_date) if primary else "",
+        "Arrived": fmt_dt(primary.arrival_date) if primary else "",
+        "Delivered": fmt_dt(primary.arrival_date) if primary else "",
+    }
+
+    icons = {
+        "New car": "fa-car-side",
+        "Cashier Payment": "fa-money-bill-wave",
+        "Auction Payment": "fa-gavel",
+        "Posted": "fa-bullhorn",
+        "Towing": "fa-truck-pickup",
+        "Warehouse": "fa-warehouse",
+        "Loading": "fa-box-open",
+        "Shipping": "fa-ship",
+        "Port": "fa-anchor",
+        "On way": "fa-route",
+        "Arrived": "fa-flag-checkered",
+        "Delivered": "fa-circle-check",
+    }
+
+    order = [
+        "New car",
+        "Cashier Payment",
+        "Auction Payment",
+        "Posted",
+        "Towing",
+        "Warehouse",
+        "Loading",
+        "Shipping",
+        "Port",
+        "On way",
+        "Arrived",
+        "Delivered",
+    ]
+
+    stages = []
+    for name in order:
+        stages.append(
+            {
+                "name": name,
+                "icon": icons.get(name, "fa-circle"),
+                "completed": bool(completed_map.get(name)),
+                "date_str": date_map.get(name, ""),
+            }
+        )
+
+    lot_number = v.auction.lot_number if v.auction and v.auction.lot_number else "-"
+    return render_template(
+        "tracking.html",
+        vin=(v.vin or "").upper(),
+        lot_number=lot_number,
+        vehicle=v,
+        stages=stages,
+    )
