@@ -13,41 +13,42 @@
 
   <!-- Overview Cards -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-    {% for label, value in {
-      _('Users'): counts.users,
-      _('Customers'): counts.customers,
-      _('Vehicles'): counts.vehicles,
-      _('Auctions'): counts.auctions,
-      _('Shipments'): counts.shipments,
-      _('Invoices'): counts.invoices,
-      _('Cost Items'): counts.cost_items,
-      _('Backups'): counts.backups
-    }.items() %}
-    <div class="bg-blue-50 hover:bg-blue-100 transition rounded-xl p-5 shadow-sm border border-blue-100">
+    {% set overview_cards = [
+      (_('Users'), counts.users, url_for('admin.users_list')),
+      (_('Customers'), counts.customers, url_for('ops.customers_list')),
+      (_('Vehicles'), counts.vehicles, url_for('ops.cars_list')),
+      (_('Auctions'), counts.auctions, url_for('ops.cars_list', status='In Auction')),
+      (_('Shipments'), counts.shipments, url_for('ops.shipments_list')),
+      (_('Invoices'), counts.invoices, url_for('acct.invoices_list')),
+      (_('Cost Items'), counts.cost_items, url_for('acct.costs_list')),
+      (_('Backups'), counts.backups, url_for('admin.activity_log'))
+    ] %}
+    {% for label, value, href in overview_cards %}
+    <a href="{{ href }}" class="block bg-blue-50 hover:bg-blue-100 transition rounded-xl p-5 shadow-sm border border-blue-100">
       <div class="text-sm text-blue-700 font-medium">{{ label }}</div>
       <div class="text-3xl font-semibold text-blue-900 mt-1">{{ value }}</div>
-    </div>
+    </a>
     {% endfor %}
   </div>
 
   <!-- Vehicle status -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-    <div class="bg-blue-50 rounded-xl p-5 shadow-sm border border-blue-100">
+    <a href="{{ url_for('ops.cars_list', status='In Auction') }}" class="block bg-blue-50 hover:bg-blue-100 transition rounded-xl p-5 shadow-sm border border-blue-100">
       <div class="text-sm text-blue-700">🚗 سيارات لا تزال في المزاد</div>
       <div class="text-2xl font-bold text-blue-900 mt-1">{{ counts.vehicles_in_auction }}</div>
-    </div>
-    <div class="bg-blue-50 rounded-xl p-5 shadow-sm border border-blue-100">
+    </a>
+    <a href="{{ url_for('ops.cars_list', status='In Warehouse') }}" class="block bg-blue-50 hover:bg-blue-100 transition rounded-xl p-5 shadow-sm border border-blue-100">
       <div class="text-sm text-blue-700">🏢 سيارات وصلت إلى المستودع</div>
       <div class="text-2xl font-bold text-blue-900 mt-1">{{ counts.vehicles_in_warehouse }}</div>
-    </div>
-    <div class="bg-blue-50 rounded-xl p-5 shadow-sm border border-blue-100">
+    </a>
+    <a href="{{ url_for('ops.cars_list', status='No Title') }}" class="block bg-blue-50 hover:bg-blue-100 transition rounded-xl p-5 shadow-sm border border-blue-100">
       <div class="text-sm text-blue-700">📄 سيارات بدون تايتل</div>
       <div class="text-2xl font-bold text-blue-900 mt-1">{{ counts.vehicles_no_title }}</div>
-    </div>
-    <div class="bg-blue-50 rounded-xl p-5 shadow-sm border border-blue-100">
+    </a>
+    <a href="{{ url_for('ops.cars_list', status='Shipped') }}" class="block bg-blue-50 hover:bg-blue-100 transition rounded-xl p-5 shadow-sm border border-blue-100">
       <div class="text-sm text-blue-700">🚢 سيارات تم شحنها</div>
       <div class="text-2xl font-bold text-blue-900 mt-1">{{ counts.vehicles_shipped }}</div>
-    </div>
+    </a>
   </div>
 
   <!-- Revenue + Quick Links + Admin Tools -->
