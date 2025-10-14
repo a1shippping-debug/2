@@ -33,6 +33,16 @@ def login():
         flash(_("Invalid credentials"), "danger")
     return render_template("auth/login.html")
 
+@auth_bp.route("/register", methods=["GET", "POST"])
+def register():
+    """Provide a legacy alias for 'auth.register'.
+
+    Some templates or external links may reference 'auth.register'. Since
+    self-service registration isn't supported, redirect to the login page
+    to avoid BuildError and keep backward compatibility.
+    """
+    return redirect(url_for("auth.login"))
+
 @auth_bp.route("/logout")
 @login_required
 def logout():
