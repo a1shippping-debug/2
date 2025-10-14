@@ -58,14 +58,15 @@
       </a>
 
       <div class="hidden md:flex items-center gap-6 text-sm">
-        <a href="{{ url_for('auth.login') }}" class="hover:text-secondary transition">{{ _('تسجيل الدخول') }}</a>
-        <a href="{{ url_for('auth.register') }}" class="hover:text-secondary transition">{{ _('إنشاء حساب') }}</a>
-        <a href="{{ request.path }}?lang=en" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">EN</a>
-        <a href="{{ request.path }}?lang=ar" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">العربية</a>
         {% if current_user.is_authenticated %}
           <span class="text-gray-600">{{ current_user.name }}</span>
           <a href="{{ url_for('auth.logout') }}" class="text-red-500 hover:underline">{{ _('خروج') }}</a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="hover:text-secondary transition">{{ _('تسجيل الدخول') }}</a>
+          <a href="{{ url_for('auth.register') }}" class="hover:text-secondary transition">{{ _('إنشاء حساب') }}</a>
         {% endif %}
+        <a href="{{ request.path }}?lang=en" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">EN</a>
+        <a href="{{ request.path }}?lang=ar" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">العربية</a>
       </div>
 
       <!-- زر القائمة للهاتف -->
@@ -80,8 +81,13 @@
         </button>
 
         <div x-show="open" class="absolute right-4 mt-3 w-48 bg-white shadow-lg rounded-lg py-2 text-sm">
-          <a href="{{ url_for('auth.login') }}" class="block px-4 py-2 hover:bg-gray-100">{{ _('تسجيل الدخول') }}</a>
-          <a href="{{ url_for('auth.register') }}" class="block px-4 py-2 hover:bg-gray-100">{{ _('إنشاء حساب') }}</a>
+          {% if current_user.is_authenticated %}
+            <div class="px-4 py-2 text-gray-600">{{ current_user.name }}</div>
+            <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-red-600 hover:bg-gray-100">{{ _('خروج') }}</a>
+          {% else %}
+            <a href="{{ url_for('auth.login') }}" class="block px-4 py-2 hover:bg-gray-100">{{ _('تسجيل الدخول') }}</a>
+            <a href="{{ url_for('auth.register') }}" class="block px-4 py-2 hover:bg-gray-100">{{ _('إنشاء حساب') }}</a>
+          {% endif %}
           <a href="{{ request.path }}?lang=en" class="block px-4 py-2 hover:bg-gray-100">EN</a>
           <a href="{{ request.path }}?lang=ar" class="block px-4 py-2 hover:bg-gray-100">العربية</a>
         </div>
