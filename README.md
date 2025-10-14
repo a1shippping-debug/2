@@ -1,4 +1,4 @@
-# CarTrade - Flask project skeleton
+# A1 Shipping - Flask project skeleton
 
 This is a starter Flask project for managing import/export of cars between US auctions and Oman.
 

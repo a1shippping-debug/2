@@ -65,13 +65,13 @@
 <div class="min-h-screen relative overflow-hidden">
   <!-- خلفية الشعار الشفافة -->
   <div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-    <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo" class="max-w-[600px]">
+    <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="A1 Shipping" class="max-w-[600px]">
   </div>
 
   <!-- رأس الصفحة -->
   <div class="dashboard-header">
     <div class="flex items-center gap-3">
-      <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo">
+      <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="A1 Shipping">
       <h1 class="text-2xl font-bold">لوحة العميل</h1>
     </div>
     <a href="{{ url_for('cust.invoices_list') }}"

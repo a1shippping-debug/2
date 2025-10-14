@@ -4,7 +4,7 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "devkey")
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///cartrade.db")
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///a1shipping.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # Use an absolute path for uploads to avoid CWD-related issues across OSes
     UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER") or os.path.join(
