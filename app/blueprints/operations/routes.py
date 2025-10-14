@@ -3,6 +3,7 @@ from flask_login import login_required
 from ...security import role_required
 from ...extensions import db
 from ...models import Vehicle, Shipment, VehicleShipment, Customer, Notification, Auction, Document, CostItem
+from ...utils_bidcars import parse_bidcars_url
 from datetime import datetime
 
 ops_bp = Blueprint("ops", __name__, template_folder="templates/operations")
@@ -104,6 +105,18 @@ def notifications_feed():
             "read": bool(n.read),
         }
     return jsonify([row_to_dict(n) for n in rows])
+
+
+@ops_bp.route('/cars/fetch_from_bidcars', methods=['POST'])
+@role_required('employee', 'admin')
+def cars_fetch_from_bidcars():
+    data = request.get_json(silent=True) or {}
+    url = (data.get('url') or '').strip()
+    if not url:
+        return jsonify({"ok": False, "error": "Missing URL"}), 400
+    parsed = parse_bidcars_url(url)
+    status = 200 if parsed.ok else 400
+    return jsonify(parsed.to_dict()), status
 
 
 @ops_bp.route("/notifications/<int:nid>/read", methods=["POST"]) 

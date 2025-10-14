@@ -16,7 +16,10 @@
     {% endfor %}
   </select>
 
-  <input name="auction_url" placeholder="{{ _('Auction Link') }}" value="{{ vehicle.auction.auction_url if vehicle and vehicle.auction else '' }}" class="border p-2 rounded md:col-span-2">
+  <div class="md:col-span-2 flex gap-2">
+    <input id="auction_url" name="auction_url" placeholder="{{ _('Auction Link') }}" value="{{ vehicle.auction.auction_url if vehicle and vehicle.auction else '' }}" class="border p-2 rounded flex-1">
+    <button type="button" id="fetch_bidcars" class="px-3 py-2 bg-emerald-600 text-white rounded whitespace-nowrap">{{ _('Auto-Fill') }}</button>
+  </div>
   <input name="current_location" placeholder="{{ _('Current Location') }}" value="{{ vehicle.current_location if vehicle else '' }}" class="border p-2 rounded">
 
   <input type="date" name="purchase_date" class="border p-2 rounded">
@@ -54,4 +57,43 @@
   <button class="px-3 py-2 bg-gray-800 text-white rounded">{{ _('Upload') }}</button>
 </form>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const btn = document.getElementById('fetch_bidcars');
+  if (!btn) return;
+  btn.addEventListener('click', async function() {
+    const urlInput = document.getElementById('auction_url');
+    const url = (urlInput && urlInput.value || '').trim();
+    if (!url) { alert('Paste BidCars link first'); return; }
+    btn.disabled = true; const old = btn.textContent; btn.textContent = '...';
+    try {
+      const resp = await fetch('{{ url_for('ops.cars_fetch_from_bidcars') }}', {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ url })
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) { alert(data.error || 'Failed to parse'); return; }
+      const setVal = (name, val) => { const el = document.querySelector(`[name="${name}"]`); if (el && !el.value && val != null) el.value = val; };
+      setVal('vin', data.vin || '');
+      setVal('make', data.make || '');
+      setVal('model', data.model || '');
+      setVal('year', data.year || '');
+      setVal('lot_number', data.lot_number || '');
+      // provider -> auction_type select
+      if (data.provider) {
+        const sel = document.querySelector('[name="auction_type"]');
+        if (sel) {
+          for (const opt of sel.options) { if ((opt.value || '').toLowerCase() === data.provider.toLowerCase()) { opt.selected = true; break; } }
+        }
+      }
+    } catch (e) {
+      alert('Network error');
+    } finally {
+      btn.disabled = false; btn.textContent = old;
+    }
+  });
+})();
+</script>
 {% endblock %}
