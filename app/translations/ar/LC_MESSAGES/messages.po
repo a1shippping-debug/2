@@ -11,6 +11,402 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0?0:n==1?1:n==2?2:n%100>=3 && n%100<=10?3:n%100>=11 && n%100<=99?4:5;\n"
 
+# Newly added UI strings
+msgid "CarTrade"
+msgstr "كار تريد"
+
+msgid "Login"
+msgstr "تسجيل الدخول"
+
+msgid "Use"
+msgstr "استخدم"
+
+msgid "after visiting"
+msgstr "بعد زيارة"
+
+msgid "Forbidden"
+msgstr "ممنوع"
+
+msgid "You don't have permission to access this page."
+msgstr "ليس لديك صلاحية للوصول إلى هذه الصفحة."
+
+msgid "Go Home"
+msgstr "العودة للرئيسية"
+
+msgid "Cars"
+msgstr "السيارات"
+
+msgid "Add Car"
+msgstr "إضافة سيارة"
+
+msgid "Client"
+msgstr "العميل"
+
+msgid "Filter"
+msgstr "تصفية"
+
+msgid "Lot"
+msgstr "اللوت"
+
+msgid "Location"
+msgstr "الموقع"
+
+msgid "Auction"
+msgstr "المزاد"
+
+msgid "Shipment"
+msgstr "الشحنة"
+
+msgid "Actions"
+msgstr "الإجراءات"
+
+msgid "Link"
+msgstr "رابط"
+
+msgid "Delete?"
+msgstr "حذف؟"
+
+msgid "Export CSV"
+msgstr "تصدير CSV"
+
+msgid "Edit Car"
+msgstr "تعديل السيارة"
+
+msgid "Add Car"
+msgstr "إضافة سيارة"
+
+msgid "Lot Number"
+msgstr "رقم اللوت"
+
+msgid "Auction Type"
+msgstr "نوع المزاد"
+
+msgid "Auction Link"
+msgstr "رابط المزاد"
+
+msgid "Current Location"
+msgstr "الموقع الحالي"
+
+msgid "Purchase Price (USD)"
+msgstr "سعر الشراء (دولار)"
+
+msgid "Auction Fees"
+msgstr "رسوم المزاد"
+
+msgid "Local Transport Cost"
+msgstr "تكلفة النقل المحلي"
+
+msgid "Upload Photos"
+msgstr "رفع الصور"
+
+msgid "Upload Documents"
+msgstr "رفع المستندات"
+
+msgid "Upload"
+msgstr "رفع"
+
+msgid "Customers"
+msgstr "العملاء"
+
+msgid "Add Customer"
+msgstr "إضافة عميل"
+
+msgid "Search"
+msgstr "بحث"
+
+msgid "Country"
+msgstr "الدولة"
+
+msgid "Operations Dashboard"
+msgstr "لوحة عمليات التشغيل"
+
+msgid "Notifications"
+msgstr "الإشعارات"
+
+msgid "Mark read"
+msgstr "تحديد كمقروء"
+
+msgid "No notifications"
+msgstr "لا توجد إشعارات"
+
+msgid "Total Cars"
+msgstr "إجمالي السيارات"
+
+msgid "In Transit"
+msgstr "قيد الشحن"
+
+msgid "Arrived"
+msgstr "وصلت"
+
+msgid "Open Shipments"
+msgstr "شحنات مفتوحة"
+
+msgid "Monthly Shipped Cars"
+msgstr "السيارات المشحونة شهرياً"
+
+msgid "Latest Vehicles"
+msgstr "أحدث المركبات"
+
+msgid "Edit Shipment"
+msgstr "تعديل الشحنة"
+
+msgid "Create Shipment"
+msgstr "إنشاء شحنة"
+
+msgid "Shipment No"
+msgstr "رقم الشحنة"
+
+msgid "Shipping Company"
+msgstr "شركة الشحن"
+
+msgid "Port From"
+msgstr "ميناء الانطلاق"
+
+msgid "Port To"
+msgstr "ميناء الوصول"
+
+msgid "Container No."
+msgstr "رقم الحاوية"
+
+msgid "Freight (USD)"
+msgstr "الشحن (دولار)"
+
+msgid "Insurance (USD)"
+msgstr "التأمين (دولار)"
+
+msgid "Attach Vehicles"
+msgstr "إرفاق المركبات"
+
+msgid "Upload BOL (PDF)"
+msgstr "رفع بوليصة الشحن (PDF)"
+
+msgid "Shipment saved."
+msgstr "تم حفظ الشحنة."
+
+msgid "Accounting Portal"
+msgstr "بوابة المحاسبة"
+
+msgid "International Costs"
+msgstr "التكاليف الدولية"
+
+msgid "Payments"
+msgstr "المدفوعات"
+
+msgid "Bill of Lading"
+msgstr "بوليصة الشحن"
+
+msgid "Financial Reports"
+msgstr "تقارير مالية"
+
+msgid "Total Revenue (OMR)"
+msgstr "إجمالي الإيرادات (ر.ع)"
+
+msgid "Total Expenses (OMR)"
+msgstr "إجمالي المصروفات (ر.ع)"
+
+msgid "Net Profit (OMR)"
+msgstr "صافي الربح (ر.ع)"
+
+msgid "Vehicles Priced"
+msgstr "المركبات المسعّرة"
+
+msgid "Monthly Revenue"
+msgstr "الإيرادات الشهرية"
+
+msgid "Expenses by Category"
+msgstr "المصروفات حسب الفئة"
+
+msgid "New Invoice"
+msgstr "فاتورة جديدة"
+
+msgid "Customer"
+msgstr "العميل"
+
+msgid "Select"
+msgstr "اختر"
+
+msgid "Items"
+msgstr "العناصر"
+
+msgid "Add"
+msgstr "إضافة"
+
+msgid "Description"
+msgstr "الوصف"
+
+msgid "Amount (OMR)"
+msgstr "المبلغ (ر.ع)"
+
+msgid "Create"
+msgstr "إنشاء"
+
+msgid "Cancel"
+msgstr "إلغاء"
+
+msgid "Invoice No"
+msgstr "رقم الفاتورة"
+
+msgid "Date"
+msgstr "التاريخ"
+
+msgid "No invoices."
+msgstr "لا توجد فواتير."
+
+msgid "Edit Invoice"
+msgstr "تعديل الفاتورة"
+
+msgid "Total:"
+msgstr "الإجمالي:"
+
+msgid "OMR"
+msgstr "ر.ع"
+
+msgid "Back"
+msgstr "رجوع"
+
+msgid "Email"
+msgstr "البريد الإلكتروني"
+
+msgid "Monthly Revenue vs Expenses"
+msgstr "الإيرادات الشهرية مقابل المصروفات"
+
+msgid "Revenue"
+msgstr "الإيرادات"
+
+msgid "Expenses"
+msgstr "المصروفات"
+
+msgid "BOL #"
+msgstr "رقم البوليصة"
+
+msgid "Existing BOLs"
+msgstr "بوالص حالية"
+
+msgid "email"
+msgstr "البريد"
+
+msgid "Send"
+msgstr "إرسال"
+
+msgid "No BOLs."
+msgstr "لا توجد بوالص."
+
+msgid "Create New"
+msgstr "إنشاء جديد"
+
+msgid "BOL Number (optional)"
+msgstr "رقم البوليصة (اختياري)"
+
+msgid "Shipments"
+msgstr "الشحنات"
+
+msgid "Create Shipment"
+msgstr "إنشاء شحنة"
+
+msgid "Type"
+msgstr "النوع"
+
+msgid "Departure"
+msgstr "المغادرة"
+
+msgid "Cars"
+msgstr "السيارات"
+
+msgid "Not found"
+msgstr "غير موجود"
+
+msgid "Vehicle not found"
+msgstr "لم يتم العثور على المركبة"
+
+msgid "Costs saved"
+msgstr "تم حفظ التكاليف"
+
+msgid "Failed to save costs"
+msgstr "فشل حفظ التكاليف"
+
+msgid "Invoice created"
+msgstr "تم إنشاء الفاتورة"
+
+msgid "Failed to create invoice"
+msgstr "فشل إنشاء الفاتورة"
+
+msgid "Invoice not found"
+msgstr "لم يتم العثور على الفاتورة"
+
+msgid "Invoice updated"
+msgstr "تم تحديث الفاتورة"
+
+msgid "Failed to update invoice"
+msgstr "فشل تحديث الفاتورة"
+
+msgid "Invoice deleted"
+msgstr "تم حذف الفاتورة"
+
+msgid "Failed to delete invoice"
+msgstr "فشل حذف الفاتورة"
+
+msgid "Missing customer email"
+msgstr "البريد الإلكتروني للعميل غير موجود"
+
+msgid "Invoice %(n)s"
+msgstr "فاتورة %(n)s"
+
+msgid "Please find attached invoice %(n)s."
+msgstr "الرجاء العثور على الفاتورة المرفقة %(n)s."
+
+msgid "Email sent"
+msgstr "تم إرسال البريد"
+
+msgid "Failed to send email"
+msgstr "فشل إرسال البريد"
+
+msgid "Invalid invoice"
+msgstr "فاتورة غير صالحة"
+
+msgid "Payment recorded"
+msgstr "تم تسجيل الدفع"
+
+msgid "Failed to save payment"
+msgstr "فشل حفظ الدفع"
+
+msgid "BOL created"
+msgstr "تم إنشاء البوليصة"
+
+msgid "Failed to create BOL"
+msgstr "فشل إنشاء البوليصة"
+
+msgid "Recipient email required"
+msgstr "البريد الإلكتروني للمستلم مطلوب"
+
+msgid "BOL not found"
+msgstr "لم يتم العثور على البوليصة"
+
+msgid "No file uploaded"
+msgstr "لم يتم رفع أي ملف"
+
+msgid "BOL uploaded"
+msgstr "تم رفع البوليصة"
+
+msgid "Monthly Profit & Loss"
+msgstr "الربح والخسارة الشهري"
+
+msgid "Month"
+msgstr "الشهر"
+
+msgid "Profit"
+msgstr "الربح"
+
+msgid "Invoices by Client"
+msgstr "الفواتير حسب العميل"
+
+msgid "Customs (OMR)"
+msgstr "الجمارك (ر.ع)"
+
+msgid "VAT (OMR)"
+msgstr "ضريبة القيمة المضافة (ر.ع)"
+
+msgid "Customs & VAT by Month"
+msgstr "الجمارك والضريبة حسب الشهر"
 #: app/templates/base_admin.html
 msgid "Admin"
 msgstr "لوحة التحكم"

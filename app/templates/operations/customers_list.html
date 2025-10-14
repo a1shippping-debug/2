@@ -1,24 +1,24 @@
 {% extends "layout.html" %}
-{% block title %}Customers{% endblock %}
+{% block title %}{{ _('Customers') }}{% endblock %}
 {% block content %}
 <div class="flex items-center justify-between mb-4">
-  <h1 class="text-xl font-semibold">Customers</h1>
-  <a href="{{ url_for('ops.customers_new') }}" class="px-3 py-2 bg-blue-600 text-white rounded">Add Customer</a>
+  <h1 class="text-xl font-semibold">{{ _('Customers') }}</h1>
+  <a href="{{ url_for('ops.customers_new') }}" class="px-3 py-2 bg-blue-600 text-white rounded">{{ _('Add Customer') }}</a>
 </div>
 <form method="get" class="bg-white p-3 rounded shadow mb-4 grid grid-cols-1 md:grid-cols-3 gap-2">
-  <input name="name" value="{{ request.args.get('name','') }}" placeholder="Name" class="border p-2 rounded">
-  <input name="email" value="{{ request.args.get('email','') }}" placeholder="Email" class="border p-2 rounded">
-  <button class="px-3 py-2 bg-gray-800 text-white rounded">Search</button>
+  <input name="name" value="{{ request.args.get('name','') }}" placeholder="{{ _('Name') }}" class="border p-2 rounded">
+  <input name="email" value="{{ request.args.get('email','') }}" placeholder="{{ _('Email') }}" class="border p-2 rounded">
+  <button class="px-3 py-2 bg-gray-800 text-white rounded">{{ _('Search') }}</button>
 </form>
 <div class="bg-white rounded shadow overflow-x-auto">
   <table class="min-w-full text-sm">
     <thead>
       <tr class="text-left text-gray-500">
-        <th class="py-2 px-3">Name</th>
-        <th class="py-2 px-3">Email</th>
-        <th class="py-2 px-3">Phone</th>
-        <th class="py-2 px-3">Country</th>
-        <th class="py-2 px-3">Actions</th>
+        <th class="py-2 px-3">{{ _('Name') }}</th>
+        <th class="py-2 px-3">{{ _('Email') }}</th>
+        <th class="py-2 px-3">{{ _('Phone') }}</th>
+        <th class="py-2 px-3">{{ _('Country') }}</th>
+        <th class="py-2 px-3">{{ _('Actions') }}</th>
       </tr>
     </thead>
     <tbody>
@@ -29,8 +29,8 @@
         <td class="py-2 px-3">{{ c.phone or '-' }}</td>
         <td class="py-2 px-3">{{ c.country or '-' }}</td>
         <td class="py-2 px-3 space-x-2">
-          <a href="{{ url_for('ops.customers_edit', customer_id=c.id) }}" class="text-blue-600">Edit</a>
-          <form action="{{ url_for('ops.customers_delete', customer_id=c.id) }}" method="post" class="inline" onsubmit="return confirm('Delete?')"><button class="text-red-600">Delete</button></form>
+          <a href="{{ url_for('ops.customers_edit', customer_id=c.id) }}" class="text-blue-600">{{ _('Edit') }}</a>
+          <form action="{{ url_for('ops.customers_delete', customer_id=c.id) }}" method="post" class="inline" onsubmit="return confirm('{{ _('Delete?') }}')"><button class="text-red-600">{{ _('Delete') }}</button></form>
         </td>
       </tr>
       {% endfor %}

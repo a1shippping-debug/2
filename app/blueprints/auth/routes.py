@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_babel import gettext as _
 from ...extensions import db
 from ...models import User, Role, AuditLog
 from ...extensions import db
@@ -29,7 +30,7 @@ def login():
             if role == "accountant":
                 return redirect(url_for("acct.dashboard"))
             return redirect(url_for("cust.dashboard"))
-        flash("Invalid credentials", "danger")
+        flash(_("Invalid credentials"), "danger")
     return render_template("auth/login.html")
 
 @auth_bp.route("/logout")

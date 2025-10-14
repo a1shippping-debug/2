@@ -1,22 +1,24 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ g.get('lang_code', 'en') }}" {% if g.get('lang_code') == 'ar' %}dir="rtl"{% endif %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{% block title %}CarTrade{% endblock %}</title>
+  <title>{% block title %}{{ _('CarTrade') }}{% endblock %}</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2/dist/tailwind.min.css" rel="stylesheet">
   <script src="https://unpkg.com/alpinejs" defer></script>
 </head>
 <body class="bg-gray-100 text-gray-800">
   <nav class="bg-white shadow mb-6">
     <div class="container mx-auto px-4 py-3 flex justify-between">
-      <div class="font-bold text-xl text-blue-600">CarTrade</div>
-      <div>
+      <div class="font-bold text-xl text-blue-600">{{ _('CarTrade') }}</div>
+      <div class="space-x-3">
+        <a href="{{ request.path }}?lang=en" class="text-sm px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">EN</a>
+        <a href="{{ request.path }}?lang=ar" class="text-sm px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">العربية</a>
         {% if current_user.is_authenticated %}
-          <span class="mr-4">{{ current_user.name }}</span>
-          <a href="{{ url_for('auth.logout') }}" class="text-sm">Logout</a>
+          <span class="mr-2">{{ current_user.name }}</span>
+          <a href="{{ url_for('auth.logout') }}" class="text-sm">{{ _('Logout') }}</a>
         {% else %}
-          <a href="{{ url_for('auth.login') }}">Login</a>
+          <a href="{{ url_for('auth.login') }}">{{ _('Login') }}</a>
         {% endif %}
       </div>
     </div>

@@ -1,17 +1,17 @@
 {% extends "base_admin.html" %}
-{% block title %}Accounting{% endblock %}
-{% block header %}{% if g.get('lang_code') == 'ar' %}بوابة المحاسب{% else %}Accounting Portal{% endif %}{% endblock %}
+{% block title %}{{ _('Accounting') }}{% endblock %}
+{% block header %}{{ _('Accounting Portal') }}{% endblock %}
 {% block content %}
 <div class="grid grid-cols-12 gap-4">
   <aside class="col-span-12 md:col-span-2">
     <nav class="sticky top-4 space-y-1 text-sm">
-      <a href="{{ url_for('acct.dashboard') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint=='acct.dashboard' %}bg-slate-800{% endif %}">Dashboard</a>
-      <a href="{{ url_for('acct.costs_list') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('acct.costs') %}bg-slate-800{% endif %}">International Costs</a>
-      <a href="{{ url_for('acct.invoices_list') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('acct.invoices') %}bg-slate-800{% endif %}">Invoices</a>
-      <a href="{{ url_for('acct.payments_list') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('acct.payments') %}bg-slate-800{% endif %}">Payments</a>
-      <a href="{{ url_for('acct.bol_list') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('acct.bol') %}bg-slate-800{% endif %}">Bill of Lading</a>
-      <a href="{{ url_for('acct.reports') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('acct.reports') %}bg-slate-800{% endif %}">Reports</a>
-      <a href="{{ url_for('acct.settings') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint=='acct.settings' %}bg-slate-800{% endif %}">Settings</a>
+      <a href="{{ url_for('acct.dashboard') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint=='acct.dashboard' %}bg-slate-800{% endif %}">{{ _('Dashboard') }}</a>
+      <a href="{{ url_for('acct.costs_list') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('acct.costs') %}bg-slate-800{% endif %}">{{ _('International Costs') }}</a>
+      <a href="{{ url_for('acct.invoices_list') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('acct.invoices') %}bg-slate-800{% endif %}">{{ _('Invoices') }}</a>
+      <a href="{{ url_for('acct.payments_list') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('acct.payments') %}bg-slate-800{% endif %}">{{ _('Payments') }}</a>
+      <a href="{{ url_for('acct.bol_list') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('acct.bol') %}bg-slate-800{% endif %}">{{ _('Bill of Lading') }}</a>
+      <a href="{{ url_for('acct.reports') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('acct.reports') %}bg-slate-800{% endif %}">{{ _('Reports') }}</a>
+      <a href="{{ url_for('acct.settings') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint=='acct.settings' %}bg-slate-800{% endif %}">{{ _('Settings') }}</a>
     </nav>
   </aside>
   <section class="col-span-12 md:col-span-10">
