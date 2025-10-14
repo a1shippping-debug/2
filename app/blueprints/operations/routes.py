@@ -3,7 +3,7 @@ from flask_babel import gettext as _
 from flask_login import login_required
 from ...security import role_required
 from ...extensions import db
-from ...models import Vehicle, Shipment, VehicleShipment, Customer, Notification, Auction, Document, CostItem
+from ...models import Vehicle, Shipment, VehicleShipment, Customer, Notification, Auction, Document, CostItem, User, Role
 from datetime import datetime
 
 ops_bp = Blueprint("ops", __name__, template_folder="templates/operations")
@@ -647,11 +647,12 @@ def customers_new():
             account_number=account_number or None,
         )
 
-        # Required fields on create: name (company or full), phone, country, card number
+        # Required fields on create: name (company or full), phone, country, card number, email
         has_name = bool(company_name or full_name)
         has_phone = bool(phone)
         has_country = bool(country)
         has_card = bool(account_number)
+        has_email = bool(email)
 
         if not has_name:
             flash(_('الاسم مطلوب (اسم الشركة أو الاسم الكامل)'), 'danger')
@@ -661,14 +662,71 @@ def customers_new():
             flash(_('الدولة مطلوبة'), 'danger')
         if not has_card:
             flash(_('رقم البطاقة مطلوب'), 'danger')
-        if not (has_name and has_phone and has_country and has_card):
+        if not has_email:
+            flash(_('البريد الإلكتروني مطلوب'), 'danger')
+        if not (has_name and has_phone and has_country and has_card and has_email):
             return render_template('operations/customer_form.html', customer=c)
 
+        # Ensure user email is unique for login
+        try:
+            existing = (
+                db.session.query(User)
+                .filter(db.func.lower(User.email) == email.lower())
+                .first()
+            )
+        except Exception:
+            existing = None
+        if existing:
+            flash(_('هذا البريد الإلكتروني مستخدم بالفعل'), 'danger')
+            return render_template('operations/customer_form.html', customer=c)
+
+        # Create a login user for this customer with a generated password
+        import secrets, string
+
+        def _generate_password(length: int = 10) -> str:
+            alphabet = string.ascii_letters + string.digits
+            # Ensure at least one letter and one digit
+            while True:
+                pw = ''.join(secrets.choice(alphabet) for _ in range(length))
+                if any(ch.isalpha() for ch in pw) and any(ch.isdigit() for ch in pw):
+                    return pw
+
+        temp_password = _generate_password(10)
+
+        # Ensure 'customer' role exists
+        role_customer = db.session.query(Role).filter(db.func.lower(Role.name) == 'customer').first()
+        if not role_customer:
+            role_customer = Role(name='customer')
+            db.session.add(role_customer)
+            db.session.flush()
+
+        user = User(
+            name=(company_name or full_name) or None,
+            email=email,
+            phone=phone or None,
+            role=role_customer,
+            active=True,
+        )
+        user.set_password(temp_password)
+
+        db.session.add(user)
+        db.session.flush()
+
+        # Link customer to the created user
+        c.user_id = user.id
         db.session.add(c)
         try:
             db.session.commit()
             notify(f"Customer {c.company_name or c.full_name} added", 'Customer', c.id)
             flash(_('Customer saved successfully'), 'success')
+            # Provide login credentials to staff to share with the customer
+            try:
+                flash(_('Email: %(email)s', email=email), 'info')
+                flash(_('Temporary password: %(password)s', password=temp_password), 'info')
+            except Exception:
+                # Best-effort: ignore translation/format issues
+                flash(f"Email: {email}", 'info')
+                flash(f"Temporary password: {temp_password}", 'info')
             return redirect(url_for('ops.customers_edit', customer_id=c.id))
         except Exception as e:
             current_app.logger.exception('Failed to save customer')
@@ -679,7 +737,10 @@ def customers_new():
             if 'no such column' in text or 'does not exist' in text:
                 message = _('Database schema is outdated. Please run the database migrations.')
             elif 'unique constraint' in text or 'unique failed' in text:
-                message = _('Account number already exists')
+                if 'users' in text or 'email' in text:
+                    message = _('User email already exists')
+                else:
+                    message = _('Account number already exists')
             flash(message, 'danger')
             return render_template('operations/customer_form.html', customer=c)
     return render_template('operations/customer_form.html')
