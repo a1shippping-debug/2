@@ -2,39 +2,113 @@
 <html lang="{{ g.get('lang_code', 'en') }}" {% if g.get('lang_code') == 'ar' %}dir="rtl"{% endif %}>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ _('CarTrade') }}{% endblock %}</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2/dist/tailwind.min.css" rel="stylesheet">
+
+  <!-- الخطوط -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- إعداد الألوان -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#003366', // الأزرق الغامق
+            secondary: '#0066cc', // الأزرق الفاتح
+          },
+          fontFamily: {
+            sans: ['Tajawal', 'ui-sans-serif', 'system-ui']
+          },
+          boxShadow: {
+            soft: '0 8px 30px rgba(0, 0, 0, 0.05)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js -->
   <script src="https://unpkg.com/alpinejs" defer></script>
+
+  <style>
+    html, body {
+      scroll-behavior: smooth;
+    }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeDown { animation: fadeDown .7s ease forwards; }
+  </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
-  <nav class="bg-white shadow mb-6">
-    <div class="container mx-auto px-4 py-3 flex justify-between">
-      <div class="font-bold text-xl text-blue-600">{{ _('CarTrade') }}</div>
-      <div class="space-x-3">
-        <a href="{{ request.path }}?lang=en" class="text-sm px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">EN</a>
-        <a href="{{ request.path }}?lang=ar" class="text-sm px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">العربية</a>
+
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+  <!-- الشريط العلوي -->
+  <nav class="bg-white shadow-md fixed top-0 w-full z-50 animate-fadeDown">
+    <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+      <a href="/" class="flex items-center gap-2 text-primary font-extrabold text-2xl tracking-tight">
+        🚘 CarTrade
+      </a>
+
+      <div class="hidden md:flex items-center gap-6 text-sm">
+        <a href="{{ url_for('auth.login') }}" class="hover:text-secondary transition">{{ _('تسجيل الدخول') }}</a>
+        <a href="{{ url_for('auth.register') }}" class="hover:text-secondary transition">{{ _('إنشاء حساب') }}</a>
+        <a href="{{ request.path }}?lang=en" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">EN</a>
+        <a href="{{ request.path }}?lang=ar" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">العربية</a>
         {% if current_user.is_authenticated %}
-          <span class="mr-2">{{ current_user.name }}</span>
-          <a href="{{ url_for('auth.logout') }}" class="text-sm">{{ _('Logout') }}</a>
-        {% else %}
-          <a href="{{ url_for('auth.login') }}">{{ _('Login') }}</a>
+          <span class="text-gray-600">{{ current_user.name }}</span>
+          <a href="{{ url_for('auth.logout') }}" class="text-red-500 hover:underline">{{ _('خروج') }}</a>
         {% endif %}
+      </div>
+
+      <!-- زر القائمة للهاتف -->
+      <div class="md:hidden" x-data="{ open: false }">
+        <button @click="open = !open" class="text-primary focus:outline-none">
+          <svg x-show="!open" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+          <svg x-show="open" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+
+        <div x-show="open" class="absolute right-4 mt-3 w-48 bg-white shadow-lg rounded-lg py-2 text-sm">
+          <a href="{{ url_for('auth.login') }}" class="block px-4 py-2 hover:bg-gray-100">{{ _('تسجيل الدخول') }}</a>
+          <a href="{{ url_for('auth.register') }}" class="block px-4 py-2 hover:bg-gray-100">{{ _('إنشاء حساب') }}</a>
+          <a href="{{ request.path }}?lang=en" class="block px-4 py-2 hover:bg-gray-100">EN</a>
+          <a href="{{ request.path }}?lang=ar" class="block px-4 py-2 hover:bg-gray-100">العربية</a>
+        </div>
       </div>
     </div>
   </nav>
 
-  <div class="container mx-auto px-4">
+  <!-- محتوى الصفحة -->
+  <main class="pt-24 container mx-auto px-4">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for cat, msg in messages %}
-          <div class="mb-4 p-3 rounded {{ 'bg-red-100' if cat=='danger' else 'bg-green-100' }}">{{ msg }}</div>
+          <div class="mb-4 p-4 rounded-lg shadow-soft border {{ 'bg-green-50 border-green-300 text-green-800' if cat=='success' else 'bg-red-50 border-red-300 text-red-800' }}">
+            {{ msg }}
+          </div>
         {% endfor %}
       {% endif %}
     {% endwith %}
 
     {% block content %}{% endblock %}
-  </div>
+  </main>
+
+  <!-- التذييل -->
+  <footer class="mt-20 py-8 bg-white border-t text-center text-gray-500 text-sm">
+    © {{ _('2025 CarTrade. جميع الحقوق محفوظة') }}
+  </footer>
+
 </body>
 {% block scripts %}{% endblock %}
 </html>
