@@ -1,155 +1,215 @@
 {% extends "base_admin.html" %}
-{% block title %}{{ _('Admin Dashboard') }}{% endblock %}
-{% block header %}{{ _('Dashboard') }}{% endblock %}
+{% block title %}{{ _('Admin Dashboard') }} - A1 Auto Shipping{% endblock %}
+
+{% block header %}
+<div class="flex items-center space-x-4 mb-6">
+<img src="{{ url_for('static', filename='logo.jpeg') }}" alt="A1 Auto Shipping" class="h-12">
+  <h1 class="text-3xl font-bold text-blue-800 tracking-wide">{{ _('Admin Dashboard') }}</h1>
+</div>
+{% endblock %}
+
 {% block content %}
-<h1 class="text-2xl mb-4">{{ _('Admin Dashboard') }}</h1>
+<div class="p-6 bg-white rounded-2xl shadow-lg border border-gray-100">
 
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Users') }}</div><div class="text-2xl font-semibold">{{ counts.users }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Customers') }}</div><div class="text-2xl font-semibold">{{ counts.customers }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Vehicles') }}</div><div class="text-2xl font-semibold">{{ counts.vehicles }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Auctions') }}</div><div class="text-2xl font-semibold">{{ counts.auctions }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Shipments') }}</div><div class="text-2xl font-semibold">{{ counts.shipments }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Invoices') }}</div><div class="text-2xl font-semibold">{{ counts.invoices }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Cost Items') }}</div><div class="text-2xl font-semibold">{{ counts.cost_items }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">{{ _('Backups') }}</div><div class="text-2xl font-semibold">{{ counts.backups }}</div></div>
-</div>
-
-<!-- Vehicle status cards (Arabic labels) -->
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">سيارات لا تزال في المزاد</div><div class="text-2xl font-semibold">{{ counts.vehicles_in_auction }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">سيارات وصلت إلى المستودع</div><div class="text-2xl font-semibold">{{ counts.vehicles_in_warehouse }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">سيارات بدون تايتل</div><div class="text-2xl font-semibold">{{ counts.vehicles_no_title }}</div></div>
-  <div class="p-4 bg-white rounded shadow"><div class="text-sm text-gray-500">سيارات تم شحنها</div><div class="text-2xl font-semibold">{{ counts.vehicles_shipped }}</div></div>
-</div>
-
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-  <div class="bg-white rounded shadow p-4">
-    <div class="flex items-center justify-between mb-2">
-      <h2 class="font-semibold">{{ _('Overview') }}</h2>
-      <div class="text-sm text-gray-500">{{ _('Revenue (OMR)') }}</div>
+  <!-- Overview Cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    {% for label, value in {
+      _('Users'): counts.users,
+      _('Customers'): counts.customers,
+      _('Vehicles'): counts.vehicles,
+      _('Auctions'): counts.auctions,
+      _('Shipments'): counts.shipments,
+      _('Invoices'): counts.invoices,
+      _('Cost Items'): counts.cost_items,
+      _('Backups'): counts.backups
+    }.items() %}
+    <div class="bg-blue-50 hover:bg-blue-100 transition rounded-xl p-5 shadow-sm border border-blue-100">
+      <div class="text-sm text-blue-700 font-medium">{{ label }}</div>
+      <div class="text-3xl font-semibold text-blue-900 mt-1">{{ value }}</div>
     </div>
-    <div class="text-3xl font-bold">{{ '%.3f'|format(totals.revenue_omr or 0) }}</div>
+    {% endfor %}
   </div>
 
-  <div class="bg-white rounded shadow p-4">
-    <h2 class="font-semibold mb-2">{{ _('Quick Links') }}</h2>
-    <ul class="space-y-2 list-disc list-inside text-blue-600">
-      <li><a href="{{ url_for('auth.init_sample') }}">{{ _('Init sample roles/users') }}</a></li>
-      <li><a href="{{ url_for('ops.dashboard') }}">{{ _('Operations') }}</a></li>
-      <li><a href="{{ url_for('acct.dashboard') }}">{{ _('Accounting') }}</a></li>
-      <li><a href="{{ url_for('cust.dashboard') }}">{{ _('Customer portal') }}</a></li>
-    </ul>
+  <!-- Vehicle status -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    <div class="bg-blue-50 rounded-xl p-5 shadow-sm border border-blue-100">
+      <div class="text-sm text-blue-700">🚗 سيارات لا تزال في المزاد</div>
+      <div class="text-2xl font-bold text-blue-900 mt-1">{{ counts.vehicles_in_auction }}</div>
+    </div>
+    <div class="bg-blue-50 rounded-xl p-5 shadow-sm border border-blue-100">
+      <div class="text-sm text-blue-700">🏢 سيارات وصلت إلى المستودع</div>
+      <div class="text-2xl font-bold text-blue-900 mt-1">{{ counts.vehicles_in_warehouse }}</div>
+    </div>
+    <div class="bg-blue-50 rounded-xl p-5 shadow-sm border border-blue-100">
+      <div class="text-sm text-blue-700">📄 سيارات بدون تايتل</div>
+      <div class="text-2xl font-bold text-blue-900 mt-1">{{ counts.vehicles_no_title }}</div>
+    </div>
+    <div class="bg-blue-50 rounded-xl p-5 shadow-sm border border-blue-100">
+      <div class="text-sm text-blue-700">🚢 سيارات تم شحنها</div>
+      <div class="text-2xl font-bold text-blue-900 mt-1">{{ counts.vehicles_shipped }}</div>
+    </div>
   </div>
 
-  <div class="bg-white rounded shadow p-4">
-    <h2 class="font-semibold mb-2">{{ _('Admin Tools') }}</h2>
-    <ul class="space-y-2 list-disc list-inside">
-      <li><a class="text-blue-600" href="{{ url_for('admin.users_list') }}">{{ _('Manage Users') }}</a></li>
-      <li><a class="text-blue-600" href="#">{{ _('Roles & Permissions') }}</a></li>
-      <li><a class="text-blue-600" href="#">{{ _('System Backups') }}</a></li>
-      <li><a class="text-blue-600" href="#">{{ _('Audit Logs') }}</a></li>
-    </ul>
-  </div>
-</div>
+  <!-- Revenue + Quick Links + Admin Tools -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+    <div class="bg-white rounded-xl border border-blue-100 shadow-sm p-5">
+      <h2 class="font-semibold text-blue-900 mb-2">{{ _('Overview') }}</h2>
+      <div class="text-sm text-gray-500">{{ _('Revenue (OMR)') }}</div>
+      <div class="text-4xl font-bold text-blue-800 mt-2">{{ '%.3f'|format(totals.revenue_omr or 0) }}</div>
+    </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  <div class="bg-white rounded shadow p-4">
-    <h2 class="font-semibold mb-3">{{ _('Recent Vehicles') }}</h2>
-    <table class="w-full text-sm">
-      <thead><tr class="text-left text-gray-500"><th>{{ _('VIN') }}</th><th>{{ _('Make') }}</th><th>{{ _('Model') }}</th><th>{{ _('Year') }}</th></tr></thead>
-      <tbody>
-      {% for v in recent.vehicles %}
-        <tr class="border-t"><td class="py-1">{{ v.vin }}</td><td>{{ v.make }}</td><td>{{ v.model }}</td><td>{{ v.year }}</td></tr>
-      {% else %}
-        <tr><td colspan="4" class="py-2 text-gray-400">{{ _('No vehicles yet') }}</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    <div class="bg-white rounded-xl border border-blue-100 shadow-sm p-5">
+      <h2 class="font-semibold text-blue-900 mb-3">{{ _('Quick Links') }}</h2>
+      <ul class="space-y-2 text-blue-700 font-medium">
+        <li><a href="{{ url_for('auth.init_sample') }}" class="hover:underline">{{ _('Init sample roles/users') }}</a></li>
+        <li><a href="{{ url_for('ops.dashboard') }}" class="hover:underline">{{ _('Operations') }}</a></li>
+        <li><a href="{{ url_for('acct.dashboard') }}" class="hover:underline">{{ _('Accounting') }}</a></li>
+        <li><a href="{{ url_for('cust.dashboard') }}" class="hover:underline">{{ _('Customer portal') }}</a></li>
+      </ul>
+    </div>
 
-  <div class="bg-white rounded shadow p-4">
-    <h2 class="font-semibold mb-3">{{ _('Recent Shipments') }}</h2>
-    <table class="w-full text-sm">
-      <thead><tr class="text-left text-gray-500"><th>#</th><th>{{ _('Origin') }}</th><th>{{ _('Destination') }}</th><th>{{ _('Status') }}</th></tr></thead>
-      <tbody>
-      {% for s in recent.shipments %}
-        <tr class="border-t"><td class="py-1">{{ s.shipment_number }}</td><td>{{ s.origin_port }}</td><td>{{ s.destination_port }}</td><td>{{ s.status }}</td></tr>
-      {% else %}
-        <tr><td colspan="4" class="py-2 text-gray-400">{{ _('No shipments yet') }}</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
+    <div class="bg-white rounded-xl border border-blue-100 shadow-sm p-5">
+      <h2 class="font-semibold text-blue-900 mb-3">{{ _('Admin Tools') }}</h2>
+      <ul class="space-y-2 text-blue-700 font-medium">
+        <li><a href="{{ url_for('admin.users_list') }}" class="hover:underline">{{ _('Manage Users') }}</a></li>
+        <li><a href="#" class="hover:underline">{{ _('Roles & Permissions') }}</a></li>
+        <li><a href="#" class="hover:underline">{{ _('System Backups') }}</a></li>
+        <li><a href="#" class="hover:underline">{{ _('Audit Logs') }}</a></li>
+      </ul>
+    </div>
   </div>
 
-  <div class="bg-white rounded shadow p-4">
-    <h2 class="font-semibold mb-3">{{ _('Recent Invoices') }}</h2>
-    <table class="w-full text-sm">
-      <thead><tr class="text-left text-gray-500"><th>#</th><th>{{ _('Customer') }}</th><th>{{ _('Total (OMR)') }}</th><th>{{ _('Status') }}</th></tr></thead>
-      <tbody>
-      {% for inv in recent.invoices %}
-        <tr class="border-t"><td class="py-1">{{ inv.invoice_number }}</td><td>{{ inv.customer.company_name if inv.customer else '-' }}</td><td>{{ '%.3f'|format(inv.total_omr or 0) }}</td><td>{{ inv.status }}</td></tr>
-      {% else %}
-        <tr><td colspan="4" class="py-2 text-gray-400">{{ _('No invoices yet') }}</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
+  <!-- Recent Tables -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+    <!-- Recent Vehicles -->
+    <div class="bg-white rounded-xl border border-blue-100 shadow-sm p-5">
+      <h2 class="font-semibold text-blue-900 mb-3">{{ _('Recent Vehicles') }}</h2>
+      <table class="w-full text-sm">
+        <thead><tr class="text-left text-blue-700"><th>VIN</th><th>Make</th><th>Model</th><th>Year</th></tr></thead>
+        <tbody>
+        {% for v in recent.vehicles %}
+          <tr class="border-t hover:bg-blue-50 transition">
+            <td class="py-2">{{ v.vin }}</td>
+            <td>{{ v.make }}</td>
+            <td>{{ v.model }}</td>
+            <td>{{ v.year }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="py-2 text-gray-400">{{ _('No vehicles yet') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Recent Shipments -->
+    <div class="bg-white rounded-xl border border-blue-100 shadow-sm p-5">
+      <h2 class="font-semibold text-blue-900 mb-3">{{ _('Recent Shipments') }}</h2>
+      <table class="w-full text-sm">
+        <thead><tr class="text-left text-blue-700"><th>#</th><th>{{ _('Origin') }}</th><th>{{ _('Destination') }}</th><th>{{ _('Status') }}</th></tr></thead>
+        <tbody>
+        {% for s in recent.shipments %}
+          <tr class="border-t hover:bg-blue-50 transition">
+            <td class="py-2">{{ s.shipment_number }}</td>
+            <td>{{ s.origin_port }}</td>
+            <td>{{ s.destination_port }}</td>
+            <td>{{ s.status }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="py-2 text-gray-400">{{ _('No shipments yet') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Recent Invoices -->
+    <div class="bg-white rounded-xl border border-blue-100 shadow-sm p-5">
+      <h2 class="font-semibold text-blue-900 mb-3">{{ _('Recent Invoices') }}</h2>
+      <table class="w-full text-sm">
+        <thead><tr class="text-left text-blue-700"><th>#</th><th>{{ _('Customer') }}</th><th>{{ _('Total (OMR)') }}</th><th>{{ _('Status') }}</th></tr></thead>
+        <tbody>
+        {% for inv in recent.invoices %}
+          <tr class="border-t hover:bg-blue-50 transition">
+            <td class="py-2">{{ inv.invoice_number }}</td>
+            <td>{{ inv.customer.company_name if inv.customer else '-' }}</td>
+            <td>{{ '%.3f'|format(inv.total_omr or 0) }}</td>
+            <td>{{ inv.status }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="py-2 text-gray-400">{{ _('No invoices yet') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Recent Users -->
+    <div class="bg-white rounded-xl border border-blue-100 shadow-sm p-5">
+      <h2 class="font-semibold text-blue-900 mb-3">{{ _('Recent Users') }}</h2>
+      <table class="w-full text-sm">
+        <thead><tr class="text-left text-blue-700"><th>{{ _('Name') }}</th><th>{{ _('Email') }}</th><th>{{ _('Role') }}</th></tr></thead>
+        <tbody>
+        {% for u in recent.users %}
+          <tr class="border-t hover:bg-blue-50 transition">
+            <td class="py-2">{{ u.name }}</td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.role.name if u.role else '-' }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="3" class="py-2 text-gray-400">{{ _('No users yet') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="bg-white rounded shadow p-4">
-    <h2 class="font-semibold mb-3">{{ _('Recent Users') }}</h2>
-    <table class="w-full text-sm">
-      <thead><tr class="text-left text-gray-500"><th>{{ _('Name') }}</th><th>{{ _('Email') }}</th><th>{{ _('Role') }}</th></tr></thead>
-      <tbody>
-      {% for u in recent.users %}
-        <tr class="border-t"><td class="py-1">{{ u.name }}</td><td>{{ u.email }}</td><td>{{ u.role.name if u.role else '-' }}</td></tr>
-      {% else %}
-        <tr><td colspan="3" class="py-2 text-gray-400">{{ _('No users yet') }}</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  <div class="bg-white rounded shadow p-4 lg:col-span-2">
-    <h2 class="font-semibold mb-3">{{ _('Audit Logs') }}</h2>
-    <table class="w-full text-sm">
-      <thead><tr class="text-left text-gray-500"><th>{{ _('When') }}</th><th>{{ _('User') }}</th><th>{{ _('Action') }}</th><th>{{ _('Target') }}</th></tr></thead>
+  <!-- Audit Logs + Charts -->
+  <div class="bg-white rounded-xl border border-blue-100 shadow-sm p-5">
+    <h2 class="font-semibold text-blue-900 mb-3">{{ _('Audit Logs') }}</h2>
+    <table class="w-full text-sm mb-6">
+      <thead><tr class="text-left text-blue-700"><th>{{ _('When') }}</th><th>{{ _('User') }}</th><th>{{ _('Action') }}</th><th>{{ _('Target') }}</th></tr></thead>
       <tbody>
       {% for a in recent.audit_logs %}
-        <tr class="border-t"><td class="py-1">{{ a.timestamp }}</td><td>{{ a.user_id }}</td><td>{{ a.action }}</td><td>{{ a.target_type }}#{{ a.target_id }}</td></tr>
+        <tr class="border-t hover:bg-blue-50 transition">
+          <td class="py-1">{{ a.timestamp }}</td>
+          <td>{{ a.user_id }}</td>
+          <td>{{ a.action }}</td>
+          <td>{{ a.target_type }}#{{ a.target_id }}</td>
+        </tr>
       {% else %}
         <tr><td colspan="4" class="py-2 text-gray-400">{{ _('No audit logs yet') }}</td></tr>
       {% endfor %}
       </tbody>
     </table>
-  <!-- Charts -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-  <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
-    <h2 class="font-semibold mb-2">{{ _('Monthly Revenue') }}</h2>
-    <canvas id="revenueChart" height="120"></canvas>
-  </div>
-  <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
-    <h2 class="font-semibold mb-2">{{ _('Shipment Status') }}</h2>
-    <canvas id="shipmentPie" height="120"></canvas>
-  </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+      <div class="bg-blue-50 border border-blue-100 rounded-xl p-4">
+        <h2 class="font-semibold text-blue-900 mb-2">{{ _('Monthly Revenue') }}</h2>
+        <canvas id="revenueChart" height="120"></canvas>
+      </div>
+      <div class="bg-blue-50 border border-blue-100 rounded-xl p-4">
+        <h2 class="font-semibold text-blue-900 mb-2">{{ _('Shipment Status') }}</h2>
+        <canvas id="shipmentPie" height="120"></canvas>
+      </div>
+    </div>
   </div>
 </div>
+
 <script>
-  // Demo chart data (replace via API/templating if available)
   const months = {{ chart.months|tojson|safe if chart else "[]" }};
   const revenue = {{ chart.revenue|tojson|safe if chart else "[]" }};
-  const ctx = document.getElementById('revenueChart');
-  if (ctx && window.Chart) {
+  if (window.Chart) {
+    const ctx = document.getElementById('revenueChart');
     new Chart(ctx, {
-      type: 'line', data: { labels: months, datasets: [{ label: 'OMR', data: revenue, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.2)', tension: 0.35, fill: true }] },
-      options: { plugins: { legend: { display: true }}, scales: { x: { ticks: { color: '#94a3b8' }}, y: { ticks: { color: '#94a3b8' }}} }
+      type: 'line',
+      data: { labels: months, datasets: [{ label: 'OMR', data: revenue, borderColor: '#1E2BA0', backgroundColor: 'rgba(30,43,160,0.1)', tension: 0.3, fill: true }] },
+      options: { plugins: { legend: { display: false } } }
     });
-  }
-  const pieEl = document.getElementById('shipmentPie');
-  if (pieEl && window.Chart) {
-    new Chart(pieEl, {
-      type: 'pie', data: { labels: {{ chart.shipment_status_labels|tojson|safe if chart else "[]" }}, datasets: [{ data: {{ chart.shipment_status_values|tojson|safe if chart else "[]" }}, backgroundColor: ['#f59e0b','#3b82f6','#10b981'] }] },
-      options: { plugins: { legend: { labels: { color: '#cbd5e1' }}} }
+
+    const pie = document.getElementById('shipmentPie');
+    new Chart(pie, {
+      type: 'pie',
+      data: { labels: {{ chart.shipment_status_labels|tojson|safe if chart else "[]" }}, datasets: [{ data: {{ chart.shipment_status_values|tojson|safe if chart else "[]" }}, backgroundColor: ['#1E2BA0','#3b82f6','#60a5fa'] }] },
+      options: { plugins: { legend: { labels: { color: '#1E2BA0' } } } }
     });
   }
 </script>
