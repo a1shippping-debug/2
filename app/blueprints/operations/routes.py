@@ -107,9 +107,9 @@ def notifications_feed():
     return jsonify([row_to_dict(n) for n in rows])
 
 
-@ops_bp.route('/cars/fetch_from_bidcars', methods=['POST'])
+@ops_bp.route('/cars/fetch_from_url', methods=['POST'])
 @role_required('employee', 'admin')
-def cars_fetch_from_bidcars():
+def cars_fetch_from_url():
     data = request.get_json(silent=True) or {}
     url = (data.get('url') or '').strip()
     if not url:

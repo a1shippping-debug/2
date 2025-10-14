@@ -90,12 +90,13 @@ def _parse_title_for_ymm(title: str) -> tuple[Optional[int], Optional[str], Opti
 
 
 def parse_bidcars_url(url: str, timeout: float = 10.0) -> ParsedBidCars:
-    """Fetch and parse a BidCars lot page to extract VIN, lot, Y/M/M, and provider.
+    """Fetch and parse a vehicle lot page to extract VIN, lot, Y/M/M, and provider.
 
-    Supports URLs like bid.cars or bidcars.com that aggregate Copart/IAAI listings.
+    Designed to work with popular auction and aggregator sites (e.g., Copart, IAAI, BidCars),
+    but attempts best-effort extraction from any given URL.
     """
-    if not url or ("bid.cars" not in url and "bidcars" not in url):
-        return ParsedBidCars(ok=False, error="Unsupported URL. Please provide a BidCars link.")
+    if not url:
+        return ParsedBidCars(ok=False, error="Missing URL")
 
     headers = {
         "User-Agent": (
