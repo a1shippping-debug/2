@@ -1,11 +1,94 @@
 {% extends "layout.html" %}
-{% block title %}Car Saved{% endblock %}
+{% block title %}{{ _('Car Saved Successfully') }}{% endblock %}
 {% block content %}
-<div class="bg-green-50 border border-green-200 text-green-800 p-4 rounded">
-  Vehicle {{ vehicle.vin }} saved successfully.
-</div>
-<div class="mt-4 space-x-3">
-  <a class="px-3 py-2 bg-blue-600 text-white rounded" href="{{ url_for('ops.cars_edit', vehicle_id=vehicle.id) }}">Edit</a>
-  <a class="px-3 py-2 bg-gray-800 text-white rounded" href="{{ url_for('ops.cars_list') }}">Back to list</a>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+  body {
+    font-family: 'Cairo', sans-serif;
+    background-color: #ffffff;
+    color: #1E2BA0;
+  }
+
+  .success-card {
+    background-color: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    max-width: 500px;
+    margin: 3rem auto;
+  }
+
+  .success-icon {
+    width: 60px;
+    height: 60px;
+    background-color: #1E2BA0;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 1.8rem;
+  }
+
+  .success-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .success-message {
+    font-size: 1rem;
+    color: #334155;
+    margin-bottom: 1.5rem;
+  }
+
+  .action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .btn {
+    padding: 0.7rem 1.4rem;
+    border-radius: 0.6rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background-color: #1E2BA0;
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    background-color: #2734c2;
+  }
+
+  .btn-secondary {
+    background-color: #f1f5f9;
+    color: #1E2BA0;
+    border: 1px solid #cbd5e1;
+  }
+
+  .btn-secondary:hover {
+    background-color: #e2e8f0;
+  }
+</style>
+
+<div class="success-card">
+  <div class="success-icon">✔</div>
+  <h1 class="success-title">{{ _('تم حفظ المركبة بنجاح!') }}</h1>
+  <p class="success-message">
+    {{ _('تم حفظ بيانات المركبة') }} <strong>{{ vehicle.vin }}</strong> {{ _('بنجاح.') }}
+  </p>
+
+  <div class="action-buttons">
+    <a class="btn btn-primary" href="{{ url_for('ops.cars_edit', vehicle_id=vehicle.id) }}">{{ _('تعديل المركبة') }}</a>
+    <a class="btn btn-secondary" href="{{ url_for('ops.cars_list') }}">{{ _('العودة إلى القائمة') }}</a>
+  </div>
 </div>
 {% endblock %}

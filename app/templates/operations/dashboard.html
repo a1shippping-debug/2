@@ -1,100 +1,198 @@
 {% extends "layout.html" %}
 {% block title %}{{ _('Operations Dashboard') }}{% endblock %}
 {% block content %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+  body { font-family: 'Cairo', sans-serif; background-color: #fff; color: #1E2BA0; }
 
-<div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-semibold">{{ _('Operations Dashboard') }}</h1>
-  <div class="flex items-center gap-2">
-    <a href="{{ url_for('cust.dashboard') }}" class="px-3 py-2 bg-emerald-600 text-white rounded inline-flex items-center">
-      <span class="material-icons mr-1">dashboard</span>
-      <span>لوحة العميل</span>
-    </a>
-    <a href="{{ url_for('cust.track') }}" class="px-3 py-2 bg-indigo-600 text-white rounded inline-flex items-center">
-      <span class="material-icons mr-1">map</span>
-      <span>تتبع السيارات</span>
-    </a>
-    <a href="{{ url_for('ops.cars_status') }}" class="px-3 py-2 bg-amber-600 text-white rounded inline-flex items-center">
-      <span class="material-icons mr-1">edit</span>
-      <span>{{ _('Update Statuses') }}</span>
-    </a>
-    <a href="{{ url_for('ops.cars_new') }}" class="px-3 py-2 bg-blue-600 text-white rounded inline-flex items-center">
-      <span class="material-icons mr-1">add</span>
-      <span>{{ _('Add Car') }}</span>
-    </a>
-    <div x-data="notificationsDropdown()" class="relative">
-      <button @click="toggle()" class="relative inline-flex items-center px-3 py-2 bg-white shadow rounded">
-        <span class="material-icons mr-1">notifications</span>
-        <span>{{ _('Notifications') }}</span>
-        <span x-show="unreadCount>0" class="ml-2 inline-flex items-center justify-center text-xs bg-red-500 text-white rounded-full w-5 h-5" x-text="unreadCount"></span>
-      </button>
-      <div x-show="open" @click.outside="open=false" class="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded p-2 z-10">
-        <template x-for="n in items" :key="n.id">
-          <div class="p-2 border-b last:border-0 flex items-start">
-            <div class="flex-1">
-              <div class="text-sm" x-text="n.message"></div>
-              <div class="text-xs text-gray-500" x-text="n.created_at"></div>
-            </div>
-            <button x-show="!n.read" @click="markRead(n)" class="text-xs text-blue-600">{{ _('Mark read') }}</button>
-          </div>
-        </template>
-        <div x-show="items.length===0" class="text-sm text-gray-500 p-2">{{ _('No notifications') }}</div>
-      </div>
-    </div>
+  /* ==== HEADER ==== */
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  .dashboard-header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1E2BA0;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.6rem 1.1rem;
+    font-size: 0.9rem;
+    border-radius: 0.6rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: #fff;
+    transition: 0.2s;
+  }
+
+  .btn span.material-icons {
+    font-size: 1.1rem;
+    margin-right: 0.4rem;
+  }
+
+  .btn-blue { background-color: #1E2BA0; }
+  .btn-blue:hover { background-color: #2734c2; }
+
+  .btn-green { background-color: #059669; }
+  .btn-green:hover { background-color: #047857; }
+
+  .btn-indigo { background-color: #4338ca; }
+  .btn-indigo:hover { background-color: #3730a3; }
+
+  .btn-amber { background-color: #d97706; }
+  .btn-amber:hover { background-color: #b45309; }
+
+  /* ==== SUMMARY CARDS ==== */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .card {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.2rem;
+    text-align: center;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.04);
+    transition: transform 0.2s;
+  }
+
+  .card:hover { transform: translateY(-3px); }
+
+  .card-title {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+  }
+
+  .card-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1E2BA0;
+  }
+
+  /* ==== CHART + TABLE SECTION ==== */
+  .grid-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .panel {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    padding: 1.5rem;
+  }
+
+  .panel h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #1E2BA0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 0.75rem;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.9rem;
+  }
+
+  th {
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  tr:hover td {
+    background-color: #f9fafb;
+  }
+
+  .status {
+    padding: 0.3rem 0.6rem;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: white;
+  }
+
+  .status.in_transit { background-color: #2563eb; }
+  .status.arrived { background-color: #16a34a; }
+  .status.pending { background-color: #f59e0b; }
+</style>
+
+<div class="dashboard-header">
+  <h1>{{ _('لوحة العمليات') }}</h1>
+  <div class="action-buttons">
+    <a href="{{ url_for('cust.dashboard') }}" class="btn btn-green"><span class="material-icons">dashboard</span>لوحة العميل</a>
+    <a href="{{ url_for('cust.track') }}" class="btn btn-indigo"><span class="material-icons">map</span>تتبع السيارات</a>
+    <a href="{{ url_for('ops.cars_status') }}" class="btn btn-amber"><span class="material-icons">edit</span>{{ _('تحديث الحالات') }}</a>
+    <a href="{{ url_for('ops.cars_new') }}" class="btn btn-blue"><span class="material-icons">add</span>{{ _('إضافة سيارة') }}</a>
   </div>
-  <script>
-    function notificationsDropdown(){
-      return {
-        open:false, items: [], unreadCount: 0,
-        toggle(){ this.open = !this.open },
-        async fetch(){
-          try{ const r = await fetch('{{ url_for('ops.notifications_feed') }}'); const data = await r.json(); this.items = data; this.unreadCount = data.filter(x=>!x.read).length; }catch(e){}
-        },
-        async markRead(n){ try{ await fetch(`{{ url_for('ops.notifications_mark_read', nid=0) }}`.replace('/0/read','/'+n.id+'/read'), {method:'POST'}); n.read=true; this.unreadCount = this.items.filter(x=>!x.read).length; }catch(e){} },
-        init(){ this.fetch(); setInterval(()=>this.fetch(), 15000) }
-      }
-    }
-  </script>
 </div>
 
-<!-- Summary cards -->
-<div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-  <div class="bg-white rounded shadow p-4"><div class="text-xs uppercase text-gray-500">{{ _('Total Cars') }}</div><div class="text-2xl font-semibold">{{ counts.total_cars }}</div></div>
-  <div class="bg-white rounded shadow p-4"><div class="text-xs uppercase text-gray-500">{{ _('In Transit') }}</div><div class="text-2xl font-semibold">{{ counts.in_transit_cars }}</div></div>
-  <div class="bg-white rounded shadow p-4"><div class="text-xs uppercase text-gray-500">{{ _('Arrived') }}</div><div class="text-2xl font-semibold">{{ counts.arrived_cars }}</div></div>
-  <div class="bg-white rounded shadow p-4"><div class="text-xs uppercase text-gray-500">{{ _('Open Shipments') }}</div><div class="text-2xl font-semibold">{{ counts.open_shipments }}</div></div>
-  <div class="bg-white rounded shadow p-4"><div class="text-xs uppercase text-gray-500">{{ _('Customers') }}</div><div class="text-2xl font-semibold">{{ counts.customers }}</div></div>
-  
+<!-- Summary Cards -->
+<div class="summary">
+  <div class="card"><div class="card-title">{{ _('إجمالي السيارات') }}</div><div class="card-value">{{ counts.total_cars }}</div></div>
+  <div class="card"><div class="card-title">{{ _('في الطريق') }}</div><div class="card-value">{{ counts.in_transit_cars }}</div></div>
+  <div class="card"><div class="card-title">{{ _('وصلت') }}</div><div class="card-value">{{ counts.arrived_cars }}</div></div>
+  <div class="card"><div class="card-title">{{ _('الشحنات المفتوحة') }}</div><div class="card-value">{{ counts.open_shipments }}</div></div>
+  <div class="card"><div class="card-title">{{ _('العملاء') }}</div><div class="card-value">{{ counts.customers }}</div></div>
 </div>
 
-<!-- Chart + Recent table -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-  <div class="lg:col-span-2 bg-white rounded shadow p-4">
-    <div class="flex items-center justify-between mb-2">
-      <h2 class="font-semibold">{{ _('Monthly Shipped Cars') }}</h2>
-    </div>
-    <canvas id="shippedChart" height="100"></canvas>
+<!-- Chart + Latest Vehicles -->
+<div class="grid-container">
+  <div class="panel">
+    <h2>{{ _('السيارات المشحونة شهرياً') }}</h2>
+    <canvas id="shippedChart" height="110"></canvas>
   </div>
-  <div class="bg-white rounded shadow p-4">
-    <h2 class="font-semibold mb-2">{{ _('Latest Vehicles') }}</h2>
+
+  <div class="panel">
+    <h2>{{ _('أحدث السيارات') }}</h2>
     <div class="overflow-x-auto">
-      <table class="min-w-full text-sm">
+      <table>
         <thead>
-          <tr class="text-left text-gray-500">
-            <th class="py-2 pr-2">{{ _('VIN') }}</th>
-            <th class="py-2 pr-2">{{ _('Make') }}</th>
-            <th class="py-2 pr-2">{{ _('Model') }}</th>
-            <th class="py-2 pr-2">{{ _('Status') }}</th>
+          <tr>
+            <th>{{ _('VIN') }}</th>
+            <th>{{ _('الماركة') }}</th>
+            <th>{{ _('الموديل') }}</th>
+            <th>{{ _('الحالة') }}</th>
           </tr>
         </thead>
         <tbody>
           {% for v in recent %}
-          <tr class="border-t">
-            <td class="py-2 pr-2">{{ v.vin }}</td>
-            <td class="py-2 pr-2">{{ v.make }}</td>
-            <td class="py-2 pr-2">{{ v.model }}</td>
-            <td class="py-2 pr-2">{{ v.status }}</td>
+          <tr>
+            <td>{{ v.vin }}</td>
+            <td>{{ v.make }}</td>
+            <td>{{ v.model }}</td>
+            <td><span class="status {{ v.status|lower|replace(' ','_') }}">{{ v.status }}</span></td>
           </tr>
           {% endfor %}
+          {% if not recent %}
+          <tr><td colspan="4" class="text-center text-gray-500 py-3">{{ _('لا توجد بيانات حالياً') }}</td></tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -104,22 +202,26 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   const ctx = document.getElementById('shippedChart').getContext('2d');
-  const shippedChart = new Chart(ctx, {
+  new Chart(ctx, {
     type: 'line',
     data: {
       labels: {{ chart.months|tojson }},
       datasets: [{
-        label: 'Shipped',
+        label: '{{ _("Shipped Cars") }}',
         data: {{ chart.shipped|tojson }},
-        borderColor: '#2563eb',
-        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+        borderColor: '#1E2BA0',
+        backgroundColor: 'rgba(30,43,160,0.1)',
         fill: true,
-        tension: 0.3,
+        tension: 0.35,
+        borderWidth: 2
       }]
     },
     options: {
-      scales: { y: { beginAtZero: true, precision: 0 } },
-      plugins: { legend: { display: false } }
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 } },
+        x: { grid: { display: false } }
+      },
+      plugins: { legend: { display: false } },
     }
   });
 </script>

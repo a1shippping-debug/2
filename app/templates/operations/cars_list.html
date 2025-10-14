@@ -1,67 +1,202 @@
 {% extends "layout.html" %}
 {% block title %}{{ _('Cars') }}{% endblock %}
 {% block content %}
-<div class="flex items-center justify-between mb-4">
-  <h1 class="text-xl font-semibold">{{ _('Cars') }}</h1>
-  <a href="{{ url_for('ops.cars_new') }}" class="px-3 py-2 bg-blue-600 text-white rounded">{{ _('Add Car') }}</a>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background-color: #ffffff;
+    color: #1E2BA0;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1E2BA0;
+  }
+
+  .add-btn {
+    background-color: #1E2BA0;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.6rem;
+    font-weight: 600;
+    transition: background 0.3s ease;
+  }
+
+  .add-btn:hover {
+    background-color: #2734c2;
+  }
+
+  .filter-form {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+  }
+
+  .filter-form input,
+  .filter-form select {
+    border: 1px solid #cbd5e1;
+    border-radius: 0.6rem;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.95rem;
+  }
+
+  .filter-form button {
+    background-color: #1E2BA0;
+    color: #fff;
+    border: none;
+    border-radius: 0.6rem;
+    font-weight: 600;
+    padding: 0.7rem;
+    cursor: pointer;
+  }
+
+  .filter-form button:hover {
+    background-color: #2734c2;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead {
+    background-color: #1E2BA0;
+    color: white;
+  }
+
+  th {
+    text-align: left;
+    padding: 0.8rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  td {
+    padding: 0.8rem;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.9rem;
+  }
+
+  tr:hover td {
+    background-color: #f8fafc;
+  }
+
+  .link-blue {
+    color: #1E2BA0;
+    text-decoration: underline;
+    font-weight: 600;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    background-color: #e2e8f0;
+    color: #334155;
+    padding: 0.25rem 0.6rem;
+    border-radius: 0.5rem;
+  }
+
+  .actions a {
+    color: #1E2BA0;
+    font-weight: 600;
+  }
+
+  .actions form button {
+    color: #dc2626;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .actions form button:hover {
+    text-decoration: underline;
+  }
+
+  .export-link {
+    color: #475569;
+    font-size: 0.9rem;
+    text-decoration: underline;
+  }
+</style>
+
+<div class="page-header">
+  <h1>{{ _('Cars Management') }}</h1>
+  <a href="{{ url_for('ops.cars_new') }}" class="add-btn">{{ _('+ Add Car') }}</a>
 </div>
-<form method="get" class="bg-white p-3 rounded shadow mb-4 grid grid-cols-1 md:grid-cols-4 gap-2">
-  <input name="vin" value="{{ request.args.get('vin','') }}" placeholder="{{ _('VIN') }}" class="border p-2 rounded">
-  <select name="status" class="border p-2 rounded">
+
+<form method="get" class="filter-form">
+  <input name="vin" value="{{ request.args.get('vin','') }}" placeholder="{{ _('VIN') }}">
+  <select name="status">
     <option value="">{{ _('Status') }}</option>
     {% for s in ['New car','Cashier Payment','Auction Payment','Posted','Towing','Warehouse','Loading','Shipping','Port','On way','Arrived','Delivered'] %}
       <option value="{{s}}" {% if request.args.get('status')==s %}selected{% endif %}>{{ s }}</option>
     {% endfor %}
   </select>
-  <select name="client_id" class="border p-2 rounded">
+  <select name="client_id">
     <option value="">{{ _('Client') }}</option>
     {% for c in customers %}
       <option value="{{c.id}}" {% if request.args.get('client_id')==(c.id|string) %}selected{% endif %}>{{ c.company_name or c.full_name }}</option>
     {% endfor %}
   </select>
-  <button class="px-3 py-2 bg-gray-800 text-white rounded">{{ _('Filter') }}</button>
+  <button>{{ _('Filter') }}</button>
 </form>
-<div class="bg-white rounded shadow overflow-x-auto">
-  <table class="min-w-full text-sm">
+
+<div class="bg-white rounded-xl shadow overflow-x-auto">
+  <table>
     <thead>
-      <tr class="text-left text-gray-500">
-        <th class="py-2 px-3">{{ _('VIN') }}</th>
-        <th class="py-2 px-3">{{ _('Make') }}</th>
-        <th class="py-2 px-3">{{ _('Model') }}</th>
-        <th class="py-2 px-3">{{ _('Lot') }}</th>
-        <th class="py-2 px-3">{{ _('Location') }}</th>
-        <th class="py-2 px-3">{{ _('Client') }}</th>
-        <th class="py-2 px-3">{{ _('Status') }}</th>
-        <th class="py-2 px-3">{{ _('Auction') }}</th>
-        <th class="py-2 px-3">{{ _('Tracking') }}</th>
-        <th class="py-2 px-3">{{ _('Actions') }}</th>
+      <tr>
+        <th>{{ _('VIN') }}</th>
+        <th>{{ _('Make') }}</th>
+        <th>{{ _('Model') }}</th>
+        <th>{{ _('Lot') }}</th>
+        <th>{{ _('Location') }}</th>
+        <th>{{ _('Client') }}</th>
+        <th>{{ _('Status') }}</th>
+        <th>{{ _('Auction') }}</th>
+        <th>{{ _('Tracking') }}</th>
+        <th>{{ _('Actions') }}</th>
       </tr>
     </thead>
     <tbody>
       {% for v in cars %}
-      <tr class="border-t">
-        <td class="py-2 px-3">{{ v.vin }}</td>
-        <td class="py-2 px-3">{{ v.make }}</td>
-        <td class="py-2 px-3">{{ v.model }}</td>
-        <td class="py-2 px-3">{{ v.auction.lot_number if v.auction else '-' }}</td>
-        <td class="py-2 px-3">{{ v.current_location or (v.auction.location if v.auction else '-') }}</td>
-        <td class="py-2 px-3">{{ v.owner.company_name if v.owner else '-' }}</td>
-        <td class="py-2 px-3">{{ v.status }}</td>
-        <td class="py-2 px-3">
+      <tr>
+        <td>{{ v.vin }}</td>
+        <td>{{ v.make }}</td>
+        <td>{{ v.model }}</td>
+        <td>{{ v.auction.lot_number if v.auction else '-' }}</td>
+        <td>{{ v.current_location or (v.auction.location if v.auction else '-') }}</td>
+        <td>{{ v.owner.company_name if v.owner else '-' }}</td>
+        <td>{{ v.status }}</td>
+        <td>
           {% if v.auction and v.auction.auction_url %}
-            <a class="text-blue-600 underline" href="{{ v.auction.auction_url }}" target="_blank">{{ _('Link') }}</a>
+            <a href="{{ v.auction.auction_url }}" target="_blank" class="link-blue">{{ _('Link') }}</a>
           {% else %}-{% endif %}
         </td>
-        <td class="py-2 px-3">
-          <div class="flex items-center gap-2">
-            <span class="inline-block text-xs px-2 py-1 rounded bg-gray-100">{{ tracking_stage.get(v.id,'-') }}</span>
-            <a class="text-blue-600 underline text-xs" href="{{ url_for('ops.vehicle_tracking', vehicle_id=v.id) }}">{{ _('View Timeline') }}</a>
-          </div>
+        <td>
+          <span class="badge">{{ tracking_stage.get(v.id,'-') }}</span>
+          <a href="{{ url_for('ops.vehicle_tracking', vehicle_id=v.id) }}" class="link-blue text-xs">{{ _('View Timeline') }}</a>
         </td>
-        <td class="py-2 px-3 space-x-2">
-          <a href="{{ url_for('ops.cars_edit', vehicle_id=v.id) }}" class="text-blue-600">{{ _('Edit') }}</a>
+        <td class="actions">
+          <a href="{{ url_for('ops.cars_edit', vehicle_id=v.id) }}">{{ _('Edit') }}</a>
           <form action="{{ url_for('ops.cars_delete', vehicle_id=v.id) }}" method="post" class="inline" onsubmit="return confirm('{{ _('Delete?') }}')">
-            <button class="text-red-600">{{ _('Delete') }}</button>
+            <button>{{ _('Delete') }}</button>
           </form>
         </td>
       </tr>
@@ -69,7 +204,8 @@
     </tbody>
   </table>
 </div>
+
 <div class="mt-4">
-  <a href="{{ url_for('ops.cars_export') }}" class="text-sm text-gray-600 underline">{{ _('Export CSV') }}</a>
+  <a href="{{ url_for('ops.cars_export') }}" class="export-link">{{ _('Export CSV') }}</a>
 </div>
 {% endblock %}

@@ -1,17 +1,109 @@
 {% extends "layout.html" %}
 {% block title %}{{ _('Login') }}{% endblock %}
+
 {% block content %}
-<div class="max-w-md mx-auto bg-white p-6 rounded shadow">
-  <h2 class="text-xl mb-4">{{ _('Login') }}</h2>
-  <form method="post">
-    <label class="block mb-2">{{ _('Email') }}</label>
-    <input name="email" type="email" class="w-full p-2 border rounded mb-3" required>
-    <label class="block mb-2">{{ _('Password') }}</label>
-    <input name="password" type="password" class="w-full p-2 border rounded mb-3" required>
-    <button class="w-full py-2 bg-blue-500 text-white rounded">{{ _('Login') }}</button>
-  </form>
-  <div class="mt-4 text-sm text-gray-600">
-    {{ _('Use') }} <strong>admin@example.com</strong> / <strong>admin123</strong> {{ _('after visiting') }} <a class="text-blue-500" href="{{ url_for('auth.init_sample') }}">/auth/init</a>
+<style>
+  /* حاوية الخلفية */
+  .login-background {
+    position: relative;
+    min-height: calc(100vh - 80px); /* يترك مساحة للقائمة العلوية */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: url("{{ url_for('static', filename='logo.jpeg') }}") no-repeat center center;
+    background-size: contain;
+    background-color: #f9fafb;
+    overflow: hidden;
+  }
+
+  /* أنيميشن البطاقة */
+  .login-card {
+    opacity: 0;
+    transform: translateY(-150px);
+    animation: slideDown 1.2s ease forwards;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-150px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* شكل البطاقة */
+  .card-container {
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(5px);
+    border-radius: 18px;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .login-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #1E2BA0;
+  }
+
+  .btn-primary {
+    background-color: #f59e0b;
+    color: white;
+    font-weight: 600;
+    transition: 0.3s;
+  }
+
+  .btn-primary:hover {
+    background-color: #d97706;
+    transform: translateY(-1px);
+  }
+
+  input {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+  }
+</style>
+
+<div class="login-background">
+  <div class="login-card">
+    <div class="card-container">
+      <h2 class="login-title">{{ _('Login') }}</h2>
+
+      <form method="post" class="space-y-4">
+        <div>
+          <label class="block text-gray-700 mb-1">{{ _('Email') }}</label>
+          <input name="email" type="email" class="w-full p-2" required>
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-1">{{ _('Password') }}</label>
+          <input name="password" type="password" class="w-full p-2" required>
+        </div>
+
+        <button type="submit" class="w-full py-2 rounded btn-primary">
+          {{ _('Login') }}
+        </button>
+      </form>
+
+      <div class="mt-6 text-sm text-gray-600 text-center">
+        {{ _('Use') }} <strong>admin@example.com</strong> / <strong>admin123</strong>
+        {{ _('after visiting') }}
+        <a class="text-[#1E2BA0] underline" href="{{ url_for('auth.init_sample') }}">/auth/init</a>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

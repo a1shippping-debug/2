@@ -1,15 +1,103 @@
 {% extends "layout.html" %}
 {% block title %}تتبع السيارات{% endblock %}
 {% block content %}
-<div class="max-w-xl mx-auto">
-  <div class="text-center mb-6">
-    <h1 class="text-2xl font-semibold">تتبع السيارات</h1>
-    <p class="text-slate-600">أدخل رقم الشاصي (VIN) للانتقال إلى صفحة التتبع.</p>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background-color: #ffffff;
+    color: #1E2BA0;
+  }
+
+  .track-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 3rem 1rem;
+    text-align: center;
+  }
+
+  .track-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .track-header p {
+    color: #475569;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .track-form {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s ease;
+  }
+
+  .track-form:hover {
+    box-shadow: 0 6px 20px rgba(30, 43, 160, 0.08);
+  }
+
+  .track-input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.6rem;
+    font-size: 1rem;
+    color: #1e293b;
+    outline: none;
+    transition: border 0.3s ease;
+  }
+
+  .track-input:focus {
+    border-color: #1E2BA0;
+  }
+
+  .track-button {
+    margin-top: 1rem;
+    width: 100%;
+    background-color: #1E2BA0;
+    color: #fff;
+    font-weight: 600;
+    padding: 0.9rem;
+    border-radius: 0.6rem;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s ease;
+  }
+
+  .track-button:hover {
+    background-color: #2734c2;
+  }
+
+  .track-example {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: #64748b;
+  }
+
+  .track-example span {
+    color: #1E2BA0;
+    font-weight: 600;
+  }
+</style>
+
+<div class="track-container">
+  <div class="track-header">
+    <h1>🔍 تتبع السيارات</h1>
+    <p>أدخل رقم الشاصي (VIN) للانتقال إلى صفحة التتبع الخاصة بمركبتك.</p>
   </div>
-  <form method="get" action="{{ url_for('cust.track') }}" class="bg-white p-4 rounded-xl border border-slate-200 shadow">
-    <div class="flex gap-2 items-center">
-      <input name="vin" placeholder="مثال: 1HGCM82633A123456" class="flex-1 p-2 border rounded" />
-      <button class="px-4 py-2 bg-blue-600 text-white rounded">تتبع</button>
+
+  <form method="get" action="{{ url_for('cust.track') }}" class="track-form">
+    <input name="vin" placeholder="مثال: 1HGCM82633A123456" class="track-input" required />
+    <button type="submit" class="track-button">تتبع الآن</button>
+    <div class="track-example">
+      تأكد من إدخال رقم الشاصي الصحيح. مثال: <span>1HGCM82633A123456</span>
     </div>
   </form>
 </div>

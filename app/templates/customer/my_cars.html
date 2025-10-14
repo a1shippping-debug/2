@@ -1,28 +1,149 @@
 {% extends "layout.html" %}
 {% block title %}سياراتي{% endblock %}
 {% block content %}
-<div class="max-w-6xl mx-auto">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-semibold">سياراتي</h1>
-    <a href="{{ url_for('cust.track') }}" class="px-3 py-2 rounded-lg bg-blue-600 text-white">تتبع بالـ VIN</a>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background-color: #ffffff;
+    color: #1E2BA0;
+  }
+
+  .cars-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 1rem;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .page-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1E2BA0;
+  }
+
+  .page-header a {
+    background-color: #1E2BA0;
+    color: #fff;
+    padding: 0.6rem 1.4rem;
+    border-radius: 0.6rem;
+    text-decoration: none;
+    transition: background 0.3s ease;
+  }
+
+  .page-header a:hover {
+    background-color: #2734c2;
+  }
+
+  .cars-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  @media (min-width: 768px) {
+    .cars-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .car-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .car-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(30, 43, 160, 0.08);
+  }
+
+  .car-card h2 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #1E2BA0;
+    margin-bottom: 0.4rem;
+  }
+
+  .car-info {
+    color: #475569;
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .car-status {
+    margin-top: 0.8rem;
+    font-size: 0.95rem;
+  }
+
+  .car-status span {
+    color: #1E2BA0;
+    font-weight: 600;
+  }
+
+  .track-link {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-weight: 600;
+    color: #1E2BA0;
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+
+  .track-link:hover {
+    color: #2734c2;
+  }
+
+  .no-cars {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: center;
+    color: #64748b;
+    font-size: 1rem;
+  }
+
+  .no-cars strong {
+    color: #1E2BA0;
+  }
+</style>
+
+<div class="cars-container">
+  <!-- رأس الصفحة -->
+  <div class="page-header">
+    <h1>🚗 سياراتي</h1>
+    <a href="{{ url_for('cust.track') }}">تتبع بالـ VIN</a>
   </div>
 
   {% if cars %}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="cars-grid">
       {% for v in cars %}
-        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow">
-          <div class="flex items-start justify-between mb-2">
-            <div class="font-semibold text-lg">{{ v.make or '-' }} {{ v.model or '' }} {{ v.year or '' }}</div>
-            <a href="{{ url_for('cust.track') }}?vin={{ v.vin }}" class="text-blue-600">تتبع</a>
-          </div>
-          <div class="text-sm text-slate-600">VIN: {{ v.vin or '-' }}</div>
-          <div class="text-sm text-slate-600">الحالة الحالية: <span class="font-medium">{{ v.status or '-' }}</span></div>
+        <div class="car-card">
+          <a href="{{ url_for('cust.track') }}?vin={{ v.vin }}" class="track-link">تتبع →</a>
+          <h2>{{ v.make or '-' }} {{ v.model or '' }} {{ v.year or '' }}</h2>
+          <div class="car-info">رقم الشاصي (VIN): {{ v.vin or '-' }}</div>
+          <div class="car-status">الحالة الحالية: <span>{{ v.status or '-' }}</span></div>
         </div>
       {% endfor %}
     </div>
   {% else %}
-    <div class="p-4 bg-slate-900/40 border border-slate-800 rounded-2xl text-slate-300">
-      لا توجد مركبات مرتبطة بحسابك حالياً.
+    <div class="no-cars">
+      لا توجد مركبات مرتبطة بحسابك حالياً.<br>
+      <strong>عند إضافة مركبات إلى حسابك ستظهر هنا.</strong>
     </div>
   {% endif %}
 </div>

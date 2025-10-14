@@ -2,27 +2,70 @@
 {% block title %}{{ _('Accounting') }}{% endblock %}
 {% block header %}{{ _('Accounting Portal') }}{% endblock %}
 {% block content %}
-<div class="grid grid-cols-12 gap-4">
-  <aside class="col-span-12 md:col-span-2">
-    <nav class="sticky top-4 space-y-1 text-sm">
-      <a href="{{ url_for('acct.dashboard') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint=='acct.dashboard' %}bg-slate-800{% endif %}">{{ _('Dashboard') }}</a>
-      <a href="{{ url_for('acct.costs_list') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('acct.costs') %}bg-slate-800{% endif %}">{{ _('International Costs') }}</a>
-      <a href="{{ url_for('acct.invoices_list') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('acct.invoices') %}bg-slate-800{% endif %}">{{ _('Invoices') }}</a>
-      <a href="{{ url_for('acct.payments_list') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('acct.payments') %}bg-slate-800{% endif %}">{{ _('Payments') }}</a>
-      <a href="{{ url_for('acct.bol_list') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('acct.bol') %}bg-slate-800{% endif %}">{{ _('Bill of Lading') }}</a>
-      <a href="{{ url_for('acct.reports') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint and request.endpoint.startswith('acct.reports') %}bg-slate-800{% endif %}">{{ _('Reports') }}</a>
-      <a href="{{ url_for('acct.settings') }}" class="block px-3 py-2 rounded-lg hover:bg-slate-800 {% if request.endpoint=='acct.settings' %}bg-slate-800{% endif %}">{{ _('Settings') }}</a>
+<div class="max-w-7xl mx-auto grid grid-cols-12 gap-6">
+
+  <!-- القائمة الجانبية -->
+  <aside class="col-span-12 md:col-span-3 lg:col-span-2">
+    <nav class="bg-white border border-slate-200 rounded-2xl shadow-sm p-3 sticky top-6">
+      <h2 class="text-blue-900 font-semibold text-base mb-3">{{ _('Menu') }}</h2>
+      <div class="space-y-1 text-sm font-medium">
+        <a href="{{ url_for('acct.dashboard') }}" 
+           class="block px-3 py-2 rounded-lg transition 
+                  {% if request.endpoint=='acct.dashboard' %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
+          📊 {{ _('Dashboard') }}
+        </a>
+        <a href="{{ url_for('acct.costs_list') }}" 
+           class="block px-3 py-2 rounded-lg transition 
+                  {% if request.endpoint and request.endpoint.startswith('acct.costs') %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
+          💸 {{ _('International Costs') }}
+        </a>
+        <a href="{{ url_for('acct.invoices_list') }}" 
+           class="block px-3 py-2 rounded-lg transition 
+                  {% if request.endpoint and request.endpoint.startswith('acct.invoices') %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
+          🧾 {{ _('Invoices') }}
+        </a>
+        <a href="{{ url_for('acct.payments_list') }}" 
+           class="block px-3 py-2 rounded-lg transition 
+                  {% if request.endpoint and request.endpoint.startswith('acct.payments') %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
+          💰 {{ _('Payments') }}
+        </a>
+        <a href="{{ url_for('acct.bol_list') }}" 
+           class="block px-3 py-2 rounded-lg transition 
+                  {% if request.endpoint and request.endpoint.startswith('acct.bol') %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
+          🚢 {{ _('Bill of Lading') }}
+        </a>
+        <a href="{{ url_for('acct.reports') }}" 
+           class="block px-3 py-2 rounded-lg transition 
+                  {% if request.endpoint and request.endpoint.startswith('acct.reports') %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
+          📈 {{ _('Reports') }}
+        </a>
+        <a href="{{ url_for('acct.settings') }}" 
+           class="block px-3 py-2 rounded-lg transition 
+                  {% if request.endpoint=='acct.settings' %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
+          ⚙️ {{ _('Settings') }}
+        </a>
+      </div>
     </nav>
   </aside>
-  <section class="col-span-12 md:col-span-10">
+
+  <!-- المحتوى الرئيسي -->
+  <section class="col-span-12 md:col-span-9 lg:col-span-10">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for cat, msg in messages %}
-          <div class="mb-4 p-3 rounded-2xl shadow-soft border {{ 'bg-emerald-900/40 border-emerald-700' if cat=='success' else 'bg-rose-900/40 border-rose-700' }}">{{ msg }}</div>
+          <div class="mb-4 p-3 rounded-xl border shadow-sm 
+                      {% if cat=='success' %}bg-green-50 border-green-300 text-green-700
+                      {% else %}bg-red-50 border-red-300 text-red-700{% endif %}">
+            {{ msg }}
+          </div>
         {% endfor %}
       {% endif %}
     {% endwith %}
-    {% block acct_content %}{% endblock %}
+
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+      {% block acct_content %}{% endblock %}
+    </div>
   </section>
+
 </div>
 {% endblock %}

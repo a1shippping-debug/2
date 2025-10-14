@@ -1,69 +1,205 @@
 {% extends "layout.html" %}
 {% block title %}{{ _('Edit Car') if vehicle else _('Add Car') }}{% endblock %}
 {% block content %}
-<h1 class="text-xl font-semibold mb-4">{{ _('Edit Car') if vehicle else _('Add Car') }}</h1>
-<form id="car_form" method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow grid grid-cols-1 md:grid-cols-3 gap-3">
-  
-  <input name="vin" placeholder="{{ _('VIN') }}" value="{{ vehicle.vin if vehicle else '' }}" class="border p-2 rounded md:col-span-1" {% if vehicle %}readonly{% endif %}>
-  <input name="make" placeholder="{{ _('Make') }}" value="{{ vehicle.make if vehicle else '' }}" class="border p-2 rounded">
-  <input name="model" placeholder="{{ _('Model') }}" value="{{ vehicle.model if vehicle else '' }}" class="border p-2 rounded">
-  <input name="year" placeholder="{{ _('Year') }}" value="{{ vehicle.year if vehicle else '' }}" class="border p-2 rounded">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
 
-  <input name="lot_number" placeholder="{{ _('Lot Number') }}" value="{{ vehicle.auction.lot_number if vehicle and vehicle.auction else '' }}" class="border p-2 rounded">
-  <select name="auction_type" class="border p-2 rounded">
-    <option value="">{{ _('Auction Type') }}</option>
-    {% for a in ['Copart','IAAI'] %}
-      <option value="{{ a }}" {% if vehicle and vehicle.auction and vehicle.auction.provider==a %}selected{% endif %}>{{ a }}</option>
-    {% endfor %}
-  </select>
+  body {
+    font-family: 'Cairo', sans-serif;
+    background-color: #ffffff;
+    color: #1E2BA0;
+  }
 
-  
-  <input name="current_location" placeholder="{{ _('Current Location') }}" value="{{ vehicle.current_location if vehicle else '' }}" class="border p-2 rounded">
+  .car-form-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 1rem;
+  }
 
-  <input type="date" name="purchase_date" class="border p-2 rounded">
-  <input name="purchase_price" placeholder="{{ _('Purchase Price (USD)') }}" class="border p-2 rounded">
-  <input name="auction_fees" placeholder="{{ _('Auction Fees') }}" class="border p-2 rounded">
-  <input name="local_transport" placeholder="{{ _('Local Transport Cost') }}" class="border p-2 rounded">
+  .car-form-header {
+    margin-bottom: 2rem;
+    text-align: center;
+  }
 
-  <div class="md:col-span-1">
-    <label class="block text-sm mb-1">العميل</label>
-    <input id="client_search" list="customers_datalist" placeholder="اكتب اسم العميل للبحث" value="{{ (vehicle.owner.company_name or vehicle.owner.full_name) if (vehicle and vehicle.owner) else '' }}" class="border p-2 rounded w-full">
-    <datalist id="customers_datalist">
-      {% for c in customers %}
-        <option value="{{ c.company_name or c.full_name }}" data-id="{{ c.id }}"></option>
-      {% endfor %}
-    </datalist>
-    <select name="client_id" id="client_select" class="border p-2 rounded w-full mt-2">
-      <option value="">{{ 'اختر العميل' }}</option>
-      {% for c in customers %}
-        <option value="{{ c.id }}" {% if vehicle and vehicle.owner_customer_id==c.id %}selected{% endif %}>{{ c.company_name or c.full_name }}</option>
-      {% endfor %}
-    </select>
+  .car-form-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1E2BA0;
+    margin-bottom: 0.4rem;
+  }
+
+  .car-form-header p {
+    color: #64748b;
+  }
+
+  form.car-form {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem 1.2rem;
+  }
+
+  .car-form input,
+  .car-form select {
+    border: 1px solid #cbd5e1;
+    border-radius: 0.6rem;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.95rem;
+    width: 100%;
+    transition: border 0.3s ease;
+  }
+
+  .car-form input:focus,
+  .car-form select:focus {
+    border-color: #1E2BA0;
+    outline: none;
+  }
+
+  .car-form label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: #1E2BA0;
+  }
+
+  .submit-btn {
+    grid-column: 1 / -1;
+    background-color: #1E2BA0;
+    color: white;
+    font-weight: 600;
+    padding: 0.9rem 1.4rem;
+    border-radius: 0.6rem;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  .submit-btn:hover {
+    background-color: #2734c2;
+  }
+
+  .upload-section {
+    grid-column: 1 / -1;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.8rem;
+    padding: 1.2rem;
+  }
+
+  .upload-section label {
+    color: #475569;
+  }
+
+  .upload-section input {
+    margin-top: 0.5rem;
+  }
+
+  .upload-docs-form {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+    margin-top: 2rem;
+  }
+
+  .upload-docs-form button {
+    background-color: #1E2BA0;
+    color: white;
+    padding: 0.7rem 1.3rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+  }
+
+  .upload-docs-form button:hover {
+    background-color: #2734c2;
+  }
+</style>
+
+<div class="car-form-container">
+  <div class="car-form-header">
+    <h1>{{ _('Edit Car') if vehicle else _('Add Car') }}</h1>
+    <p>قم بإدخال بيانات السيارة بدقة لتحديث السجلات.</p>
   </div>
-  <select name="status" class="border p-2 rounded">
-    {% for s in ['New car','Cashier Payment','Auction Payment','Posted','Towing','Warehouse','Loading','Shipping','Port','On way','Arrived','Delivered'] %}
-      <option value="{{s}}" {% if vehicle and vehicle.status==s %}selected{% endif %}>{{ s }}</option>
-    {% endfor %}
-  </select>
 
-  {% if not vehicle %}
-  <div class="md:col-span-3">
-    <label class="block text-sm mb-1">{{ _('Upload Photos') }}</label>
-    <input type="file" name="photos" multiple class="border p-2 rounded w-full">
-  </div>
+  <form id="car_form" method="post" enctype="multipart/form-data" class="car-form">
+    <div>
+      <label>رقم الشاصي (VIN)</label>
+      <input name="vin" placeholder="مثال: 1HGCM82633A123456" value="{{ vehicle.vin if vehicle else '' }}" {% if vehicle %}readonly{% endif %}>
+    </div>
+
+    <div><label>الشركة المصنعة</label><input name="make" value="{{ vehicle.make if vehicle else '' }}"></div>
+    <div><label>الموديل</label><input name="model" value="{{ vehicle.model if vehicle else '' }}"></div>
+    <div><label>السنة</label><input name="year" value="{{ vehicle.year if vehicle else '' }}"></div>
+
+    <div><label>رقم اللوت</label><input name="lot_number" value="{{ vehicle.auction.lot_number if vehicle and vehicle.auction else '' }}"></div>
+
+    <div>
+      <label>نوع المزاد</label>
+      <select name="auction_type">
+        <option value="">اختر نوع المزاد</option>
+        {% for a in ['Copart','IAAI'] %}
+        <option value="{{ a }}" {% if vehicle and vehicle.auction and vehicle.auction.provider==a %}selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div><label>الموقع الحالي</label><input name="current_location" value="{{ vehicle.current_location if vehicle else '' }}"></div>
+    <div><label>تاريخ الشراء</label><input type="date" name="purchase_date"></div>
+    <div><label>سعر الشراء (USD)</label><input name="purchase_price"></div>
+    <div><label>رسوم المزاد</label><input name="auction_fees"></div>
+    <div><label>تكلفة النقل المحلي</label><input name="local_transport"></div>
+
+    <div>
+      <label>العميل</label>
+      <input id="client_search" list="customers_datalist" placeholder="ابحث باسم العميل" value="{{ (vehicle.owner.company_name or vehicle.owner.full_name) if (vehicle and vehicle.owner) else '' }}">
+      <datalist id="customers_datalist">
+        {% for c in customers %}
+          <option value="{{ c.company_name or c.full_name }}" data-id="{{ c.id }}"></option>
+        {% endfor %}
+      </datalist>
+      <select name="client_id" id="client_select" class="mt-2">
+        <option value="">اختر العميل</option>
+        {% for c in customers %}
+          <option value="{{ c.id }}" {% if vehicle and vehicle.owner_customer_id==c.id %}selected{% endif %}>{{ c.company_name or c.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label>الحالة</label>
+      <select name="status">
+        {% for s in ['New car','Cashier Payment','Auction Payment','Posted','Towing','Warehouse','Loading','Shipping','Port','On way','Arrived','Delivered'] %}
+        <option value="{{ s }}" {% if vehicle and vehicle.status==s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {% if not vehicle %}
+    <div class="upload-section">
+      <label>رفع صور السيارة</label>
+      <input type="file" name="photos" multiple>
+    </div>
+    {% endif %}
+
+    <button class="submit-btn">{{ _('Save') }}</button>
+  </form>
+
+  {% if vehicle %}
+  <form action="{{ url_for('ops.cars_upload', vehicle_id=vehicle.id) }}" method="post" enctype="multipart/form-data" class="upload-docs-form">
+    <label class="block mb-2 text-slate-600">رفع مستندات إضافية</label>
+    <input type="file" name="files" multiple class="border p-2 rounded w-full mb-3">
+    <button>{{ _('Upload') }}</button>
+  </form>
   {% endif %}
+</div>
 
-  <div class="md:col-span-3">
-    <button class="px-4 py-2 bg-blue-600 text-white rounded">{{ _('Save') }}</button>
-  </div>
-</form>
-{% if vehicle %}
-<form action="{{ url_for('ops.cars_upload', vehicle_id=vehicle.id) }}" method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow mt-4">
-  <div class="mb-2"><label class="text-sm">{{ _('Upload Documents') }}</label></div>
-  <input type="file" name="files" multiple class="border p-2 rounded w-full mb-2">
-  <button class="px-3 py-2 bg-gray-800 text-white rounded">{{ _('Upload') }}</button>
-</form>
-{% endif %}
 <script>
 (function() {
   const input = document.getElementById('client_search');
@@ -72,26 +208,14 @@
   if (!input || !select || !datalist) return;
   function selectByName(name) {
     const options = Array.from(datalist.options || []);
-    const match = options.find(function(opt) {
-      return (opt.value || '').trim().toLowerCase() === (name || '').trim().toLowerCase();
-    });
-    if (match && match.dataset && match.dataset.id) {
-      select.value = match.dataset.id;
-    }
+    const match = options.find(o => (o.value || '').trim().toLowerCase() === (name || '').trim().toLowerCase());
+    if (match && match.dataset && match.dataset.id) select.value = match.dataset.id;
   }
-  input.addEventListener('change', function() {
-    selectByName(input.value);
-  });
-  select.addEventListener('change', function() {
-    const opt = Array.from(datalist.options || []).find(function(o) {
-      return (o.dataset && o.dataset.id) === select.value;
-    });
-    if (opt) {
-      input.value = opt.value;
-    }
+  input.addEventListener('change', () => selectByName(input.value));
+  select.addEventListener('change', () => {
+    const opt = Array.from(datalist.options || []).find(o => (o.dataset && o.dataset.id) === select.value);
+    if (opt) input.value = opt.value;
   });
 })();
 </script>
 {% endblock %}
-
-

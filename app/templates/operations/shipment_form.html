@@ -1,46 +1,145 @@
 {% extends "layout.html" %}
 {% block title %}{{ _('Edit Shipment') if shipment else _('Create Shipment') }}{% endblock %}
 {% block content %}
-<h1 class="text-xl font-semibold mb-4">{{ _('Edit Shipment') if shipment else _('Create Shipment') }}</h1>
-<form method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow grid grid-cols-1 md:grid-cols-3 gap-3">
-  <input name="shipment_number" placeholder="{{ _('Shipment No') }}" value="{{ shipment.shipment_number if shipment else '' }}" class="border p-2 rounded" {% if shipment %}readonly{% endif %}>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+  body { font-family: 'Cairo', sans-serif; background-color: #fff; color: #1E2BA0; }
+
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #1E2BA0;
+    margin-bottom: 1.5rem;
+  }
+
+  form {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+  }
+
+  input, select, textarea {
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: #1E2BA0;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(30,43,160,0.1);
+  }
+
+  label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1E2BA0;
+  }
+
+  .btn-main {
+    background-color: #1E2BA0;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.6rem;
+    font-weight: 600;
+    transition: background-color 0.2s;
+  }
+  .btn-main:hover { background-color: #2734c2; }
+
+  .section-title {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-top: 1.2rem;
+    margin-bottom: 0.4rem;
+    color: #1E2BA0;
+  }
+
+  .checkbox-list {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.7rem;
+    max-height: 12rem;
+    overflow-y: auto;
+    padding: 0.6rem;
+  }
+
+  .checkbox-list label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 500;
+    color: #1E2BA0;
+  }
+
+  .success-box {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+    padding: 0.9rem;
+    border-radius: 0.6rem;
+    margin-top: 1.5rem;
+  }
+</style>
+
+<h1>{{ shipment and _('تعديل الشحنة') or _('إنشاء شحنة جديدة') }}</h1>
+
+<form method="post" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+  <input name="shipment_number" placeholder="{{ _('رقم الشحنة') }}"
+         value="{{ shipment.shipment_number if shipment else '' }}"
+         class="border p-2 rounded"
+         {% if shipment %}readonly{% endif %}>
+
   <select name="type" class="border p-2 rounded">
-    {% for t in ['RORO','Container'] %}<option value="{{t}}" {% if shipment and shipment.type==t %}selected{% endif %}>{{ t }}</option>{% endfor %}
-  </select>
-  <input name="shipping_company" placeholder="{{ _('Shipping Company') }}" value="{{ shipment.shipping_company if shipment else '' }}" class="border p-2 rounded">
-  <input name="origin_port" placeholder="{{ _('Port From') }}" value="{{ shipment.origin_port if shipment else '' }}" class="border p-2 rounded">
-  <input name="destination_port" placeholder="{{ _('Port To') }}" value="{{ shipment.destination_port if shipment else '' }}" class="border p-2 rounded">
-  <input type="date" name="departure_date" value="{{ shipment.departure_date.strftime('%Y-%m-%d') if shipment and shipment.departure_date else '' }}" class="border p-2 rounded">
-  <input type="date" name="arrival_date" value="{{ shipment.arrival_date.strftime('%Y-%m-%d') if shipment and shipment.arrival_date else '' }}" class="border p-2 rounded">
-  <input name="container_number" placeholder="{{ _('Container No.') }}" value="{{ shipment.container_number if shipment else '' }}" class="border p-2 rounded">
-  <input name="cost_freight_usd" placeholder="{{ _('Freight (USD)') }}" value="{{ shipment.cost_freight_usd if shipment else '' }}" class="border p-2 rounded">
-  <input name="cost_insurance_usd" placeholder="{{ _('Insurance (USD)') }}" value="{{ shipment.cost_insurance_usd if shipment else '' }}" class="border p-2 rounded">
-  <select name="status" class="border p-2 rounded">
-    {% for s in ['Open','In Transit','Arrived','Delivered'] %}<option value="{{s}}" {% if shipment and shipment.status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+    {% for t in ['RORO','Container'] %}
+      <option value="{{t}}" {% if shipment and shipment.type==t %}selected{% endif %}>{{ t }}</option>
+    {% endfor %}
   </select>
 
+  <input name="shipping_company" placeholder="{{ _('شركة الشحن') }}" value="{{ shipment.shipping_company if shipment else '' }}" class="border p-2 rounded">
+
+  <input name="origin_port" placeholder="{{ _('من ميناء') }}" value="{{ shipment.origin_port if shipment else '' }}" class="border p-2 rounded">
+  <input name="destination_port" placeholder="{{ _('إلى ميناء') }}" value="{{ shipment.destination_port if shipment else '' }}" class="border p-2 rounded">
+
+  <input type="date" name="departure_date" value="{{ shipment.departure_date.strftime('%Y-%m-%d') if shipment and shipment.departure_date else '' }}" class="border p-2 rounded">
+  <input type="date" name="arrival_date" value="{{ shipment.arrival_date.strftime('%Y-%m-%d') if shipment and shipment.arrival_date else '' }}" class="border p-2 rounded">
+
+  <input name="container_number" placeholder="{{ _('رقم الحاوية') }}" value="{{ shipment.container_number if shipment else '' }}" class="border p-2 rounded">
+  <input name="cost_freight_usd" placeholder="{{ _('الشحن (دولار)') }}" value="{{ shipment.cost_freight_usd if shipment else '' }}" class="border p-2 rounded">
+  <input name="cost_insurance_usd" placeholder="{{ _('التأمين (دولار)') }}" value="{{ shipment.cost_insurance_usd if shipment else '' }}" class="border p-2 rounded">
+
+  <select name="status" class="border p-2 rounded">
+    {% for s in ['Open','In Transit','Arrived','Delivered'] %}
+      <option value="{{s}}" {% if shipment and shipment.status==s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+
+  <!-- Attach Vehicles -->
   <div class="md:col-span-3">
-    <label class="block text-sm mb-1">{{ _('Attach Vehicles') }}</label>
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-2 max-h-48 overflow-auto border rounded p-2">
+    <div class="section-title">{{ _('المركبات المرفقة') }}</div>
+    <div class="checkbox-list">
       {% for v in vehicles %}
-        <label class="inline-flex items-center space-x-2"><input type="checkbox" name="vehicle_ids" value="{{ v.id }}"> <span>{{ v.vin }} - {{ v.make }} {{ v.model }}</span></label>
+        <label><input type="checkbox" name="vehicle_ids" value="{{ v.id }}"> {{ v.vin }} - {{ v.make }} {{ v.model }}</label>
       {% endfor %}
     </div>
     {% if shipment %}<input type="hidden" name="update_vehicles" value="1">{% endif %}
   </div>
 
+  <!-- Upload BOL -->
   <div class="md:col-span-3">
-    <label class="block text-sm mb-1">{{ _('Upload BOL (PDF)') }}</label>
+    <div class="section-title">{{ _('تحميل مستند BOL (PDF)') }}</div>
     <input type="file" name="bol" accept="application/pdf" class="border p-2 rounded w-full">
   </div>
 
-  <div class="md:col-span-3">
-    <button class="px-4 py-2 bg-blue-600 text-white rounded">{{ _('Save') }}</button>
+  <!-- Save Button -->
+  <div class="md:col-span-3 flex justify-end mt-4">
+    <button class="btn-main">{{ _('حفظ') }}</button>
   </div>
 </form>
 
 {% if saved %}
-<div class="mt-4 bg-green-50 text-green-800 border border-green-200 p-3 rounded">{{ _('Shipment saved.') }}</div>
+  <div class="success-box">{{ _('تم حفظ الشحنة بنجاح.') }}</div>
 {% endif %}
-
 {% endblock %}

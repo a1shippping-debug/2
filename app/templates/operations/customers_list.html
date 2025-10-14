@@ -1,39 +1,151 @@
 {% extends "layout.html" %}
 {% block title %}{{ _('Customers') }}{% endblock %}
 {% block content %}
-<div class="flex items-center justify-between mb-4">
-  <h1 class="text-xl font-semibold">{{ _('Customers') }}</h1>
-  <a href="{{ url_for('ops.customers_new') }}" class="px-3 py-2 bg-blue-600 text-white rounded">{{ _('Add Customer') }}</a>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+  body { font-family: 'Cairo', sans-serif; background-color: #fff; color: #1E2BA0; }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+
+  .btn-primary {
+    background-color: #1E2BA0;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.6rem;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+    border: none;
+  }
+
+  .btn-primary:hover { background-color: #2734c2; }
+
+  .search-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+  }
+
+  input {
+    border: 1px solid #cbd5e1;
+    border-radius: 0.6rem;
+    padding: 0.6rem 0.8rem;
+    width: 100%;
+    font-size: 0.95rem;
+  }
+
+  input:focus {
+    border-color: #1E2BA0;
+    box-shadow: 0 0 0 2px rgba(30,43,160,0.1);
+    outline: none;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+  }
+
+  thead {
+    background-color: #f8fafc;
+  }
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    color: #475569;
+    padding: 0.8rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  td {
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  tr:hover td {
+    background-color: #f9fafb;
+  }
+
+  .action-link {
+    font-weight: 600;
+    margin-right: 0.6rem;
+    text-decoration: none;
+  }
+
+  .action-link.edit { color: #1E2BA0; }
+  .action-link.delete { color: #dc2626; }
+
+  .table-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    overflow: hidden;
+  }
+
+  .no-data {
+    text-align: center;
+    color: #64748b;
+    padding: 2rem;
+  }
+</style>
+
+<div class="page-header">
+  <h1>{{ _('قائمة العملاء') }}</h1>
+  <a href="{{ url_for('ops.customers_new') }}" class="btn-primary">{{ _('إضافة عميل جديد') }}</a>
 </div>
-<form method="get" class="bg-white p-3 rounded shadow mb-4 grid grid-cols-1 md:grid-cols-3 gap-2">
-  <input name="name" value="{{ request.args.get('name','') }}" placeholder="{{ _('Name') }}" class="border p-2 rounded">
-  <input name="email" value="{{ request.args.get('email','') }}" placeholder="{{ _('Email') }}" class="border p-2 rounded">
-  <button class="px-3 py-2 bg-gray-800 text-white rounded">{{ _('Search') }}</button>
+
+<form method="get" class="search-card grid grid-cols-1 md:grid-cols-3 gap-3">
+  <input name="name" value="{{ request.args.get('name','') }}" placeholder="{{ _('اسم العميل') }}">
+  <input name="email" value="{{ request.args.get('email','') }}" placeholder="{{ _('البريد الإلكتروني') }}">
+  <button class="btn-primary">{{ _('بحث') }}</button>
 </form>
-<div class="bg-white rounded shadow overflow-x-auto">
-  <table class="min-w-full text-sm">
+
+<div class="table-card overflow-x-auto">
+  <table>
     <thead>
-      <tr class="text-left text-gray-500">
-        <th class="py-2 px-3">{{ _('Name') }}</th>
-        <th class="py-2 px-3">{{ _('Email') }}</th>
-        <th class="py-2 px-3">{{ _('Phone') }}</th>
-        <th class="py-2 px-3">{{ _('Country') }}</th>
-        <th class="py-2 px-3">{{ _('Actions') }}</th>
+      <tr>
+        <th>{{ _('الاسم') }}</th>
+        <th>{{ _('البريد الإلكتروني') }}</th>
+        <th>{{ _('رقم الهاتف') }}</th>
+        <th>{{ _('الدولة') }}</th>
+        <th>{{ _('الإجراءات') }}</th>
       </tr>
     </thead>
     <tbody>
-      {% for c in customers %}
-      <tr class="border-t">
-        <td class="py-2 px-3">{{ c.company_name or c.full_name }}</td>
-        <td class="py-2 px-3">{{ c.email or '-' }}</td>
-        <td class="py-2 px-3">{{ c.phone or '-' }}</td>
-        <td class="py-2 px-3">{{ c.country or '-' }}</td>
-        <td class="py-2 px-3 space-x-2">
-          <a href="{{ url_for('ops.customers_edit', customer_id=c.id) }}" class="text-blue-600">{{ _('Edit') }}</a>
-          <form action="{{ url_for('ops.customers_delete', customer_id=c.id) }}" method="post" class="inline" onsubmit="return confirm('{{ _('Delete?') }}')"><button class="text-red-600">{{ _('Delete') }}</button></form>
-        </td>
-      </tr>
-      {% endfor %}
+      {% if customers %}
+        {% for c in customers %}
+        <tr>
+          <td>{{ c.company_name or c.full_name }}</td>
+          <td>{{ c.email or '-' }}</td>
+          <td>{{ c.phone or '-' }}</td>
+          <td>{{ c.country or '-' }}</td>
+          <td>
+            <a href="{{ url_for('ops.customers_edit', customer_id=c.id) }}" class="action-link edit">{{ _('تعديل') }}</a>
+            <form action="{{ url_for('ops.customers_delete', customer_id=c.id) }}" method="post" class="inline" onsubmit="return confirm('{{ _('هل تريد الحذف؟') }}')">
+              <button type="submit" class="action-link delete bg-transparent border-none cursor-pointer">{{ _('حذف') }}</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="5" class="no-data">{{ _('لا يوجد عملاء حالياً') }}</td>
+        </tr>
+      {% endif %}
     </tbody>
   </table>
 </div>
