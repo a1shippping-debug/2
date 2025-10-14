@@ -1,35 +1,36 @@
 {% extends "base_accounting.html" %}
 {% block acct_content %}
-<div class="grid md:grid-cols-4 gap-4 mb-4">
-  <div class="p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
-    <div class="text-sm text-slate-400">{{ _('Total Revenue (OMR)') }}</div>
-    <div class="text-2xl font-semibold">{{ '%.3f'|format(totals.revenue_omr or 0) }}</div>
+
+<div class="grid md:grid-cols-4 gap-4 mb-6">
+  <div class="p-4 rounded-2xl bg-white border border-gray-200 shadow-sm">
+    <div class="text-sm text-gray-500">{{ _('Total Revenue (OMR)') }}</div>
+    <div class="text-2xl font-semibold text-blue-900 mt-1">{{ '%.3f'|format(totals.revenue_omr or 0) }}</div>
   </div>
-  <div class="p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
-    <div class="text-sm text-slate-400">{{ _('Total Expenses (OMR)') }}</div>
-    <div class="text-2xl font-semibold">{{ '%.3f'|format(totals.expenses_omr or 0) }}</div>
+  <div class="p-4 rounded-2xl bg-white border border-gray-200 shadow-sm">
+    <div class="text-sm text-gray-500">{{ _('Total Expenses (OMR)') }}</div>
+    <div class="text-2xl font-semibold text-blue-900 mt-1">{{ '%.3f'|format(totals.expenses_omr or 0) }}</div>
   </div>
-  <div class="p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
-    <div class="text-sm text-slate-400">{{ _('Net Profit (OMR)') }}</div>
-    <div class="text-2xl font-semibold">{{ '%.3f'|format(totals.net_omr or 0) }}</div>
+  <div class="p-4 rounded-2xl bg-white border border-gray-200 shadow-sm">
+    <div class="text-sm text-gray-500">{{ _('Net Profit (OMR)') }}</div>
+    <div class="text-2xl font-semibold text-blue-900 mt-1">{{ '%.3f'|format(totals.net_omr or 0) }}</div>
   </div>
-  <div class="p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
-    <div class="text-sm text-slate-400">{{ _('Invoices') }}</div>
-    <div class="text-2xl font-semibold">{{ counts.invoices }}</div>
+  <div class="p-4 rounded-2xl bg-white border border-gray-200 shadow-sm">
+    <div class="text-sm text-gray-500">{{ _('Invoices') }}</div>
+    <div class="text-2xl font-semibold text-blue-900 mt-1">{{ counts.invoices }}</div>
   </div>
-  <div class="p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
-    <div class="text-sm text-slate-400">{{ _('Vehicles Priced') }}</div>
-    <div class="text-2xl font-semibold">{{ counts.vehicles_priced }}</div>
+  <div class="p-4 rounded-2xl bg-white border border-gray-200 shadow-sm">
+    <div class="text-sm text-gray-500">{{ _('Vehicles Priced') }}</div>
+    <div class="text-2xl font-semibold text-blue-900 mt-1">{{ counts.vehicles_priced }}</div>
   </div>
 </div>
 
-<div class="grid md:grid-cols-3 gap-4">
-  <div class="md:col-span-2 bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
-    <h3 class="font-semibold mb-2">{{ _('Monthly Revenue') }}</h3>
+<div class="grid md:grid-cols-3 gap-6">
+  <div class="md:col-span-2 bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
+    <h3 class="font-semibold text-blue-900 mb-3">{{ _('Monthly Revenue') }}</h3>
     <canvas id="revChart" height="120"></canvas>
   </div>
-  <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
-    <h3 class="font-semibold mb-2">{{ _('Expenses by Category') }}</h3>
+  <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
+    <h3 class="font-semibold text-blue-900 mb-3">{{ _('Expenses by Category') }}</h3>
     <canvas id="expPie" height="120"></canvas>
   </div>
 </div>
@@ -37,8 +38,37 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 const rc = document.getElementById('revChart');
-new Chart(rc, { type: 'bar', data: { labels: {{ chart.months|tojson|safe }}, datasets: [{ label: 'Revenue', data: {{ chart.revenue|tojson|safe }}, backgroundColor: '#3b82f6' }] }, options: { plugins: { legend: { display: false } } } });
+new Chart(rc, {
+  type: 'bar',
+  data: {
+    labels: {{ chart.months|tojson|safe }},
+    datasets: [{
+      label: 'Revenue (OMR)',
+      data: {{ chart.revenue|tojson|safe }},
+      backgroundColor: '#1d4ed8',
+      borderRadius: 6
+    }]
+  },
+  options: {
+    scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } } },
+    plugins: { legend: { display: false } }
+  }
+});
+
 const pc = document.getElementById('expPie');
-new Chart(pc, { type: 'pie', data: { labels: {{ chart.exp_labels|tojson|safe }}, datasets: [{ data: {{ chart.exp_values|tojson|safe }}, backgroundColor: ['#f59e0b','#10b981','#ef4444','#8b5cf6','#06b6d4'] }] } });
+new Chart(pc, {
+  type: 'pie',
+  data: {
+    labels: {{ chart.exp_labels|tojson|safe }},
+    datasets: [{
+      data: {{ chart.exp_values|tojson|safe }},
+      backgroundColor: ['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6']
+    }]
+  },
+  options: {
+    plugins: { legend: { position: 'bottom' } }
+  }
+});
 </script>
+
 {% endblock %}
