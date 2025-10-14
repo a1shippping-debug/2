@@ -395,13 +395,13 @@ msgstr "Exports"
 msgid "Export Excel"
 msgstr "Export Excel"
 
-#: app/templates/admin/settings.html
-msgid "Customs Rate (%)"
-msgstr "Customs Rate (%)"
+#: app/templates/admin/settings.html app/templates/accounting/settings.html
+msgid "Customs Rate"
+msgstr "Customs Rate"
 
-#: app/templates/admin/settings.html
-msgid "VAT (%)"
-msgstr "VAT (%)"
+#: app/templates/admin/settings.html app/templates/accounting/settings.html
+msgid "VAT"
+msgstr "VAT"
 
 #: app/templates/admin/settings.html
 msgid "Shipping Fee (OMR)"

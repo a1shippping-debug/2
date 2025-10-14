@@ -5,11 +5,11 @@
 <div class="max-w-3xl">
   <form method="post" class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
     <div>
-      <label class="block text-sm text-slate-300 mb-1">{{ _('Customs Rate (%)') }}</label>
+      <label class="block text-sm text-slate-300 mb-1">{{ _('Customs Rate') }} (%)</label>
       <input name="customs_rate" value="{{ settings.customs_rate or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" />
     </div>
     <div>
-      <label class="block text-sm text-slate-300 mb-1">{{ _('VAT (%)') }}</label>
+      <label class="block text-sm text-slate-300 mb-1">{{ _('VAT') }} (%)</label>
       <input name="vat_rate" value="{{ settings.vat_rate or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" />
     </div>
     <div>
