@@ -11,8 +11,10 @@ class Config:
         os.path.dirname(os.path.abspath(__file__)), "static", "uploads"
     )
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
-    BABEL_DEFAULT_LOCALE = os.getenv("BABEL_DEFAULT_LOCALE", "en")
-    BABEL_SUPPORTED_LOCALES = os.getenv("BABEL_SUPPORTED_LOCALES", "en,ar").split(",")
+    # Default site language is Arabic; English is the secondary translation
+    BABEL_DEFAULT_LOCALE = os.getenv("BABEL_DEFAULT_LOCALE", "ar")
+    # Keep Arabic first to reflect primary UI language
+    BABEL_SUPPORTED_LOCALES = os.getenv("BABEL_SUPPORTED_LOCALES", "ar,en").split(",")
     MAIL_SERVER = os.getenv("MAIL_SERVER")
     MAIL_PORT = int(os.getenv("MAIL_PORT", 25) or 25)
     MAIL_USERNAME = os.getenv("MAIL_USERNAME")

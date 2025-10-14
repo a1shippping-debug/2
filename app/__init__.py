@@ -35,12 +35,13 @@ def create_app():
             return None
     # i18n
     def select_locale():
-        supported = app.config.get("BABEL_SUPPORTED_LOCALES", ["en", "ar"]) or ["en", "ar"]
-        # normalize & strip
+        # Always prioritize explicit user choice via query/cookie; otherwise default to Arabic
+        supported = app.config.get("BABEL_SUPPORTED_LOCALES", ["ar", "en"]) or ["ar", "en"]
         lang = (request.args.get("lang") or request.cookies.get("lang") or "").strip()
         if lang in supported:
             return lang
-        return request.accept_languages.best_match(supported) or app.config.get("BABEL_DEFAULT_LOCALE", "en")
+        # Ignore Accept-Language to keep Arabic as the canonical default language
+        return app.config.get("BABEL_DEFAULT_LOCALE", "ar")
 
     babel.init_app(app, locale_selector=select_locale)
     mail.init_app(app)
@@ -55,14 +56,14 @@ def create_app():
     @app.before_request
     def inject_lang_to_g():
         try:
-            g.lang_code = select_locale()
+            g.lang_code = select_locale() or "ar"
         except Exception:
-            g.lang_code = "en"
+            g.lang_code = "ar"
 
     @app.after_request
     def persist_lang_cookie(response):
         try:
-            supported = app.config.get("BABEL_SUPPORTED_LOCALES", ["en", "ar"]) or ["en", "ar"]
+            supported = app.config.get("BABEL_SUPPORTED_LOCALES", ["ar", "en"]) or ["ar", "en"]
             requested_language = (request.args.get("lang") or "").strip()
             if requested_language in supported:
                 response.set_cookie(
