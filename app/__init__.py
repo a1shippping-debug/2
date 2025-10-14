@@ -82,6 +82,155 @@ def create_app():
     def index():
         return render_template("landing.html")
 
+    @app.route("/tracking/<string:vin>")
+    def tracking_page(vin: str):
+        """Public vehicle shipment tracking by VIN.
+
+        Renders a Bootstrap-based horizontal 12-stage timeline with icons and
+        green/red status indicators. Data is derived from DB where available
+        and otherwise simulated for demonstration.
+        """
+        from datetime import datetime, timedelta
+        from .extensions import db
+        from .models import Vehicle, Auction, Shipment, VehicleShipment
+
+        vin_norm = (vin or "").strip()
+
+        vehicle = (
+            db.session.query(Vehicle)
+            .join(Auction, Vehicle.auction_id == Auction.id, isouter=True)
+            .filter(db.func.lower(Vehicle.vin) == db.func.lower(vin_norm))
+            .first()
+        )
+
+        stages = []
+        lot_number = "-"
+
+        if vehicle:
+            lot_number = vehicle.auction.lot_number if vehicle.auction and vehicle.auction.lot_number else "-"
+
+            shipments = (
+                db.session.query(Shipment)
+                .join(VehicleShipment, Shipment.id == VehicleShipment.shipment_id)
+                .filter(VehicleShipment.vehicle_id == vehicle.id)
+                .order_by(Shipment.created_at.asc())
+                .all()
+            )
+            primary_shipment = shipments[0] if shipments else None
+
+            departed = bool(primary_shipment and primary_shipment.departure_date)
+            arrived = bool(primary_shipment and primary_shipment.arrival_date)
+            shipment_status = (primary_shipment.status or "").strip().lower() if primary_shipment else ""
+            shipment_delivered = shipment_status == "delivered"
+
+            norm_status = (vehicle.status or "").strip().lower()
+
+            def fmt_dt(dt):
+                try:
+                    return dt.strftime("%d-%m-%Y") if dt else ""
+                except Exception:
+                    return ""
+
+            completed_map = {
+                "New car": True,
+                "Cashier Payment": bool(vehicle.purchase_price_usd and float(vehicle.purchase_price_usd) > 0),
+                "Auction Payment": bool(vehicle.purchase_date),
+                "Posted": bool(shipments) or norm_status in {"in shipping", "shipped", "delivered", "arrived", "in transit"},
+                "Towing": any(k in norm_status for k in ["picked", "towing", "tow"]),
+                "Warehouse": "warehouse" in norm_status,
+                "Loading": bool(shipments and not departed),
+                "Shipping": bool(departed),
+                "Port": bool(departed),  # assume processed at origin port once departed
+                "On way": bool(departed and not arrived),
+                "Arrived": bool(arrived),
+                "Delivered": bool(shipment_delivered or "delivered" in norm_status),
+            }
+
+            date_map = {
+                "New car": fmt_dt(vehicle.created_at),
+                "Cashier Payment": fmt_dt(vehicle.purchase_date) or fmt_dt(vehicle.created_at),
+                "Auction Payment": fmt_dt(vehicle.purchase_date),
+                "Posted": fmt_dt(vehicle.created_at),
+                "Towing": "",
+                "Warehouse": "",
+                "Loading": fmt_dt(primary_shipment.departure_date - timedelta(days=1)) if departed and primary_shipment else "",
+                "Shipping": fmt_dt(primary_shipment.departure_date) if primary_shipment else "",
+                "Port": fmt_dt(primary_shipment.departure_date) if primary_shipment else "",
+                "On way": fmt_dt(primary_shipment.departure_date) if primary_shipment else "",
+                "Arrived": fmt_dt(primary_shipment.arrival_date) if primary_shipment else "",
+                "Delivered": fmt_dt(primary_shipment.arrival_date) if primary_shipment else "",
+            }
+        else:
+            # Simulated example data when VIN is not found
+            base = datetime.utcnow() - timedelta(days=15)
+            lot_number = "-"
+            completed_map, date_map = {}, {}
+            sim_names = [
+                "New car",
+                "Cashier Payment",
+                "Auction Payment",
+                "Posted",
+                "Towing",
+                "Warehouse",
+                "Loading",
+                "Shipping",
+                "Port",
+                "On way",
+                "Arrived",
+                "Delivered",
+            ]
+            for idx, nm in enumerate(sim_names):
+                completed_map[nm] = idx < 7  # first 7 steps completed in demo
+                date_map[nm] = (base + timedelta(days=idx)).strftime("%d-%m-%Y") if completed_map[nm] else ""
+            vehicle = None
+
+        icons = {
+            "New car": "fa-car-side",
+            "Cashier Payment": "fa-money-bill-wave",
+            "Auction Payment": "fa-gavel",
+            "Posted": "fa-bullhorn",
+            "Towing": "fa-truck-pickup",
+            "Warehouse": "fa-warehouse",
+            "Loading": "fa-box-open",
+            "Shipping": "fa-ship",
+            "Port": "fa-anchor",
+            "On way": "fa-route",
+            "Arrived": "fa-flag-checkered",
+            "Delivered": "fa-circle-check",
+        }
+
+        order = [
+            "New car",
+            "Cashier Payment",
+            "Auction Payment",
+            "Posted",
+            "Towing",
+            "Warehouse",
+            "Loading",
+            "Shipping",
+            "Port",
+            "On way",
+            "Arrived",
+            "Delivered",
+        ]
+        for name in order:
+            stages.append(
+                {
+                    "name": name,
+                    "icon": icons.get(name, "fa-circle"),
+                    "completed": bool(completed_map.get(name)),
+                    "date_str": date_map.get(name, ""),
+                }
+            )
+
+        return render_template(
+            "tracking.html",
+            vin=vin_norm.upper(),
+            lot_number=lot_number,
+            vehicle=vehicle,
+            stages=stages,
+        )
+
     @app.shell_context_processor
     def make_shell_context():
         from .models import User, Role, Customer, Vehicle, Auction, Shipment
