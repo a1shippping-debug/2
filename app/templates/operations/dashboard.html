@@ -13,6 +13,10 @@
       <span class="material-icons mr-1">map</span>
       <span>تتبع السيارات</span>
     </a>
+    <a href="{{ url_for('ops.cars_status') }}" class="px-3 py-2 bg-amber-600 text-white rounded inline-flex items-center">
+      <span class="material-icons mr-1">edit</span>
+      <span>{{ _('Update Statuses') }}</span>
+    </a>
     <a href="{{ url_for('ops.cars_new') }}" class="px-3 py-2 bg-blue-600 text-white rounded inline-flex items-center">
       <span class="material-icons mr-1">add</span>
       <span>{{ _('Add Car') }}</span>
