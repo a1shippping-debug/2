@@ -791,13 +791,13 @@ msgstr "التصديرات"
 msgid "Export Excel"
 msgstr "تصدير إكسل"
 
-#: app/templates/admin/settings.html
-msgid "Customs Rate (%)"
-msgstr "نسبة الجمارك (%)"
+#: app/templates/admin/settings.html app/templates/accounting/settings.html
+msgid "Customs Rate"
+msgstr "نسبة الجمارك"
 
-#: app/templates/admin/settings.html
-msgid "VAT (%)"
-msgstr "ضريبة القيمة المضافة (%)"
+#: app/templates/admin/settings.html app/templates/accounting/settings.html
+msgid "VAT"
+msgstr "ضريبة القيمة المضافة"
 
 #: app/templates/admin/settings.html
 msgid "Shipping Fee (OMR)"
