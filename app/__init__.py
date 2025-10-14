@@ -78,6 +78,10 @@ def create_app():
     def forbidden(_e):
         return render_template("errors/403.html"), 403
 
+    @app.route("/")
+    def index():
+        return render_template("landing.html")
+
     @app.shell_context_processor
     def make_shell_context():
         from .models import User, Role, Customer, Vehicle, Auction, Shipment
