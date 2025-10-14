@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}تتبع السيارات{% endblock %}
+{% block title %}{{ _('تتبع السيارات') }}{% endblock %}
 {% block content %}
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
@@ -89,15 +89,15 @@
 
 <div class="track-container">
   <div class="track-header">
-    <h1>🔍 تتبع السيارات</h1>
-    <p>أدخل رقم الشاصي (VIN) للانتقال إلى صفحة التتبع الخاصة بمركبتك.</p>
+    <h1>🔍 {{ _('تتبع السيارات') }}</h1>
+    <p>{{ _('أدخل رقم الشاصي (VIN) للانتقال إلى صفحة التتبع الخاصة بمركبتك.') }}</p>
   </div>
 
   <form method="get" action="{{ url_for('cust.track') }}" class="track-form">
-    <input name="vin" placeholder="مثال: 1HGCM82633A123456" class="track-input" required />
-    <button type="submit" class="track-button">تتبع الآن</button>
+    <input name="vin" placeholder="{{ _('مثال: 1HGCM82633A123456') }}" class="track-input" required />
+    <button type="submit" class="track-button">{{ _('تتبع الآن') }}</button>
     <div class="track-example">
-      تأكد من إدخال رقم الشاصي الصحيح. مثال: <span>1HGCM82633A123456</span>
+      {{ _('تأكد من إدخال رقم الشاصي الصحيح. مثال:') }} <span>1HGCM82633A123456</span>
     </div>
   </form>
 </div>

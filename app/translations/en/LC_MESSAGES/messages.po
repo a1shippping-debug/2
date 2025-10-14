@@ -11,6 +11,246 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 # English acts as identity translations; included for completeness
+# Landing and layout Arabic source strings translated to English
+#: app/templates/landing.html
+msgid "الصفحة الرئيسية"
+msgstr "Home"
+
+#: app/templates/landing.html
+msgid "مرحباً بكم في CarTrade"
+msgstr "Welcome to CarTrade"
+
+#: app/templates/landing.html
+msgid "نحن شركة متخصصة في إدارة عمليات السيارات، من الشراء في المزادات الأمريكية إلى الشحن والفوترة، عبر نظام متكامل يوفر لوحة تحكم موحدة وسهلة الاستخدام لفريقك — مع دعم كامل للّغتين العربية والإنجليزية."
+msgstr "We specialize in automotive operations from US auction purchasing to shipping and invoicing, through an integrated system that provides a unified, easy-to-use dashboard for your team — with full Arabic and English support."
+
+#: app/templates/layout.html app/templates/landing.html
+msgid "تسجيل الدخول"
+msgstr "Login"
+
+#: app/templates/layout.html app/templates/landing.html
+msgid "إنشاء حساب"
+msgstr "Register"
+
+#: app/templates/layout.html
+msgid "خروج"
+msgstr "Logout"
+
+#: app/templates/landing.html
+msgid "إدارة السيارات"
+msgstr "Vehicle Management"
+
+#: app/templates/landing.html
+msgid "تتبع السيارات من الشراء حتى التسليم النهائي."
+msgstr "Track vehicles from purchase to final delivery."
+
+#: app/templates/landing.html
+msgid "الشحن وتتبع الشحنات"
+msgstr "Shipping and Shipment Tracking"
+
+#: app/templates/landing.html
+msgid "تنظيم الشحنات وتتبعها من الميناء إلى الوجهة."
+msgstr "Organize and track shipments from port to destination."
+
+#: app/templates/landing.html
+msgid "الفواتير والمحاسبة"
+msgstr "Invoices and Accounting"
+
+#: app/templates/landing.html
+msgid "نظام فوترة متكامل لعمليات البيع والمصاريف."
+msgstr "Integrated invoicing for sales and expenses."
+
+#: app/templates/layout.html app/templates/landing.html
+msgid "2025 CarTrade. جميع الحقوق محفوظة"
+msgstr "2025 CarTrade. All rights reserved"
+# Customer portal (Arabic source strings translated to English)
+#: app/templates/customer/home.html app/templates/customer/dashboard.html
+msgid "لوحة العميل"
+msgstr "Customer Portal"
+
+#: app/templates/customer/home.html
+msgid "اختر أحد الخيارات التالية للوصول إلى خدماتك"
+msgstr "Choose one of the options below to access your services"
+
+#: app/templates/customer/home.html app/templates/customer/dashboard.html app/templates/customer/my_cars.html
+msgid "سياراتي"
+msgstr "My Cars"
+
+#: app/templates/customer/home.html
+msgid "عرض جميع المركبات المرتبطة بحسابك وتتبع حالتها الحالية."
+msgstr "View all vehicles linked to your account and track their status."
+
+#: app/templates/customer/home.html
+msgid "الدخول"
+msgstr "Enter"
+
+#: app/templates/customer/home.html app/templates/customer/track.html
+msgid "تتبع السيارات"
+msgstr "Track Vehicles"
+
+#: app/templates/customer/home.html app/templates/customer/track.html
+msgid "أدخل رقم الشاصي (VIN) لمعرفة موقع الشحنة الحالية ومراحلها."
+msgstr "Enter the VIN to see the current shipment location and stages."
+
+#: app/templates/customer/home.html
+msgid "ابدأ التتبع"
+msgstr "Start Tracking"
+
+#: app/templates/customer/my_cars.html app/templates/customer/dashboard.html
+msgid "فواتيري"
+msgstr "My Invoices"
+
+#: app/templates/customer/my_cars.html
+msgid "تتبع بالـ VIN"
+msgstr "Track by VIN"
+
+#: app/templates/customer/my_cars.html
+msgid "تتبع"
+msgstr "Track"
+
+#: app/templates/customer/my_cars.html
+msgid "رقم الشاصي (VIN):"
+msgstr "VIN:"
+
+#: app/templates/customer/my_cars.html
+msgid "الحالة الحالية:"
+msgstr "Current status:"
+
+#: app/templates/customer/my_cars.html app/templates/customer/dashboard.html
+msgid "لا توجد مركبات مرتبطة بحسابك حالياً."
+msgstr "There are no vehicles linked to your account yet."
+
+#: app/templates/customer/my_cars.html
+msgid "عند إضافة مركبات إلى حسابك ستظهر هنا."
+msgstr "When vehicles are added to your account, they will show up here."
+
+#: app/templates/customer/dashboard.html
+msgid "ابحث برقم اللوت أو رقم الشاصي"
+msgstr "Search by Lot # or VIN"
+
+#: app/templates/customer/dashboard.html
+msgid "بحث"
+msgstr "Search"
+
+#: app/templates/customer/dashboard.html
+msgid "أدخل رقم اللوت أو رقم الشاصي (VIN)"
+msgstr "Enter Lot # or VIN"
+
+#: app/templates/customer/dashboard.html
+msgid "الحالة:"
+msgstr "Status:"
+
+#: app/templates/customer/dashboard.html
+msgid "دفع السيارة من المزاد"
+msgstr "Vehicle paid at auction"
+
+#: app/templates/customer/dashboard.html
+msgid "سحب السيارة من المزاد"
+msgstr "Vehicle picked up from auction"
+
+#: app/templates/customer/dashboard.html
+msgid "وصول السيارة للمستودع"
+msgstr "Vehicle arrived to warehouse"
+
+#: app/templates/customer/dashboard.html
+msgid "شحن السيارة"
+msgstr "Vehicle shipped"
+
+#: app/templates/customer/dashboard.html
+msgid "وصول السيارة"
+msgstr "Vehicle arrived"
+
+#: app/templates/customer/dashboard.html
+msgid "عند إضافة مركبات إلى حسابك ستظهر هنا في قسم \"سياراتي\"."
+msgstr "When vehicles are added to your account, they will appear here under \"My Cars\"."
+
+#: app/templates/customer/track.html
+msgid "مثال: 1HGCM82633A123456"
+msgstr "Example: 1HGCM82633A123456"
+
+#: app/templates/customer/track.html
+msgid "تتبع الآن"
+msgstr "Track now"
+
+#: app/templates/customer/track.html
+msgid "تأكد من إدخال رقم الشاصي الصحيح. مثال:"
+msgstr "Make sure you enter a correct VIN. Example:"
+
+#: app/templates/customer/invoices_list.html
+msgid "فواتيري"
+msgstr "My Invoices"
+
+#: app/templates/customer/invoices_list.html
+msgid "رقم الفاتورة"
+msgstr "Invoice #"
+
+#: app/templates/customer/invoices_list.html
+msgid "الإجمالي (ر.ع)"
+msgstr "Total (OMR)"
+
+#: app/templates/customer/invoices_list.html
+msgid "الحالة"
+msgstr "Status"
+
+#: app/templates/customer/invoices_list.html
+msgid "التاريخ"
+msgstr "Date"
+
+#: app/templates/customer/invoices_list.html
+msgid "الإجراءات"
+msgstr "Actions"
+
+#: app/templates/customer/invoices_list.html
+msgid "عرض"
+msgstr "View"
+
+#: app/templates/customer/invoices_list.html
+msgid "لا توجد فواتير."
+msgstr "No invoices."
+
+#: app/templates/customer/invoice_detail.html
+msgid "تفاصيل الفاتورة"
+msgstr "Invoice Details"
+
+#: app/templates/customer/invoice_detail.html
+msgid "رقم الفاتورة:"
+msgstr "Invoice #:"
+
+#: app/templates/customer/invoice_detail.html
+msgid "التاريخ:"
+msgstr "Date:"
+
+#: app/templates/customer/invoice_detail.html
+msgid "الحالة:"
+msgstr "Status:"
+
+#: app/templates/customer/invoice_detail.html
+msgid "تنزيل PDF"
+msgstr "Download PDF"
+
+#: app/templates/customer/invoice_detail.html
+msgid "العناصر"
+msgstr "Items"
+
+#: app/templates/customer/invoice_detail.html
+msgid "الوصف"
+msgstr "Description"
+
+#: app/templates/customer/invoice_detail.html
+msgid "المبلغ (ر.ع)"
+msgstr "Amount (OMR)"
+
+#: app/templates/customer/invoice_detail.html
+msgid "لا توجد عناصر."
+msgstr "No items."
+
+#: app/templates/customer/invoice_detail.html
+msgid "الإجمالي"
+msgstr "Total"
+
+#: app/templates/customer/invoice_detail.html
+msgid "العودة إلى الفواتير"
+msgstr "Back to invoices"
 #: app/templates/base_admin.html
 msgid "Admin"
 msgstr "Admin"

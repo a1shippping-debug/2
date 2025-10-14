@@ -1,16 +1,16 @@
 {% extends "layout.html" %}
-{% block title %}فواتيري{% endblock %}
+{% block title %}{{ _('فواتيري') }}{% endblock %}
 {% block content %}
-<h1 class="text-2xl mb-4">فواتيري</h1>
+<h1 class="text-2xl mb-4">{{ _('فواتيري') }}</h1>
 <div class="bg-white rounded shadow overflow-hidden">
   <table class="w-full text-sm">
     <thead class="bg-gray-50">
       <tr class="text-left text-gray-600">
-        <th class="px-3 py-2">رقم الفاتورة</th>
-        <th class="px-3 py-2">الإجمالي (ر.ع)</th>
-        <th class="px-3 py-2">الحالة</th>
-        <th class="px-3 py-2">التاريخ</th>
-        <th class="px-3 py-2">الإجراءات</th>
+        <th class="px-3 py-2">{{ _('رقم الفاتورة') }}</th>
+        <th class="px-3 py-2">{{ _('الإجمالي (ر.ع)') }}</th>
+        <th class="px-3 py-2">{{ _('الحالة') }}</th>
+        <th class="px-3 py-2">{{ _('التاريخ') }}</th>
+        <th class="px-3 py-2">{{ _('الإجراءات') }}</th>
       </tr>
     </thead>
     <tbody>
@@ -21,12 +21,12 @@
         <td class="px-3 py-2">{{ inv.status or '-' }}</td>
         <td class="px-3 py-2">{{ inv.created_at.strftime('%Y-%m-%d') if inv.created_at else '-' }}</td>
         <td class="px-3 py-2 space-x-2">
-          <a class="text-blue-600" href="{{ url_for('cust.invoice_detail', invoice_id=inv.id) }}">عرض</a>
+          <a class="text-blue-600" href="{{ url_for('cust.invoice_detail', invoice_id=inv.id) }}">{{ _('عرض') }}</a>
           <a class="text-blue-600" href="{{ url_for('cust.invoice_pdf', invoice_id=inv.id) }}">PDF</a>
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="5" class="px-3 py-6 text-center text-gray-500">لا توجد فواتير.</td></tr>
+      <tr><td colspan="5" class="px-3 py-6 text-center text-gray-500">{{ _('لا توجد فواتير.') }}</td></tr>
       {% endfor %}
     </tbody>
   </table>

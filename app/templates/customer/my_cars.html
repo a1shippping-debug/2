@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}سياراتي{% endblock %}
+{% block title %}{{ _('سياراتي') }}{% endblock %}
 {% block content %}
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
@@ -125,25 +125,25 @@
 <div class="cars-container">
   <!-- رأس الصفحة -->
   <div class="page-header">
-    <h1>🚗 سياراتي</h1>
-    <a href="{{ url_for('cust.track') }}">تتبع بالـ VIN</a>
+    <h1>🚗 {{ _('سياراتي') }}</h1>
+    <a href="{{ url_for('cust.track') }}">{{ _('تتبع بالـ VIN') }}</a>
   </div>
 
   {% if cars %}
     <div class="cars-grid">
       {% for v in cars %}
         <div class="car-card">
-          <a href="{{ url_for('cust.track') }}?vin={{ v.vin }}" class="track-link">تتبع →</a>
+          <a href="{{ url_for('cust.track') }}?vin={{ v.vin }}" class="track-link">{{ _('تتبع') }} →</a>
           <h2>{{ v.make or '-' }} {{ v.model or '' }} {{ v.year or '' }}</h2>
-          <div class="car-info">رقم الشاصي (VIN): {{ v.vin or '-' }}</div>
-          <div class="car-status">الحالة الحالية: <span>{{ v.status or '-' }}</span></div>
+          <div class="car-info">{{ _('رقم الشاصي (VIN):') }} {{ v.vin or '-' }}</div>
+          <div class="car-status">{{ _('الحالة الحالية:') }} <span>{{ v.status or '-' }}</span></div>
         </div>
       {% endfor %}
     </div>
   {% else %}
     <div class="no-cars">
-      لا توجد مركبات مرتبطة بحسابك حالياً.<br>
-      <strong>عند إضافة مركبات إلى حسابك ستظهر هنا.</strong>
+      {{ _('لا توجد مركبات مرتبطة بحسابك حالياً.') }}<br>
+      <strong>{{ _('عند إضافة مركبات إلى حسابك ستظهر هنا.') }}</strong>
     </div>
   {% endif %}
 </div>

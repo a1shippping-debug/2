@@ -11,6 +11,190 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0?0:n==1?1:n==2?2:n%100>=3 && n%100<=10?3:n%100>=11 && n%100<=99?4:5;\n"
 
+# Customer portal additions (ensure Arabic originals still map for completeness)
+#: app/templates/customer/home.html app/templates/customer/dashboard.html
+msgid "لوحة العميل"
+msgstr "لوحة العميل"
+
+#: app/templates/customer/home.html
+msgid "اختر أحد الخيارات التالية للوصول إلى خدماتك"
+msgstr "اختر أحد الخيارات التالية للوصول إلى خدماتك"
+
+#: app/templates/customer/home.html app/templates/customer/dashboard.html app/templates/customer/my_cars.html
+msgid "سياراتي"
+msgstr "سياراتي"
+
+#: app/templates/customer/home.html
+msgid "عرض جميع المركبات المرتبطة بحسابك وتتبع حالتها الحالية."
+msgstr "عرض جميع المركبات المرتبطة بحسابك وتتبع حالتها الحالية."
+
+#: app/templates/customer/home.html
+msgid "الدخول"
+msgstr "الدخول"
+
+#: app/templates/customer/home.html app/templates/customer/track.html
+msgid "تتبع السيارات"
+msgstr "تتبع السيارات"
+
+#: app/templates/customer/home.html app/templates/customer/track.html
+msgid "أدخل رقم الشاصي (VIN) لمعرفة موقع الشحنة الحالية ومراحلها."
+msgstr "أدخل رقم الشاصي (VIN) لمعرفة موقع الشحنة الحالية ومراحلها."
+
+#: app/templates/customer/home.html
+msgid "ابدأ التتبع"
+msgstr "ابدأ التتبع"
+
+#: app/templates/customer/my_cars.html app/templates/customer/dashboard.html
+msgid "فواتيري"
+msgstr "فواتيري"
+
+#: app/templates/customer/my_cars.html
+msgid "تتبع بالـ VIN"
+msgstr "تتبع بالـ VIN"
+
+#: app/templates/customer/my_cars.html
+msgid "تتبع"
+msgstr "تتبع"
+
+#: app/templates/customer/my_cars.html
+msgid "رقم الشاصي (VIN):"
+msgstr "رقم الشاصي (VIN):"
+
+#: app/templates/customer/my_cars.html
+msgid "الحالة الحالية:"
+msgstr "الحالة الحالية:"
+
+#: app/templates/customer/my_cars.html app/templates/customer/dashboard.html
+msgid "لا توجد مركبات مرتبطة بحسابك حالياً."
+msgstr "لا توجد مركبات مرتبطة بحسابك حالياً."
+
+#: app/templates/customer/my_cars.html
+msgid "عند إضافة مركبات إلى حسابك ستظهر هنا."
+msgstr "عند إضافة مركبات إلى حسابك ستظهر هنا."
+
+#: app/templates/customer/dashboard.html
+msgid "ابحث برقم اللوت أو رقم الشاصي"
+msgstr "ابحث برقم اللوت أو رقم الشاصي"
+
+#: app/templates/customer/dashboard.html
+msgid "بحث"
+msgstr "بحث"
+
+#: app/templates/customer/dashboard.html
+msgid "أدخل رقم اللوت أو رقم الشاصي (VIN)"
+msgstr "أدخل رقم اللوت أو رقم الشاصي (VIN)"
+
+#: app/templates/customer/dashboard.html
+msgid "الحالة:"
+msgstr "الحالة:"
+
+#: app/templates/customer/dashboard.html
+msgid "دفع السيارة من المزاد"
+msgstr "دفع السيارة من المزاد"
+
+#: app/templates/customer/dashboard.html
+msgid "سحب السيارة من المزاد"
+msgstr "سحب السيارة من المزاد"
+
+#: app/templates/customer/dashboard.html
+msgid "وصول السيارة للمستودع"
+msgstr "وصول السيارة للمستودع"
+
+#: app/templates/customer/dashboard.html
+msgid "شحن السيارة"
+msgstr "شحن السيارة"
+
+#: app/templates/customer/dashboard.html
+msgid "وصول السيارة"
+msgstr "وصول السيارة"
+
+#: app/templates/customer/dashboard.html
+msgid "عند إضافة مركبات إلى حسابك ستظهر هنا في قسم \"سياراتي\"."
+msgstr "عند إضافة مركبات إلى حسابك ستظهر هنا في قسم \"سياراتي\"."
+
+#: app/templates/customer/track.html
+msgid "مثال: 1HGCM82633A123456"
+msgstr "مثال: 1HGCM82633A123456"
+
+#: app/templates/customer/track.html
+msgid "تتبع الآن"
+msgstr "تتبع الآن"
+
+#: app/templates/customer/track.html
+msgid "تأكد من إدخال رقم الشاصي الصحيح. مثال:"
+msgstr "تأكد من إدخال رقم الشاصي الصحيح. مثال:"
+
+#: app/templates/customer/invoices_list.html
+msgid "رقم الفاتورة"
+msgstr "رقم الفاتورة"
+
+#: app/templates/customer/invoices_list.html
+msgid "الإجمالي (ر.ع)"
+msgstr "الإجمالي (ر.ع)"
+
+#: app/templates/customer/invoices_list.html
+msgid "الحالة"
+msgstr "الحالة"
+
+#: app/templates/customer/invoices_list.html
+msgid "التاريخ"
+msgstr "التاريخ"
+
+#: app/templates/customer/invoices_list.html
+msgid "الإجراءات"
+msgstr "الإجراءات"
+
+#: app/templates/customer/invoices_list.html
+msgid "عرض"
+msgstr "عرض"
+
+#: app/templates/customer/invoices_list.html
+msgid "لا توجد فواتير."
+msgstr "لا توجد فواتير."
+
+#: app/templates/customer/invoice_detail.html
+msgid "تفاصيل الفاتورة"
+msgstr "تفاصيل الفاتورة"
+
+#: app/templates/customer/invoice_detail.html
+msgid "رقم الفاتورة:"
+msgstr "رقم الفاتورة:"
+
+#: app/templates/customer/invoice_detail.html
+msgid "التاريخ:"
+msgstr "التاريخ:"
+
+#: app/templates/customer/invoice_detail.html
+msgid "الحالة:"
+msgstr "الحالة:"
+
+#: app/templates/customer/invoice_detail.html
+msgid "تنزيل PDF"
+msgstr "تنزيل PDF"
+
+#: app/templates/customer/invoice_detail.html
+msgid "العناصر"
+msgstr "العناصر"
+
+#: app/templates/customer/invoice_detail.html
+msgid "الوصف"
+msgstr "الوصف"
+
+#: app/templates/customer/invoice_detail.html
+msgid "المبلغ (ر.ع)"
+msgstr "المبلغ (ر.ع)"
+
+#: app/templates/customer/invoice_detail.html
+msgid "لا توجد عناصر."
+msgstr "لا توجد عناصر."
+
+#: app/templates/customer/invoice_detail.html
+msgid "الإجمالي"
+msgstr "الإجمالي"
+
+#: app/templates/customer/invoice_detail.html
+msgid "العودة إلى الفواتير"
+msgstr "العودة إلى الفواتير"
 # Newly added UI strings
 msgid "CarTrade"
 msgstr "كار تريد"

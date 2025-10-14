@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}لوحة العميل{% endblock %}
+{% block title %}{{ _('لوحة العميل') }}{% endblock %}
 {% block content %}
 
 <style>
@@ -72,29 +72,29 @@
   <div class="dashboard-header">
     <div class="flex items-center gap-3">
       <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo">
-      <h1 class="text-2xl font-bold">لوحة العميل</h1>
+      <h1 class="text-2xl font-bold">{{ _('لوحة العميل') }}</h1>
     </div>
     <a href="{{ url_for('cust.invoices_list') }}"
        class="px-4 py-2 bg-white text-[#1E2BA0] rounded-xl font-semibold hover:bg-slate-100">
-      فواتيري
+      {{ _('فواتيري') }}
     </a>
   </div>
 
   <!-- شريط البحث -->
   <form method="get" class="mb-8">
     <div class="search-bar flex gap-2 items-center">
-      <input name="q" value="{{ q or '' }}" placeholder="ابحث برقم اللوت أو رقم الشاصي"
+      <input name="q" value="{{ q or '' }}" placeholder="{{ _('ابحث برقم اللوت أو رقم الشاصي') }}"
              class="flex-1 p-2 border rounded focus:ring-2 focus:ring-blue-400" />
       <button class="px-4 py-2 bg-[#1E2BA0] text-white rounded hover:bg-blue-800 transition">
-        بحث
+        {{ _('بحث') }}
       </button>
     </div>
-    <p class="text-gray-500 text-sm mt-2">أدخل رقم اللوت أو رقم الشاصي (VIN)</p>
+    <p class="text-gray-500 text-sm mt-2">{{ _('أدخل رقم اللوت أو رقم الشاصي (VIN)') }}</p>
   </form>
 
   {% if results is defined %}
     {% if results %}
-      <h2 class="text-xl font-semibold mb-4 text-[#1E2BA0]">سياراتي</h2>
+      <h2 class="text-xl font-semibold mb-4 text-[#1E2BA0]">{{ _('سياراتي') }}</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for r in results %}
           {% set v = r.vehicle %}
@@ -108,29 +108,29 @@
                   VIN: {{ v.vin }}{% if a and a.lot_number %} • Lot: {{ a.lot_number }}{% endif %}
                 </div>
               </div>
-              <div class="text-sm text-gray-700">الحالة: <span class="font-semibold text-[#1E2BA0]">{{ v.status or '-' }}</span></div>
+              <div class="text-sm text-gray-700">{{ _('الحالة:') }} <span class="font-semibold text-[#1E2BA0]">{{ v.status or '-' }}</span></div>
             </div>
 
             <div class="space-y-2 mt-2">
               <div class="flex items-center gap-2">
                 <span class="stage-dot {{ 'bg-green-500' if s.paid else 'bg-gray-300' }}"></span>
-                <span class="text-sm">دفع السيارة من المزاد</span>
+                <span class="text-sm">{{ _('دفع السيارة من المزاد') }}</span>
               </div>
               <div class="flex items-center gap-2">
                 <span class="stage-dot {{ 'bg-green-500' if s.picked_up else 'bg-gray-300' }}"></span>
-                <span class="text-sm">سحب السيارة من المزاد</span>
+                <span class="text-sm">{{ _('سحب السيارة من المزاد') }}</span>
               </div>
               <div class="flex items-center gap-2">
                 <span class="stage-dot {{ 'bg-green-500' if s.warehouse else 'bg-gray-300' }}"></span>
-                <span class="text-sm">وصول السيارة للمستودع</span>
+                <span class="text-sm">{{ _('وصول السيارة للمستودع') }}</span>
               </div>
               <div class="flex items-center gap-2">
                 <span class="stage-dot {{ 'bg-green-500' if s.shipped else 'bg-gray-300' }}"></span>
-                <span class="text-sm">شحن السيارة</span>
+                <span class="text-sm">{{ _('شحن السيارة') }}</span>
               </div>
               <div class="flex items-center gap-2">
                 <span class="stage-dot {{ 'bg-green-500' if s.delivered else 'bg-gray-300' }}"></span>
-                <span class="text-sm">وصول السيارة</span>
+                <span class="text-sm">{{ _('وصول السيارة') }}</span>
               </div>
             </div>
           </div>
@@ -138,9 +138,9 @@
       </div>
     {% else %}
       <div class="p-4 bg-white border border-slate-200 rounded-xl text-center shadow">
-        <p class="text-slate-600">لا توجد مركبات مرتبطة بحسابك حالياً.</p>
+        <p class="text-slate-600">{{ _('لا توجد مركبات مرتبطة بحسابك حالياً.') }}</p>
         <p class="text-sm text-slate-400 mt-1">
-          عند إضافة مركبات إلى حسابك ستظهر هنا في قسم "سياراتي".
+          {{ _('عند إضافة مركبات إلى حسابك ستظهر هنا في قسم "سياراتي".') }}
         </p>
       </div>
     {% endif %}
