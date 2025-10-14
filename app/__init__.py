@@ -15,6 +15,14 @@ def create_app():
     # init extensions
     db.init_app(app)
     migrate.init_app(app, db)
+    # Try to auto-apply pending migrations at startup to avoid schema/runtime mismatches
+    try:
+        from flask_migrate import upgrade as _alembic_upgrade
+        with app.app_context():
+            _alembic_upgrade()
+    except Exception:
+        # If migrations aren't set up or upgrade fails, continue; save handlers will surface errors
+        pass
     login_manager.init_app(app)
     @login_manager.user_loader
     def load_user(user_id):
