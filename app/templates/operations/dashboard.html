@@ -4,23 +4,29 @@
 
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-semibold">{{ _('Operations Dashboard') }}</h1>
-  <div x-data="notificationsDropdown()" class="relative">
-    <button @click="toggle()" class="relative inline-flex items-center px-3 py-2 bg-white shadow rounded">
-      <span class="material-icons mr-1">notifications</span>
-      <span>{{ _('Notifications') }}</span>
-      <span x-show="unreadCount>0" class="ml-2 inline-flex items-center justify-center text-xs bg-red-500 text-white rounded-full w-5 h-5" x-text="unreadCount"></span>
-    </button>
-    <div x-show="open" @click.outside="open=false" class="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded p-2 z-10">
-      <template x-for="n in items" :key="n.id">
-        <div class="p-2 border-b last:border-0 flex items-start">
-          <div class="flex-1">
-            <div class="text-sm" x-text="n.message"></div>
-            <div class="text-xs text-gray-500" x-text="n.created_at"></div>
+  <div class="flex items-center gap-2">
+    <a href="{{ url_for('ops.cars_new') }}" class="px-3 py-2 bg-blue-600 text-white rounded inline-flex items-center">
+      <span class="material-icons mr-1">add</span>
+      <span>{{ _('Add Car') }}</span>
+    </a>
+    <div x-data="notificationsDropdown()" class="relative">
+      <button @click="toggle()" class="relative inline-flex items-center px-3 py-2 bg-white shadow rounded">
+        <span class="material-icons mr-1">notifications</span>
+        <span>{{ _('Notifications') }}</span>
+        <span x-show="unreadCount>0" class="ml-2 inline-flex items-center justify-center text-xs bg-red-500 text-white rounded-full w-5 h-5" x-text="unreadCount"></span>
+      </button>
+      <div x-show="open" @click.outside="open=false" class="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded p-2 z-10">
+        <template x-for="n in items" :key="n.id">
+          <div class="p-2 border-b last:border-0 flex items-start">
+            <div class="flex-1">
+              <div class="text-sm" x-text="n.message"></div>
+              <div class="text-xs text-gray-500" x-text="n.created_at"></div>
+            </div>
+            <button x-show="!n.read" @click="markRead(n)" class="text-xs text-blue-600">{{ _('Mark read') }}</button>
           </div>
-          <button x-show="!n.read" @click="markRead(n)" class="text-xs text-blue-600">{{ _('Mark read') }}</button>
-        </div>
-      </template>
-      <div x-show="items.length===0" class="text-sm text-gray-500 p-2">{{ _('No notifications') }}</div>
+        </template>
+        <div x-show="items.length===0" class="text-sm text-gray-500 p-2">{{ _('No notifications') }}</div>
+      </div>
     </div>
   </div>
   <script>
