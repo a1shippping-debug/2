@@ -25,12 +25,21 @@
   <input name="auction_fees" placeholder="{{ _('Auction Fees') }}" class="border p-2 rounded">
   <input name="local_transport" placeholder="{{ _('Local Transport Cost') }}" class="border p-2 rounded">
 
-  <select name="client_id" class="border p-2 rounded">
-    <option value="">{{ _('Client') }}</option>
-    {% for c in customers %}
-      <option value="{{c.id}}" {% if vehicle and vehicle.owner_customer_id==c.id %}selected{% endif %}>{{ c.company_name or c.full_name }}</option>
-    {% endfor %}
-  </select>
+  <div class="md:col-span-1">
+    <label class="block text-sm mb-1">العميل</label>
+    <input id="client_search" list="customers_datalist" placeholder="اكتب اسم العميل للبحث" value="{{ (vehicle.owner.company_name or vehicle.owner.full_name) if (vehicle and vehicle.owner) else '' }}" class="border p-2 rounded w-full">
+    <datalist id="customers_datalist">
+      {% for c in customers %}
+        <option value="{{ c.company_name or c.full_name }}" data-id="{{ c.id }}"></option>
+      {% endfor %}
+    </datalist>
+    <select name="client_id" id="client_select" class="border p-2 rounded w-full mt-2">
+      <option value="">{{ 'اختر العميل' }}</option>
+      {% for c in customers %}
+        <option value="{{ c.id }}" {% if vehicle and vehicle.owner_customer_id==c.id %}selected{% endif %}>{{ c.company_name or c.full_name }}</option>
+      {% endfor %}
+    </select>
+  </div>
   <select name="status" class="border p-2 rounded">
     {% for s in ['Purchased','Shipped','In Transit','Arrived','Cleared','Delivered'] %}
       <option value="{{s}}" {% if vehicle and vehicle.status==s %}selected{% endif %}>{{ s }}</option>
@@ -55,6 +64,34 @@
   <button class="px-3 py-2 bg-gray-800 text-white rounded">{{ _('Upload') }}</button>
 </form>
 {% endif %}
+<script>
+(function() {
+  const input = document.getElementById('client_search');
+  const select = document.getElementById('client_select');
+  const datalist = document.getElementById('customers_datalist');
+  if (!input || !select || !datalist) return;
+  function selectByName(name) {
+    const options = Array.from(datalist.options || []);
+    const match = options.find(function(opt) {
+      return (opt.value || '').trim().toLowerCase() === (name || '').trim().toLowerCase();
+    });
+    if (match && match.dataset && match.dataset.id) {
+      select.value = match.dataset.id;
+    }
+  }
+  input.addEventListener('change', function() {
+    selectByName(input.value);
+  });
+  select.addEventListener('change', function() {
+    const opt = Array.from(datalist.options || []).find(function(o) {
+      return (o.dataset && o.dataset.id) === select.value;
+    });
+    if (opt) {
+      input.value = opt.value;
+    }
+  });
+})();
+</script>
 {% endblock %}
 
 
