@@ -104,6 +104,7 @@ def create_app():
         )
 
         stages = []
+        stage_details = {}
         lot_number = "-"
 
         if vehicle:
@@ -160,6 +161,137 @@ def create_app():
                 "Arrived": fmt_dt(primary_shipment.arrival_date) if primary_shipment else "",
                 "Delivered": fmt_dt(primary_shipment.arrival_date) if primary_shipment else "",
             }
+
+            # Build per-stage details using available data
+            def clean_str(value):
+                try:
+                    s = str(value).strip()
+                    return s if s else "-"
+                except Exception:
+                    return "-"
+
+            def add_details(name: str, fields: list[tuple[str, str]]):
+                stage_details[name] = [
+                    {"label": lbl, "value": val if (val and str(val).strip()) else "-"}
+                    for (lbl, val) in fields
+                ]
+
+            # Common references
+            auction = vehicle.auction if vehicle else None
+
+            # Details per stage
+            add_details(
+                "New car",
+                [
+                    ("Created", date_map.get("New car", "-")),
+                    ("Status", clean_str(vehicle.status if vehicle else "")),
+                    ("Lot #", clean_str(lot_number)),
+                    ("Location", clean_str(vehicle.current_location if vehicle else "")),
+                ],
+            )
+
+            add_details(
+                "Cashier Payment",
+                [
+                    ("Amount (USD)", clean_str(vehicle.purchase_price_usd if vehicle else "")),
+                    ("Date", date_map.get("Cashier Payment", "-")),
+                ],
+            )
+
+            add_details(
+                "Auction Payment",
+                [
+                    ("Paid On", date_map.get("Auction Payment", "-")),
+                    ("Auction Provider", clean_str(auction.provider if auction else "")),
+                    ("Lot #", clean_str(lot_number)),
+                ],
+            )
+
+            add_details(
+                "Posted",
+                [
+                    ("Auction", clean_str(auction.provider if auction else "")),
+                    ("Auction Date", clean_str(fmt_dt(auction.auction_date) if auction else "")),
+                    ("Location", clean_str(auction.location if auction else "")),
+                    ("Lot #", clean_str(lot_number)),
+                    ("Auction URL", clean_str(auction.auction_url if auction else "")),
+                ],
+            )
+
+            add_details(
+                "Towing",
+                [
+                    ("Current Status", clean_str(norm_status)),
+                    ("Location", clean_str(vehicle.current_location if vehicle else "")),
+                ],
+            )
+
+            add_details(
+                "Warehouse",
+                [
+                    ("Location", clean_str(vehicle.current_location if vehicle else "")),
+                    ("Status", clean_str(norm_status)),
+                ],
+            )
+
+            add_details(
+                "Loading",
+                [
+                    ("Planned Load Date", date_map.get("Loading", "-")),
+                    ("Shipment #", clean_str(primary_shipment.shipment_number if primary_shipment else "")),
+                    ("Shipping Company", clean_str(primary_shipment.shipping_company if primary_shipment else "")),
+                    ("Container #", clean_str(primary_shipment.container_number if primary_shipment else "")),
+                ],
+            )
+
+            add_details(
+                "Shipping",
+                [
+                    ("Shipment #", clean_str(primary_shipment.shipment_number if primary_shipment else "")),
+                    ("Origin Port", clean_str(primary_shipment.origin_port if primary_shipment else "")),
+                    ("Destination Port", clean_str(primary_shipment.destination_port if primary_shipment else "")),
+                    ("Departure", date_map.get("Shipping", "-")),
+                    ("Arrival", date_map.get("Arrived", "-")),
+                    ("Status", clean_str(primary_shipment.status if primary_shipment else "")),
+                ],
+            )
+
+            add_details(
+                "Port",
+                [
+                    ("Processed At", clean_str(primary_shipment.origin_port if primary_shipment else "")),
+                    ("Departure", date_map.get("Shipping", "-")),
+                    ("Shipment #", clean_str(primary_shipment.shipment_number if primary_shipment else "")),
+                ],
+            )
+
+            add_details(
+                "On way",
+                [
+                    ("From", clean_str(primary_shipment.origin_port if primary_shipment else "")),
+                    ("To", clean_str(primary_shipment.destination_port if primary_shipment else "")),
+                    ("Departure", date_map.get("Shipping", "-")),
+                    ("ETA", date_map.get("Arrived", "-")),
+                    ("Status", clean_str(primary_shipment.status if primary_shipment else "")),
+                ],
+            )
+
+            add_details(
+                "Arrived",
+                [
+                    ("Arrival", date_map.get("Arrived", "-")),
+                    ("Destination Port", clean_str(primary_shipment.destination_port if primary_shipment else "")),
+                    ("Shipment #", clean_str(primary_shipment.shipment_number if primary_shipment else "")),
+                ],
+            )
+
+            add_details(
+                "Delivered",
+                [
+                    ("Delivered On", date_map.get("Delivered", "-")),
+                    ("Final Status", "Delivered" if completed_map.get("Delivered") else clean_str(norm_status)),
+                ],
+            )
         else:
             # Simulated example data when VIN is not found
             base = datetime.utcnow() - timedelta(days=15)
@@ -183,6 +315,13 @@ def create_app():
                 completed_map[nm] = idx < 7  # first 7 steps completed in demo
                 date_map[nm] = (base + timedelta(days=idx)).strftime("%d-%m-%Y") if completed_map[nm] else ""
             vehicle = None
+
+            # Generic simulated details
+            for nm in sim_names:
+                stage_details[nm] = [
+                    {"label": "Date", "value": date_map.get(nm, "-") or "-"},
+                    {"label": "Info", "value": "Demo data"},
+                ]
 
         icons = {
             "New car": "fa-car-side",
@@ -229,6 +368,7 @@ def create_app():
             lot_number=lot_number,
             vehicle=vehicle,
             stages=stages,
+            stage_details=stage_details,
         )
 
     @app.shell_context_processor
