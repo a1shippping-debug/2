@@ -684,6 +684,59 @@ def calendar_events():
     return jsonify(events)
 
 
+# Bulk vehicle status update page (Operations)
+@ops_bp.route('/cars/status', methods=['GET', 'POST'])
+@role_required('employee', 'admin')
+def cars_status():
+    if request.method == 'POST':
+        # Expect multiple repeated fields: status[vehicle_id] = new_status
+        # Or pairs of vehicle_ids[] and statuses[] in the same order
+        updated = 0
+        # Support style: status_123=Shipped
+        for key, val in (request.form or {}).items():
+            if key.startswith('status_'):
+                try:
+                    vid = int(key.split('_', 1)[1])
+                    v = db.session.get(Vehicle, vid)
+                    if v and val and val != v.status:
+                        v.status = val
+                        updated += 1
+                except Exception:
+                    continue
+        # Support style: status[123] = Shipped
+        for key in (request.form or {}).keys():
+            if key.startswith('status[') and key.endswith(']'):
+                try:
+                    vid = int(key[7:-1])
+                    val = request.form.get(key)
+                    v = db.session.get(Vehicle, vid)
+                    if v and val and val != v.status:
+                        v.status = val
+                        updated += 1
+                except Exception:
+                    continue
+        try:
+            if updated:
+                db.session.commit()
+            return jsonify({"updated": updated})
+        except Exception:
+            db.session.rollback()
+            return ("", 400)
+
+    q = db.session.query(Vehicle)
+    vin = (request.args.get('vin') or '').strip()
+    client_id = request.args.get('client_id')
+    if vin:
+        q = q.filter(db.func.lower(Vehicle.vin).like(db.func.lower(f"%{vin}%")))
+    if client_id:
+        try:
+            q = q.filter(Vehicle.owner_customer_id == int(client_id))
+        except Exception:
+            pass
+    cars = q.order_by(Vehicle.created_at.desc()).limit(200).all()
+    customers = db.session.query(Customer).order_by(Customer.company_name.asc()).all()
+    return render_template('operations/cars_status.html', cars=cars, customers=customers)
+
 # Vehicle tracking timeline view for Operations (staff access)
 @ops_bp.route('/cars/<int:vehicle_id>/tracking')
 @role_required('employee', 'admin')

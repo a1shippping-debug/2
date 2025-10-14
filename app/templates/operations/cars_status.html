@@ -1,0 +1,79 @@
+{% extends "layout.html" %}
+{% block title %}{{ _('Update Vehicle Statuses') }}{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-semibold">{{ _('Update Vehicle Statuses') }}</h1>
+  <div class="flex items-center gap-2">
+    <a href="{{ url_for('ops.cars_list') }}" class="px-3 py-2 bg-white border rounded">{{ _('Back to Cars') }}</a>
+  </div>
+</div>
+
+<form method="get" class="bg-white p-4 rounded shadow mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+  <input name="vin" placeholder="{{ _('VIN') }}" value="{{ request.args.get('vin','') }}" class="border p-2 rounded">
+  <select name="client_id" class="border p-2 rounded">
+    <option value="">{{ _('Client') }}</option>
+    {% for c in customers %}
+      <option value="{{c.id}}" {% if request.args.get('client_id')==(c.id|string) %}selected{% endif %}>{{ c.company_name or c.full_name }}</option>
+    {% endfor %}
+  </select>
+  <button class="px-3 py-2 bg-gray-800 text-white rounded">{{ _('Filter') }}</button>
+</form>
+
+<div class="bg-white rounded shadow overflow-x-auto">
+  <form id="statusForm" class="p-3">
+    <table class="min-w-full text-sm">
+      <thead>
+        <tr class="text-left text-gray-500">
+          <th class="py-2 px-3">{{ _('VIN') }}</th>
+          <th class="py-2 px-3">{{ _('Make') }}</th>
+          <th class="py-2 px-3">{{ _('Model') }}</th>
+          <th class="py-2 px-3">{{ _('Client') }}</th>
+          <th class="py-2 px-3">{{ _('Current Status') }}</th>
+          <th class="py-2 px-3">{{ _('New Status') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in cars %}
+        <tr class="border-t">
+          <td class="py-2 px-3">{{ v.vin }}</td>
+          <td class="py-2 px-3">{{ v.make }}</td>
+          <td class="py-2 px-3">{{ v.model }}</td>
+          <td class="py-2 px-3">{{ v.owner.company_name if v.owner else '-' }}</td>
+          <td class="py-2 px-3">{{ v.status or '-' }}</td>
+          <td class="py-2 px-3">
+            <select name="status_{{ v.id }}" class="border p-2 rounded">
+              {% for s in ['Purchased','Shipped','In Transit','Arrived','Cleared','Delivered'] %}
+                <option value="{{s}}" {% if v.status==s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="p-3">
+      <button type="submit" class="px-3 py-2 bg-blue-600 text-white rounded">{{ _('Save Changes') }}</button>
+      <span id="saveResult" class="ml-3 text-sm"></span>
+    </div>
+  </form>
+</div>
+
+<script>
+  const form = document.getElementById('statusForm');
+  const result = document.getElementById('saveResult');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    try {
+      const r = await fetch('{{ url_for('ops.cars_status') }}', { method: 'POST', body: fd });
+      if (!r.ok) throw new Error('Failed');
+      const data = await r.json();
+      result.textContent = `${data.updated} {{ _('vehicles updated') }}`;
+      result.className = 'ml-3 text-sm text-green-700';
+    } catch (err) {
+      result.textContent = '{{ _('Save failed') }}';
+      result.className = 'ml-3 text-sm text-red-700';
+    }
+  });
+</script>
+{% endblock %}
