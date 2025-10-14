@@ -33,7 +33,7 @@
         <th class="py-2 px-3">{{ _('Client') }}</th>
         <th class="py-2 px-3">{{ _('Status') }}</th>
         <th class="py-2 px-3">{{ _('Auction') }}</th>
-        <th class="py-2 px-3">{{ _('Shipment') }}</th>
+        <th class="py-2 px-3">{{ _('Tracking') }}</th>
         <th class="py-2 px-3">{{ _('Actions') }}</th>
       </tr>
     </thead>
@@ -52,7 +52,12 @@
             <a class="text-blue-600 underline" href="{{ v.auction.auction_url }}" target="_blank">{{ _('Link') }}</a>
           {% else %}-{% endif %}
         </td>
-        <td class="py-2 px-3">-</td>
+        <td class="py-2 px-3">
+          <div class="flex items-center gap-2">
+            <span class="inline-block text-xs px-2 py-1 rounded bg-gray-100">{{ tracking_stage.get(v.id,'-') }}</span>
+            <a class="text-blue-600 underline text-xs" href="{{ url_for('ops.vehicle_tracking', vehicle_id=v.id) }}">{{ _('View Timeline') }}</a>
+          </div>
+        </td>
         <td class="py-2 px-3 space-x-2">
           <a href="{{ url_for('ops.cars_edit', vehicle_id=v.id) }}" class="text-blue-600">{{ _('Edit') }}</a>
           <form action="{{ url_for('ops.cars_delete', vehicle_id=v.id) }}" method="post" class="inline" onsubmit="return confirm('{{ _('Delete?') }}')">
