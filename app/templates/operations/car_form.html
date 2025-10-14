@@ -3,7 +3,7 @@
 {% block content %}
 <h1 class="text-xl font-semibold mb-4">{{ _('Edit Car') if vehicle else _('Add Car') }}</h1>
 <form id="car_form" method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow grid grid-cols-1 md:grid-cols-3 gap-3">
-  <!-- BidCars link at the top -->
+  <!-- Auction/Listing URL at the top -->
   <div class="md:col-span-3 flex gap-2">
     <input id="auction_url" name="auction_url" placeholder="رابط السيارة" value="{{ vehicle.auction.auction_url if vehicle and vehicle.auction else '' }}" class="border p-2 rounded flex-1">
     <button type="button" id="fetch_bidcars" class="px-3 py-2 bg-emerald-600 text-white rounded whitespace-nowrap">جلب البيانات</button>
@@ -71,10 +71,10 @@
   btn.addEventListener('click', async function() {
     const urlInput = document.getElementById('auction_url');
     const url = (urlInput && urlInput.value || '').trim();
-    if (!url) { alert('الرجاء لصق رابط السيارة من BidCars أولاً'); return; }
+    if (!url) { alert('الرجاء لصق رابط صفحة السيارة أولاً'); return; }
     btn.disabled = true; const old = btn.textContent; btn.textContent = '...';
     try {
-      const resp = await fetch('{{ url_for('ops.cars_fetch_from_bidcars') }}', {
+      const resp = await fetch('{{ url_for('ops.cars_fetch_from_url') }}', {
         method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ url })
       });
       const data = await resp.json();
