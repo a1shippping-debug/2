@@ -406,3 +406,25 @@ msgstr "VAT"
 #: app/templates/admin/settings.html
 msgid "Shipping Fee (OMR)"
 msgstr "Shipping Fee (OMR)"
+
+# New customer messages
+msgid "Please enter a Company Name or Full Name"
+msgstr "Please enter a Company Name or Full Name"
+
+msgid "Customer saved successfully"
+msgstr "Customer saved successfully"
+
+msgid "Failed to save customer"
+msgstr "Failed to save customer"
+
+msgid "Database schema is outdated. Please run the database migrations."
+msgstr "Database schema is outdated. Please run the database migrations."
+
+msgid "Account number already exists"
+msgstr "Account number already exists"
+
+msgid "Customer updated"
+msgstr "Customer updated"
+
+msgid "Failed to update customer"
+msgstr "Failed to update customer"

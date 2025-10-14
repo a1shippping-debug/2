@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, request, jsonify, current_app
+from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for, flash
+from flask_babel import gettext as _
 from flask_login import login_required
 from ...security import role_required
 from ...extensions import db
@@ -627,9 +628,15 @@ def customers_list():
 @role_required('employee', 'admin')
 def customers_new():
     if request.method == 'POST':
+        company_name = (request.form.get('company_name') or '').strip()
+        full_name = (request.form.get('full_name') or '').strip()
+        if not company_name and not full_name:
+            flash(_('Please enter a Company Name or Full Name'), 'danger')
+            return render_template('operations/customer_form.html')
+
         c = Customer(
-            company_name=(request.form.get('company_name') or '').strip() or None,
-            full_name=(request.form.get('full_name') or '').strip() or None,
+            company_name=company_name or None,
+            full_name=full_name or None,
             email=(request.form.get('email') or '').strip() or None,
             phone=(request.form.get('phone') or '').strip() or None,
             country=(request.form.get('country') or '').strip() or None,
@@ -638,10 +645,22 @@ def customers_new():
         )
         db.session.add(c)
         try:
-            db.session.commit(); notify(f"Customer {c.company_name or c.full_name} added", 'Customer', c.id)
-            return render_template('operations/customer_form.html', customer=c, saved=True)
-        except Exception:
+            db.session.commit()
+            notify(f"Customer {c.company_name or c.full_name} added", 'Customer', c.id)
+            flash(_('Customer saved successfully'), 'success')
+            return redirect(url_for('ops.customers_edit', customer_id=c.id))
+        except Exception as e:
+            current_app.logger.exception('Failed to save customer')
             db.session.rollback()
+            # Provide a helpful message for common problems (e.g., missing migrations or unique constraints)
+            message = _('Failed to save customer')
+            text = str(e).lower()
+            if 'no such column' in text or 'does not exist' in text:
+                message = _('Database schema is outdated. Please run the database migrations.')
+            elif 'unique constraint' in text or 'unique failed' in text:
+                message = _('Account number already exists')
+            flash(message, 'danger')
+            return render_template('operations/customer_form.html', customer=c)
     return render_template('operations/customer_form.html')
 
 
@@ -658,8 +677,11 @@ def customers_edit(customer_id: int):
                 setattr(c, fld, val)
         try:
             db.session.commit(); notify(f"Customer {c.company_name or c.full_name} updated", 'Customer', c.id)
-        except Exception:
+            flash(_('Customer updated'), 'success')
+        except Exception as e:
+            current_app.logger.exception('Failed to update customer')
             db.session.rollback()
+            flash(_('Failed to update customer'), 'danger')
     return render_template('operations/customer_form.html', customer=c)
 
 

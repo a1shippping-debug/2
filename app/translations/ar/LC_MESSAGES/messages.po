@@ -348,6 +348,28 @@ msgstr "فشل حذف الفاتورة"
 msgid "Missing customer email"
 msgstr "البريد الإلكتروني للعميل غير موجود"
 
+# New customer messages
+msgid "Please enter a Company Name or Full Name"
+msgstr "يرجى إدخال اسم الشركة أو الاسم الكامل"
+
+msgid "Customer saved successfully"
+msgstr "تم حفظ العميل بنجاح"
+
+msgid "Failed to save customer"
+msgstr "فشل حفظ بيانات العميل"
+
+msgid "Database schema is outdated. Please run the database migrations."
+msgstr "مخطط قاعدة البيانات قديم. يرجى تشغيل ترحيلات قاعدة البيانات."
+
+msgid "Account number already exists"
+msgstr "رقم الحساب موجود بالفعل"
+
+msgid "Customer updated"
+msgstr "تم تحديث بيانات العميل"
+
+msgid "Failed to update customer"
+msgstr "فشل تحديث بيانات العميل"
+
 msgid "Invoice %(n)s"
 msgstr "فاتورة %(n)s"
 

@@ -128,7 +128,10 @@
       <textarea name="address" rows="3" placeholder="{{ _('Address') }}">{{ customer.address if customer else '' }}</textarea>
     </div>
 
-    <div class="md:col-span-2 flex justify-end">
+    <div class="md:col-span-2 flex justify-between items-center">
+      <div class="text-sm text-gray-500">
+        {{ _('الحقول المطلوبة: اسم الشركة أو الاسم الكامل') }}
+      </div>
       <button class="btn-primary">{{ _('حفظ العميل') }}</button>
     </div>
   </form>
