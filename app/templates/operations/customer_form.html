@@ -105,12 +105,10 @@
       <input name="account_number" value="{{ customer.account_number if customer else '' }}" placeholder="{{ _('رقم البطاقة') }}" {% if not customer %}required{% endif %}>
     </div>
 
-    {% if customer %}
     <div>
       <label>{{ _('البريد الإلكتروني') }}</label>
-      <input type="email" name="email" value="{{ customer.email if customer else '' }}" placeholder="{{ _('Email') }}">
+      <input type="email" name="email" value="{{ customer.email if customer else '' }}" placeholder="{{ _('Email') }}" {% if not customer %}required{% endif %}>
     </div>
-    {% endif %}
 
     <div>
       <label>{{ _('رقم الهاتف') }}</label>
@@ -131,7 +129,7 @@
 
     <div class="md:col-span-2 flex justify-between items-center">
       <div class="text-sm text-gray-500">
-        {{ _('الحقول المطلوبة: الاسم، رقم الجوال، الدولة، رقم البطاقة') }}
+        {{ _('الحقول المطلوبة: الاسم، البريد الإلكتروني، رقم الجوال، الدولة، رقم البطاقة') }}
       </div>
       <button class="btn-primary">{{ _('حفظ العميل') }}</button>
     </div>
