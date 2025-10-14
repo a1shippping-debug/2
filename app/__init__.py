@@ -55,10 +55,21 @@ def create_app():
     def persist_lang_cookie(response):
         try:
             supported = app.config.get("BABEL_SUPPORTED_LOCALES", ["en", "ar"]) or ["en", "ar"]
-            lang = (request.args.get("lang") or "").strip()
-            if lang in supported:
-                # persist for 1 year
-                response.set_cookie("lang", lang, max_age=60 * 60 * 24 * 365, samesite="Lax")
+            requested_language = (request.args.get("lang") or "").strip()
+            if requested_language in supported:
+                response.set_cookie(
+                    "lang",
+                    requested_language,
+                    max_age=60 * 60 * 24 * 365,
+                    samesite="Lax",
+                )
+        except Exception:
+            pass
+        # Always ensure UTF-8 for HTML responses to avoid mojibake
+        try:
+            content_type_header = response.headers.get("Content-Type", "")
+            if content_type_header.startswith("text/html"):
+                response.headers["Content-Type"] = "text/html; charset=utf-8"
         except Exception:
             pass
         return response
