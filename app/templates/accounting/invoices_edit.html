@@ -1,50 +1,102 @@
 {% extends "base_accounting.html" %}
 {% block acct_content %}
-<h2 class="text-xl font-semibold mb-4">Edit Invoice {{ invoice.invoice_number }}</h2>
-<form method="post" class="space-y-4">
-  <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-4">
+<h2 class="text-2xl font-bold text-blue-900 mb-6">
+  {{ _('Edit Invoice') }} {{ invoice.invoice_number }}
+</h2>
+
+<form method="post" class="space-y-6">
+
+  <!-- 🧾 الحالة والمجموع -->
+  <div class="bg-white border border-gray-200 shadow-sm p-5 rounded-2xl grid grid-cols-1 md:grid-cols-3 gap-4 transition hover:shadow-md">
     <div>
-      <label class="block text-sm mb-1">Status</label>
-      <select name="status" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
+      <label class="block text-sm font-medium text-gray-600 mb-1">{{ _('Status') }}</label>
+      <select name="status" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
         {% for s in ['Draft','Paid','Partial','Cancelled'] %}
         <option value="{{ s }}" {% if invoice.status==s %}selected{% endif %}>{{ s }}</option>
         {% endfor %}
       </select>
     </div>
-    <div class="md:col-span-2 flex items-end text-slate-300">Total: {{ '%.3f'|format(invoice.total_omr or 0) }} OMR</div>
+    <div class="md:col-span-2 flex items-end justify-end">
+      <div class="text-gray-700 text-lg font-semibold">
+        {{ _('Total:') }} <span class="text-blue-800">{{ '%.3f'|format(invoice.total_omr or 0) }}</span> OMR
+      </div>
+    </div>
   </div>
 
-  <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
-    <div class="flex items-center justify-between mb-2"><div class="font-semibold">Items</div><button type="button" class="px-2 py-1 bg-slate-800 rounded" onclick="addRow()">Add</button></div>
+  <!-- 💼 عناصر الفاتورة -->
+  <div class="bg-white border border-gray-200 shadow-sm p-5 rounded-2xl transition hover:shadow-md">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-semibold text-blue-900">{{ _('Items') }}</h3>
+      <button type="button"
+              class="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
+              onclick="addRow()">
+        + {{ _('Add Item') }}
+      </button>
+    </div>
+
     <div id="items">
       {% for it in invoice.items %}
-      <div class="grid grid-cols-1 md:grid-cols-6 gap-2 mb-2">
-        <input name="item_description" value="{{ it.description }}" class="md:col-span-4 bg-slate-900 border border-slate-700 rounded p-2" />
-        <input name="item_amount" value="{{ it.amount_omr }}" class="md:col-span-2 bg-slate-900 border border-slate-700 rounded p-2" />
+      <div class="grid grid-cols-1 md:grid-cols-6 gap-2 mb-2 animate-fadeIn">
+        <input name="item_description" value="{{ it.description }}" placeholder="Description"
+               class="md:col-span-4 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+        <input name="item_amount" value="{{ it.amount_omr }}" placeholder="Amount (OMR)"
+               class="md:col-span-2 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
       </div>
       {% endfor %}
       {% if not invoice.items %}
-      <div class="grid grid-cols-1 md:grid-cols-6 gap-2 mb-2">
-        <input name="item_description" placeholder="Description" class="md:col-span-4 bg-slate-900 border border-slate-700 rounded p-2" />
-        <input name="item_amount" placeholder="Amount (OMR)" class="md:col-span-2 bg-slate-900 border border-slate-700 rounded p-2" />
+      <div class="grid grid-cols-1 md:grid-cols-6 gap-2 mb-2 animate-fadeIn">
+        <input name="item_description" placeholder="Description"
+               class="md:col-span-4 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+        <input name="item_amount" placeholder="Amount (OMR)"
+               class="md:col-span-2 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
       </div>
       {% endif %}
     </div>
   </div>
-  <div>
-    <button class="px-4 py-2 rounded bg-primary text-white">Save</button>
-    <a href="{{ url_for('acct.invoices_list') }}" class="ml-2 px-4 py-2 rounded bg-slate-800">Back</a>
-    <a href="{{ url_for('acct.invoices_export', invoice_id=invoice.id) }}" class="ml-2 px-4 py-2 rounded bg-slate-800">Export PDF</a>
-    <form method="post" action="{{ url_for('acct.invoices_email', invoice_id=invoice.id) }}" class="inline"><button class="ml-2 px-4 py-2 rounded bg-slate-800">Email</button></form>
+
+  <!-- 🔘 الأزرار -->
+  <div class="flex flex-wrap items-center gap-3">
+    <button class="px-5 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">
+      {{ _('Save') }}
+    </button>
+    <a href="{{ url_for('acct.invoices_list') }}"
+       class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+      {{ _('Back') }}
+    </a>
+    <a href="{{ url_for('acct.invoices_export', invoice_id=invoice.id) }}"
+       class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+      {{ _('Export PDF') }}
+    </a>
+    <form method="post" action="{{ url_for('acct.invoices_email', invoice_id=invoice.id) }}" class="inline">
+      <button class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+        {{ _('Email') }}
+      </button>
+    </form>
   </div>
+
 </form>
+
+<!-- ⚙️ سكربت إضافة صف جديد -->
 <script>
 function addRow(){
   const div = document.createElement('div');
-  div.className='grid grid-cols-1 md:grid-cols-6 gap-2 mb-2';
-  div.innerHTML = '<input name="item_description" placeholder="Description" class="md:col-span-4 bg-slate-900 border border-slate-700 rounded p-2" />\
-  <input name="item_amount" placeholder="Amount (OMR)" class="md:col-span-2 bg-slate-900 border border-slate-700 rounded p-2" />';
+  div.className = 'grid grid-cols-1 md:grid-cols-6 gap-2 mb-2 animate-fadeIn';
+  div.innerHTML = `
+    <input name="item_description" placeholder="Description"
+           class="md:col-span-4 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+    <input name="item_amount" placeholder="Amount (OMR)"
+           class="md:col-span-2 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+  `;
   document.getElementById('items').appendChild(div);
 }
 </script>
+
+<style>
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+</style>
+
 {% endblock %}

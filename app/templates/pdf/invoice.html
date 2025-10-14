@@ -1,31 +1,142 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8"/>
     <style>
-      body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 12px; }
-      .header { text-align: center; margin-bottom: 20px; }
-      .items { width: 100%; border-collapse: collapse; }
-      .items th, .items td { border: 1px solid #333; padding: 6px; }
+      body {
+        font-family: "DejaVu Sans", Arial, sans-serif;
+        font-size: 13px;
+        color: #333;
+        background: #fff;
+        margin: 40px;
+      }
+
+      .invoice-box {
+        max-width: 800px;
+        margin: auto;
+        padding: 30px;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+      }
+
+      .logo {
+        height: 60px;
+      }
+
+      .company-info {
+        text-align: right;
+        font-size: 12px;
+        color: #555;
+      }
+
+      h2.title {
+        text-align: center;
+        color: #007bff;
+        margin-top: 0;
+        text-transform: uppercase;
+      }
+
+      .details {
+        margin-bottom: 25px;
+      }
+
+      .details strong {
+        width: 150px;
+        display: inline-block;
+      }
+
+      table.items {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+
+      .items th {
+        background: #007bff;
+        color: white;
+        text-align: left;
+        padding: 8px;
+        border: 1px solid #ccc;
+      }
+
+      .items td {
+        border: 1px solid #ddd;
+        padding: 8px;
+      }
+
+      .total {
+        text-align: right;
+        font-weight: bold;
+        font-size: 14px;
+      }
+
+      .footer {
+        margin-top: 30px;
+        text-align: center;
+        font-size: 12px;
+        color: #777;
+      }
     </style>
   </head>
   <body>
-    <div class="header">
-      <h2>{{ _('Commercial Invoice') }}</h2>
+    <div class="invoice-box">
+      <div class="header">
+        <div>
+          <img src="{{ url_for('static', filename='images/company_logo.png') }}" class="logo" alt="Company Logo">
+        </div>
+        <div class="company-info">
+          <strong>CarTrade LLC</strong><br>
+          Muscat, Sultanate of Oman<br>
+          Tel: +968 9999 9999<br>
+          Email: info@cartrade.com
+        </div>
+      </div>
+
+      <h2 class="title">{{ _('Commercial Invoice') }}</h2>
+
+      <div class="details">
+        <p>
+          <strong>{{ _('Invoice #:') }}</strong> {{ invoice.invoice_number }}<br>
+          <strong>{{ _('Date:') }}</strong> {{ invoice.created_at.strftime('%Y-%m-%d') }}<br>
+          <strong>{{ _('Client:') }}</strong> {{ invoice.customer.company_name if invoice.customer else '-' }}
+        </p>
+      </div>
+
+      <table class="items">
+        <thead>
+          <tr>
+            <th>{{ _('Description') }}</th>
+            <th style="width:150px; text-align:right">{{ _('Amount (OMR)') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for it in items %}
+          <tr>
+            <td>{{ it.description }}</td>
+            <td style="text-align:right">{{ '%.3f'|format(it.amount_omr or 0) }}</td>
+          </tr>
+          {% endfor %}
+          <tr>
+            <td class="total">{{ _('Total') }}</td>
+            <td class="total">{{ '%.3f'|format(invoice.total_omr or 0) }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="footer">
+        {{ _('Thank you for your business!') }}<br>
+        {{ _('This is a computer-generated invoice and does not require a signature.') }}
+      </div>
     </div>
-    <div>
-      <strong>{{ _('Invoice #:') }} </strong>{{ invoice.invoice_number }}<br/>
-      <strong>{{ _('Date:') }} </strong>{{ invoice.created_at.strftime('%Y-%m-%d') }}
-    </div>
-    <table class="items" style="margin-top:10px">
-      <thead>
-        <tr><th>{{ _('Description') }}</th><th>{{ _('Amount (OMR)') }}</th></tr>
-      </thead>
-      <tbody>
-        {% for it in items %}
-        <tr><td>{{ it.description }}</td><td>{{ '%.3f'|format(it.amount_omr or 0) }}</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
   </body>
 </html>

@@ -1,20 +1,69 @@
 {% extends "base_accounting.html" %}
 {% block acct_content %}
-<h2 class="text-xl font-semibold mb-4">{{ _('Financial Reports') }}</h2>
-<div class="flex items-center gap-2 mb-4">
-  <a class="px-3 py-2 rounded bg-slate-800" href="?export=pdf">{{ _('Export PDF') }}</a>
-  <a class="px-3 py-2 rounded bg-slate-800" href="?export=xlsx">{{ _('Export Excel') }}</a>
+
+<div class="mb-6">
+  <h2 class="text-2xl font-bold text-blue-900 mb-4">{{ _('Financial Reports') }}</h2>
+
+  <div class="flex items-center gap-3 mb-6">
+    <a href="?export=pdf"
+       class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium shadow hover:bg-blue-700 transition">
+       {{ _('Export PDF') }}
+    </a>
+    <a href="?export=xlsx"
+       class="px-4 py-2 rounded-lg bg-green-600 text-white font-medium shadow hover:bg-green-700 transition">
+       {{ _('Export Excel') }}
+    </a>
+  </div>
+
+  <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold text-blue-900">{{ _('Monthly Revenue vs Expenses') }}</h3>
+    </div>
+
+    <canvas id="lineChart" height="120"></canvas>
+  </div>
 </div>
-<div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
-  <h3 class="font-semibold mb-2">{{ _('Monthly Revenue vs Expenses') }}</h3>
-  <canvas id="lineChart" height="120"></canvas>
-</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 const ctx = document.getElementById('lineChart');
-new Chart(ctx, { type: 'line', data: { labels: {{ chart.months|tojson|safe }}, datasets: [
-  { label: '{{ _('Revenue') }}', data: {{ chart.revenue|tojson|safe }}, borderColor: '#10b981', tension: 0.3 },
-  { label: '{{ _('Expenses') }}', data: {{ chart.expenses|tojson|safe }}, borderColor: '#ef4444', tension: 0.3 }
-]}});
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: {{ chart.months|tojson|safe }},
+    datasets: [
+      {
+        label: '{{ _('Revenue') }}',
+        data: {{ chart.revenue|tojson|safe }},
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3
+      },
+      {
+        label: '{{ _('Expenses') }}',
+        data: {{ chart.expenses|tojson|safe }},
+        borderColor: '#ef4444',
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top', labels: { color: '#1e3a8a' } },
+      tooltip: { mode: 'index', intersect: false }
+    },
+    scales: {
+      x: { ticks: { color: '#475569' }, grid: { color: '#f1f5f9' } },
+      y: { ticks: { color: '#475569' }, grid: { color: '#f1f5f9' } }
+    }
+  }
+});
 </script>
+
 {% endblock %}
