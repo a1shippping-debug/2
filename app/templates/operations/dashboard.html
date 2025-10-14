@@ -9,6 +9,10 @@
       <span class="material-icons mr-1">dashboard</span>
       <span>لوحة العميل</span>
     </a>
+    <a href="{{ url_for('cust.track') }}" class="px-3 py-2 bg-indigo-600 text-white rounded inline-flex items-center">
+      <span class="material-icons mr-1">map</span>
+      <span>تتبع السيارات</span>
+    </a>
     <a href="{{ url_for('ops.cars_new') }}" class="px-3 py-2 bg-blue-600 text-white rounded inline-flex items-center">
       <span class="material-icons mr-1">add</span>
       <span>{{ _('Add Car') }}</span>
