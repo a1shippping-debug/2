@@ -68,7 +68,7 @@ class Vehicle(db.Model):
     year = db.Column(db.Integer)
     auction_id = db.Column(db.Integer, db.ForeignKey("auctions.id"))
     owner_customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=True)
-    status = db.Column(db.String(50), default="New")
+    status = db.Column(db.String(50), default="New car")
     current_location = db.Column(db.String(200))
     purchase_price_usd = db.Column(db.Numeric(12,2))
     purchase_date = db.Column(db.DateTime)

@@ -42,7 +42,7 @@
           <td class="py-2 px-3">{{ v.status or '-' }}</td>
           <td class="py-2 px-3">
             <select name="status_{{ v.id }}" class="border p-2 rounded">
-              {% for s in ['Purchased','Shipped','In Transit','Arrived','Cleared','Delivered'] %}
+              {% for s in ['New car','Cashier Payment','Auction Payment','Posted','Towing','Warehouse','Loading','Shipping','Port','On way','Arrived','Delivered'] %}
                 <option value="{{s}}" {% if v.status==s %}selected{% endif %}>{{ s }}</option>
               {% endfor %}
             </select>

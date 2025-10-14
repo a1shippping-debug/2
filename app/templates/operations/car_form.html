@@ -41,7 +41,7 @@
     </select>
   </div>
   <select name="status" class="border p-2 rounded">
-    {% for s in ['Purchased','Shipped','In Transit','Arrived','Cleared','Delivered'] %}
+    {% for s in ['New car','Cashier Payment','Auction Payment','Posted','Towing','Warehouse','Loading','Shipping','Port','On way','Arrived','Delivered'] %}
       <option value="{{s}}" {% if vehicle and vehicle.status==s %}selected{% endif %}>{{ s }}</option>
     {% endfor %}
   </select>

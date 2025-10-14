@@ -9,7 +9,7 @@
   <input name="vin" value="{{ request.args.get('vin','') }}" placeholder="{{ _('VIN') }}" class="border p-2 rounded">
   <select name="status" class="border p-2 rounded">
     <option value="">{{ _('Status') }}</option>
-    {% for s in ['Purchased','Shipped','In Transit','Arrived','Cleared','Delivered'] %}
+    {% for s in ['New car','Cashier Payment','Auction Payment','Posted','Towing','Warehouse','Loading','Shipping','Port','On way','Arrived','Delivered'] %}
       <option value="{{s}}" {% if request.args.get('status')==s %}selected{% endif %}>{{ s }}</option>
     {% endfor %}
   </select>
