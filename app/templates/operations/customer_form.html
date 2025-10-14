@@ -104,33 +104,37 @@
     </div>
 
     <div>
-      <label>{{ _('رقم الحساب') }}</label>
-      <input name="account_number" value="{{ customer.account_number if customer else '' }}" placeholder="{{ _('Account #') }}">
+      <label>{{ _('رقم البطاقة') }}</label>
+      <input name="account_number" value="{{ customer.account_number if customer else '' }}" placeholder="{{ _('رقم البطاقة') }}" {% if not customer %}required{% endif %}>
     </div>
 
+    {% if customer %}
     <div>
       <label>{{ _('البريد الإلكتروني') }}</label>
       <input type="email" name="email" value="{{ customer.email if customer else '' }}" placeholder="{{ _('Email') }}">
     </div>
+    {% endif %}
 
     <div>
       <label>{{ _('رقم الهاتف') }}</label>
-      <input name="phone" value="{{ customer.phone if customer else '' }}" placeholder="{{ _('Phone') }}">
+      <input name="phone" value="{{ customer.phone if customer else '' }}" placeholder="{{ _('Phone') }}" {% if not customer %}required{% endif %}>
     </div>
 
     <div>
       <label>{{ _('الدولة') }}</label>
-      <input name="country" value="{{ customer.country if customer else '' }}" placeholder="{{ _('Country') }}">
+      <input name="country" value="{{ customer.country if customer else '' }}" placeholder="{{ _('Country') }}" {% if not customer %}required{% endif %}>
     </div>
 
+    {% if customer %}
     <div class="md:col-span-2">
       <label>{{ _('العنوان') }}</label>
       <textarea name="address" rows="3" placeholder="{{ _('Address') }}">{{ customer.address if customer else '' }}</textarea>
     </div>
+    {% endif %}
 
     <div class="md:col-span-2 flex justify-between items-center">
       <div class="text-sm text-gray-500">
-        {{ _('الحقول المطلوبة: اسم الشركة أو الاسم الكامل') }}
+        {{ _('الحقول المطلوبة: الاسم، رقم الجوال، الدولة، رقم البطاقة') }}
       </div>
       <button class="btn-primary">{{ _('حفظ العميل') }}</button>
     </div>
