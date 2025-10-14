@@ -630,19 +630,40 @@ def customers_new():
     if request.method == 'POST':
         company_name = (request.form.get('company_name') or '').strip()
         full_name = (request.form.get('full_name') or '').strip()
-        if not company_name and not full_name:
-            flash(_('Please enter a Company Name or Full Name'), 'danger')
-            return render_template('operations/customer_form.html')
+        email = (request.form.get('email') or '').strip()
+        phone = (request.form.get('phone') or '').strip()
+        country = (request.form.get('country') or '').strip()
+        address = (request.form.get('address') or '').strip()
+        account_number = (request.form.get('account_number') or '').strip()
 
+        # Build a transient customer to repopulate the form on validation errors
         c = Customer(
             company_name=company_name or None,
             full_name=full_name or None,
-            email=(request.form.get('email') or '').strip() or None,
-            phone=(request.form.get('phone') or '').strip() or None,
-            country=(request.form.get('country') or '').strip() or None,
-            address=(request.form.get('address') or '').strip() or None,
-            account_number=(request.form.get('account_number') or '').strip() or None,
+            email=email or None,
+            phone=phone or None,
+            country=country or None,
+            address=address or None,
+            account_number=account_number or None,
         )
+
+        # Required fields on create: name (company or full), phone, country, card number
+        has_name = bool(company_name or full_name)
+        has_phone = bool(phone)
+        has_country = bool(country)
+        has_card = bool(account_number)
+
+        if not has_name:
+            flash(_('الاسم مطلوب (اسم الشركة أو الاسم الكامل)'), 'danger')
+        if not has_phone:
+            flash(_('رقم الجوال مطلوب'), 'danger')
+        if not has_country:
+            flash(_('الدولة مطلوبة'), 'danger')
+        if not has_card:
+            flash(_('رقم البطاقة مطلوب'), 'danger')
+        if not (has_name and has_phone and has_country and has_card):
+            return render_template('operations/customer_form.html', customer=c)
+
         db.session.add(c)
         try:
             db.session.commit()
