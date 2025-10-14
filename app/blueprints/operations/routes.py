@@ -212,14 +212,21 @@ def cars_list():
                 "New car": True,
                 "Cashier Payment": bool(v.purchase_price_usd and float(v.purchase_price_usd) > 0),
                 "Auction Payment": bool(v.purchase_date),
+                # Use either shipment existence or vehicle status keywords
                 "Posted": bool(shps) or norm_status in {"in shipping", "shipped", "delivered", "arrived", "in transit"},
                 "Towing": any(k in norm_status for k in ["picked", "towing", "tow"]),
-                "Warehouse": "warehouse" in norm_status,
-                "Loading": bool(shps and not departed),
-                "Shipping": bool(departed),
-                "Port": bool(departed),
-                "On way": bool(departed and not arrived),
-                "Arrived": bool(arrived),
+                # Map cleared/warehouse statuses
+                "Warehouse": ("warehouse" in norm_status) or ("cleared" in norm_status),
+                # Loading is implied by shipped/in shipping too
+                "Loading": bool(shps and not departed) or ("shipped" in norm_status) or ("in shipping" in norm_status),
+                # Shipping and Port can be status-driven
+                "Shipping": bool(departed) or ("shipped" in norm_status) or ("in shipping" in norm_status),
+                "Port": bool(departed) or ("shipped" in norm_status) or ("in shipping" in norm_status),
+                # In transit -> On way
+                "On way": bool(departed and not arrived) or ("in transit" in norm_status),
+                # Arrived if either arrival date or status indicates
+                "Arrived": bool(arrived) or ("arrived" in norm_status),
+                # Delivered by shipment or status
                 "Delivered": bool((shipment_status == "delivered") or ("delivered" in norm_status)),
             }
             current = next((name for name in reversed(order) if completed_map.get(name)), None)
@@ -773,14 +780,21 @@ def vehicle_tracking(vehicle_id: int):
         "New car": True,
         "Cashier Payment": bool(v.purchase_price_usd and float(v.purchase_price_usd) > 0),
         "Auction Payment": bool(v.purchase_date),
+        # Consider status text for lifecycle
         "Posted": bool(shipments) or norm_status in {"in shipping", "shipped", "delivered", "arrived", "in transit"},
         "Towing": any(k in norm_status for k in ["picked", "towing", "tow"]),
-        "Warehouse": "warehouse" in norm_status,
-        "Loading": bool(shipments and not departed),
-        "Shipping": bool(departed),
-        "Port": bool(departed),
-        "On way": bool(departed and not arrived),
-        "Arrived": bool(arrived),
+        # Warehouse or cleared
+        "Warehouse": ("warehouse" in norm_status) or ("cleared" in norm_status),
+        # Loading implied by shipped/in shipping
+        "Loading": bool(shipments and not departed) or ("shipped" in norm_status) or ("in shipping" in norm_status),
+        # Shipping and Port can be status-driven
+        "Shipping": bool(departed) or ("shipped" in norm_status) or ("in shipping" in norm_status),
+        "Port": bool(departed) or ("shipped" in norm_status) or ("in shipping" in norm_status),
+        # In transit marks On way
+        "On way": bool(departed and not arrived) or ("in transit" in norm_status),
+        # Arrived by shipment or status
+        "Arrived": bool(arrived) or ("arrived" in norm_status),
+        # Delivered as above
         "Delivered": bool(delivered or ("delivered" in norm_status)),
     }
 
