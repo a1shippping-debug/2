@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, send_file, abort
+from flask import Blueprint, render_template, request, send_file, abort, redirect, url_for
 from flask_login import login_required, current_user
 from ...extensions import db
 from ...models import Vehicle, Auction, Shipment, VehicleShipment, Customer, Invoice, InvoiceItem
@@ -9,172 +9,52 @@ cust_bp = Blueprint("cust", __name__, template_folder="templates/customer")
 @cust_bp.route("/dashboard")
 @login_required
 def dashboard():
-    """Customer dashboard now renders the unified tracking timeline page.
+    """Customer home page with quick actions."""
+    return render_template("customer/home.html")
 
-    If a VIN is provided via query string (vin= or q=), we render its timeline.
-    Otherwise we pick the latest vehicle owned by the logged-in customer.
-    If none found, we render a simulated timeline so the page isn't empty.
-    """
-    from datetime import datetime, timedelta
-    from flask_login import current_user
 
-    # Resolve current customer's profile (if any)
-    customer = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
-
-    # Determine VIN to display: explicit 'vin' or 'q' param, else latest vehicle VIN
-    vin_param = (request.args.get("vin") or request.args.get("q") or "").strip()
-    vin_norm = vin_param
-
-    vehicle = None
-    if not vin_norm and customer:
-        vehicle = (
+@cust_bp.route("/cars")
+@login_required
+def my_cars():
+    """List vehicles that belong to the logged-in customer."""
+    cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
+    cars = []
+    if cust:
+        cars = (
             db.session.query(Vehicle)
-            .filter(Vehicle.owner_customer_id == customer.id)
+            .filter(Vehicle.owner_customer_id == cust.id)
+            .order_by(Vehicle.created_at.desc())
+            .all()
+        )
+    return render_template("customer/my_cars.html", cars=cars)
+
+
+@cust_bp.route("/track")
+@login_required
+def track():
+    """VIN entry and redirect to the public tracking timeline.
+
+    If a VIN is provided (via vin= or q=), redirect to /tracking/<vin>.
+    Otherwise, try to use the latest vehicle of the current customer.
+    If none, show a simple VIN input form.
+    """
+    vin_param = (request.args.get("vin") or request.args.get("q") or "").strip()
+    if vin_param:
+        return redirect(url_for("tracking_page", vin=vin_param))
+
+    # Pick latest vehicle for convenience
+    cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
+    if cust:
+        v = (
+            db.session.query(Vehicle)
+            .filter(Vehicle.owner_customer_id == cust.id)
             .order_by(Vehicle.created_at.desc())
             .first()
         )
-        vin_norm = (vehicle.vin or "").strip() if vehicle else ""
+        if v and v.vin:
+            return redirect(url_for("tracking_page", vin=v.vin))
 
-    stages = []
-    lot_number = "-"
-
-    if vin_norm:
-        if vehicle is None:
-            vehicle = (
-                db.session.query(Vehicle)
-                .join(Auction, Vehicle.auction_id == Auction.id, isouter=True)
-                .filter(db.func.lower(Vehicle.vin) == db.func.lower(vin_norm))
-                .first()
-            )
-
-        # Ensure customers can only view their own vehicle details
-        if vehicle and customer and vehicle.owner_customer_id and vehicle.owner_customer_id != customer.id:
-            vehicle = None
-
-    completed_map = {}
-    date_map = {}
-
-    if vehicle:
-        lot_number = vehicle.auction.lot_number if vehicle.auction and vehicle.auction.lot_number else "-"
-
-        shipments = (
-            db.session.query(Shipment)
-            .join(VehicleShipment, Shipment.id == VehicleShipment.shipment_id)
-            .filter(VehicleShipment.vehicle_id == vehicle.id)
-            .order_by(Shipment.created_at.asc())
-            .all()
-        )
-        primary_shipment = shipments[0] if shipments else None
-
-        departed = bool(primary_shipment and primary_shipment.departure_date)
-        arrived = bool(primary_shipment and primary_shipment.arrival_date)
-        shipment_status = (primary_shipment.status or "").strip().lower() if primary_shipment else ""
-        shipment_delivered = shipment_status == "delivered"
-
-        norm_status = (vehicle.status or "").strip().lower()
-
-        def fmt_dt(dt):
-            try:
-                return dt.strftime("%d-%m-%Y") if dt else ""
-            except Exception:
-                return ""
-
-        completed_map = {
-            "New car": True,
-            "Cashier Payment": bool(vehicle.purchase_price_usd and float(vehicle.purchase_price_usd) > 0),
-            "Auction Payment": bool(vehicle.purchase_date),
-            "Posted": bool(shipments) or norm_status in {"in shipping", "shipped", "delivered", "arrived", "in transit"},
-            "Towing": any(k in norm_status for k in ["picked", "towing", "tow"]),
-            "Warehouse": "warehouse" in norm_status,
-            "Loading": bool(shipments and not departed),
-            "Shipping": bool(departed),
-            "Port": bool(departed),
-            "On way": bool(departed and not arrived),
-            "Arrived": bool(arrived),
-            "Delivered": bool(shipment_delivered or "delivered" in norm_status),
-        }
-
-        date_map = {
-            "New car": fmt_dt(vehicle.created_at),
-            "Cashier Payment": fmt_dt(vehicle.purchase_date) or fmt_dt(vehicle.created_at),
-            "Auction Payment": fmt_dt(vehicle.purchase_date),
-            "Posted": fmt_dt(vehicle.created_at),
-            "Towing": "",
-            "Warehouse": "",
-            "Loading": fmt_dt(primary_shipment.departure_date - timedelta(days=1)) if departed and primary_shipment else "",
-            "Shipping": fmt_dt(primary_shipment.departure_date) if primary_shipment else "",
-            "Port": fmt_dt(primary_shipment.departure_date) if primary_shipment else "",
-            "On way": fmt_dt(primary_shipment.departure_date) if primary_shipment else "",
-            "Arrived": fmt_dt(primary_shipment.arrival_date) if primary_shipment else "",
-            "Delivered": fmt_dt(primary_shipment.arrival_date) if primary_shipment else "",
-        }
-    else:
-        # Simulated example data when VIN not found or customer has no vehicles
-        base = datetime.utcnow() - timedelta(days=15)
-        sim_names = [
-            "New car",
-            "Cashier Payment",
-            "Auction Payment",
-            "Posted",
-            "Towing",
-            "Warehouse",
-            "Loading",
-            "Shipping",
-            "Port",
-            "On way",
-            "Arrived",
-            "Delivered",
-        ]
-        for idx, nm in enumerate(sim_names):
-            completed_map[nm] = idx < 7
-            date_map[nm] = (base + timedelta(days=idx)).strftime("%d-%m-%Y") if completed_map[nm] else ""
-
-    icons = {
-        "New car": "fa-car-side",
-        "Cashier Payment": "fa-money-bill-wave",
-        "Auction Payment": "fa-gavel",
-        "Posted": "fa-bullhorn",
-        "Towing": "fa-truck-pickup",
-        "Warehouse": "fa-warehouse",
-        "Loading": "fa-box-open",
-        "Shipping": "fa-ship",
-        "Port": "fa-anchor",
-        "On way": "fa-route",
-        "Arrived": "fa-flag-checkered",
-        "Delivered": "fa-circle-check",
-    }
-
-    order = [
-        "New car",
-        "Cashier Payment",
-        "Auction Payment",
-        "Posted",
-        "Towing",
-        "Warehouse",
-        "Loading",
-        "Shipping",
-        "Port",
-        "On way",
-        "Arrived",
-        "Delivered",
-    ]
-    for name in order:
-        stages.append(
-            {
-                "name": name,
-                "icon": icons.get(name, "fa-circle"),
-                "completed": bool(completed_map.get(name)),
-                "date_str": date_map.get(name, ""),
-            }
-        )
-
-    return render_template(
-        "tracking.html",
-        vin=(vin_norm.upper() if vin_norm else ""),
-        lot_number=lot_number,
-        vehicle=vehicle,
-        stages=stages,
-    )
+    return render_template("customer/track.html")
 
 
 @cust_bp.route("/invoices")

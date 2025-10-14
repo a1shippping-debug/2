@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% block title %}تتبع السيارات{% endblock %}
+{% block content %}
+<div class="max-w-xl mx-auto">
+  <div class="text-center mb-6">
+    <h1 class="text-2xl font-semibold">تتبع السيارات</h1>
+    <p class="text-slate-600">أدخل رقم الشاصي (VIN) للانتقال إلى صفحة التتبع.</p>
+  </div>
+  <form method="get" action="{{ url_for('cust.track') }}" class="bg-white p-4 rounded-xl border border-slate-200 shadow">
+    <div class="flex gap-2 items-center">
+      <input name="vin" placeholder="مثال: 1HGCM82633A123456" class="flex-1 p-2 border rounded" />
+      <button class="px-4 py-2 bg-blue-600 text-white rounded">تتبع</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

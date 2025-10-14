@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block title %}سياراتي{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-semibold">سياراتي</h1>
+    <a href="{{ url_for('cust.track') }}" class="px-3 py-2 rounded-lg bg-blue-600 text-white">تتبع بالـ VIN</a>
+  </div>
+
+  {% if cars %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% for v in cars %}
+        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow">
+          <div class="flex items-start justify-between mb-2">
+            <div class="font-semibold text-lg">{{ v.make or '-' }} {{ v.model or '' }} {{ v.year or '' }}</div>
+            <a href="{{ url_for('cust.track') }}?vin={{ v.vin }}" class="text-blue-600">تتبع</a>
+          </div>
+          <div class="text-sm text-slate-600">VIN: {{ v.vin or '-' }}</div>
+          <div class="text-sm text-slate-600">الحالة الحالية: <span class="font-medium">{{ v.status or '-' }}</span></div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="p-4 bg-slate-900/40 border border-slate-800 rounded-2xl text-slate-300">
+      لا توجد مركبات مرتبطة بحسابك حالياً.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
