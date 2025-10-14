@@ -1,8 +1,9 @@
-from flask import Blueprint, render_template, request, send_file, abort, redirect, url_for
+from flask import Blueprint, render_template, request, send_file, abort, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from ...extensions import db
 from ...models import Vehicle, Auction, Shipment, VehicleShipment, Customer, Invoice, InvoiceItem
 from ...utils_pdf import render_invoice_pdf
+import os
 
 cust_bp = Blueprint("cust", __name__, template_folder="templates/customer")
 
@@ -93,5 +94,20 @@ def invoice_pdf(invoice_id: int):
     if not inv or not cust or inv.customer_id != cust.id:
         abort(404)
     items = db.session.query(InvoiceItem).filter_by(invoice_id=inv.id).all()
-    path = inv.pdf_path or render_invoice_pdf(inv, items)
+    path = inv.pdf_path
+    if not path or not os.path.isfile(path):
+        if path:
+            try:
+                current_app.logger.warning("Invoice PDF missing at %s; regenerating", path)
+            except Exception:
+                pass
+        path = render_invoice_pdf(inv, items)
+        inv.pdf_path = path
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+    if not os.path.isfile(path):
+        flash("Invoice PDF is not available.", "danger")
+        return redirect(url_for("cust.invoice_detail", invoice_id=inv.id))
     return send_file(path, as_attachment=True, download_name=f"{inv.invoice_number}.pdf")

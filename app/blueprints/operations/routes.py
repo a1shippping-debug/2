@@ -136,7 +136,7 @@ def save_uploaded_file(subdir: str, file_obj, filename_hint: str | None = None) 
     import os, secrets
     if not file_obj:
         return None
-    base = current_app.config.get('UPLOAD_FOLDER') or './app/static/uploads'
+    base = current_app.config.get('UPLOAD_FOLDER') or os.path.join(current_app.root_path, 'static', 'uploads')
     outdir = os.path.join(base, subdir)
     os.makedirs(outdir, exist_ok=True)
     ext = ''

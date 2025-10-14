@@ -16,6 +16,7 @@ from ...models import (
     VehicleShipment,
 )
 from ...utils_pdf import render_invoice_pdf, render_bol_pdf
+import os
 from flask_mail import Message
 from datetime import datetime
 from decimal import Decimal
@@ -248,7 +249,18 @@ def invoices_email(invoice_id: int):
     email = inv.customer.user.email
     # ensure pdf exists
     items = db.session.query(InvoiceItem).filter_by(invoice_id=inv.id).all()
-    path = inv.pdf_path or render_invoice_pdf(inv, items)
+    path = inv.pdf_path
+    if not path or not os.path.isfile(path):
+        try:
+            current_app.logger.warning("Invoice PDF missing at %s; regenerating", path)
+        except Exception:
+            pass
+        path = render_invoice_pdf(inv, items)
+        inv.pdf_path = path
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
     try:
         msg = Message(subject=_('Invoice %(n)s', n=inv.invoice_number), recipients=[email])
         msg.body = _('Please find attached invoice %(n)s.', n=inv.invoice_number)
