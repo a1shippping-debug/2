@@ -16,3 +16,6 @@ pandas==2.2.3
 openpyxl==3.1.2
 Babel==2.12.1
 bcrypt==4.0.1
+requests==2.32.3
+beautifulsoup4==4.12.3
+lxml==5.3.0
