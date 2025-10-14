@@ -17,7 +17,7 @@
     .tracking-card { border: 0; border-radius: 1rem; }
     .timeline-wrapper { overflow-x: auto; padding-bottom: .5rem; }
     .timeline { display: flex; align-items: flex-start; gap: 24px; min-width: 1200px; padding: 8px 4px; }
-    .stage { position: relative; text-align: center; flex: 0 0 140px; }
+    .stage { position: relative; text-align: center; flex: 0 0 140px; cursor: pointer; }
     .stage .icon-circle { width: 48px; height: 48px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: #fff; margin: 0 auto .5rem; box-shadow: 0 6px 16px rgba(0,0,0,.08); z-index: 1; }
     .stage .title { font-weight: 600; font-size: .95rem; line-height: 1.2; min-height: 2.2em; }
     .stage .date { font-size: .8rem; color: #6c757d; }
@@ -49,12 +49,14 @@
     <div class="card shadow-sm tracking-card">
       <div class="card-body">
         <div class="timeline-wrapper">
-          <div class="timeline">
+          <div class="timeline" id="timeline">
             {% for s in stages %}
-              <div class="stage {% if s.completed %}completed{% else %}not-completed{% endif %}">
+              {% set stage_id = 'stage-' + s.name.replace(' ', '-').lower() %}
+              <button class="stage btn p-0 border-0 bg-transparent {% if s.completed %}completed{% else %}not-completed{% endif %}"
+                      type="button" data-stage-name="{{ s.name }}" aria-controls="details-panel" aria-expanded="false">
                 <div class="connector" style="background-color: {% if s.completed %}var(--success-color){% else %}var(--danger-color){% endif %};"></div>
                 <div class="icon-circle">
-                  <i class="fa-solid {{ s.icon }} fa-lg"></i>
+                  <i class="fa-solid {{ s.icon }} fa-lg" aria-hidden="true"></i>
                 </div>
                 <div class="title">{{ s.name }}</div>
                 <div class="date">{{ s.date_str }}</div>
@@ -65,7 +67,7 @@
                     <span class="badge bg-danger">Pending</span>
                   {% endif %}
                 </div>
-              </div>
+              </button>
             {% endfor %}
           </div>
         </div>
@@ -74,36 +76,75 @@
 
     <p class="text-muted small mt-3 text-center">Swipe horizontally to view all stages on small screens.</p>
 
-    {% if vehicle %}
-      <div class="row mt-4 g-3 justify-content-center">
-        <div class="col-12 col-md-10 col-lg-8">
-          <div class="card border-0 shadow-sm">
-            <div class="card-body">
-              <div class="row g-3">
-                <div class="col-6 col-md-3">
-                  <div class="text-muted small">Make</div>
-                  <div class="fw-semibold">{{ vehicle.make or '-' }}</div>
-                </div>
-                <div class="col-6 col-md-3">
-                  <div class="text-muted small">Model</div>
-                  <div class="fw-semibold">{{ vehicle.model or '-' }}</div>
-                </div>
-                <div class="col-6 col-md-3">
-                  <div class="text-muted small">Year</div>
-                  <div class="fw-semibold">{{ vehicle.year or '-' }}</div>
-                </div>
-                <div class="col-6 col-md-3">
-                  <div class="text-muted small">Current Status</div>
-                  <div class="fw-semibold">{{ vehicle.status or '-' }}</div>
-                </div>
+    <div class="row mt-4 g-3 justify-content-center">
+      <div class="col-12 col-md-10 col-lg-8">
+        <div id="details-panel" class="card border-0 shadow-sm" aria-live="polite">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <div class="text-muted small">Stage</div>
+                <div id="details-title" class="h6 mb-0">Select a stage to view details</div>
               </div>
+              {% if vehicle %}
+              <div class="text-end">
+                <div class="text-muted small">Vehicle</div>
+                <div class="fw-semibold">{{ vehicle.make or '-' }} {{ vehicle.model or '' }} {{ vehicle.year or '' }}</div>
+              </div>
+              {% endif %}
+            </div>
+            <hr/>
+            <div id="details-content">
+              <div class="text-muted">Click any stage above to see more information here.</div>
             </div>
           </div>
         </div>
       </div>
-    {% endif %}
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    (function() {
+      const stageDetails = {{ stage_details | tojson }};
+      const timeline = document.getElementById('timeline');
+      const titleEl = document.getElementById('details-title');
+      const contentEl = document.getElementById('details-content');
+      if (!timeline) return;
+
+      function renderDetails(stageName) {
+        titleEl.textContent = stageName;
+        const rows = (stageDetails[stageName] || []).map(item => {
+          const label = String(item.label || '-');
+          const value = String(item.value || '-');
+          return `<div class="row py-1">
+                    <div class="col-5 col-md-4 text-muted small">${label}</div>
+                    <div class="col-7 col-md-8 fw-semibold">${value}</div>
+                  </div>`
+        }).join('');
+        contentEl.innerHTML = rows || '<div class="text-muted">No details.</div>';
+      }
+
+      timeline.addEventListener('click', function(e) {
+        const target = e.target.closest('[data-stage-name]');
+        if (!target) return;
+        const stageName = target.getAttribute('data-stage-name');
+        renderDetails(stageName);
+        // Update aria-expanded
+        const buttons = timeline.querySelectorAll('[data-stage-name]');
+        buttons.forEach(btn => btn.setAttribute('aria-expanded', btn === target ? 'true' : 'false'));
+      });
+
+      // Auto-select the latest completed stage on load
+      try {
+        const buttons = Array.from(timeline.querySelectorAll('[data-stage-name]'));
+        const completedButtons = buttons.filter(b => b.classList.contains('completed'));
+        const defaultBtn = completedButtons.at(-1) || buttons[0];
+        if (defaultBtn) {
+          renderDetails(defaultBtn.getAttribute('data-stage-name'));
+          defaultBtn.setAttribute('aria-expanded', 'true');
+        }
+      } catch (_) {}
+    })();
+  </script>
 </body>
 </html>
