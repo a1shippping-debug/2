@@ -1,0 +1,115 @@
+{% set lang = g.get('lang_code', 'ar') %}
+{% set is_rtl = (lang == 'ar') %}
+{% set role_name = (current_user.role.name|lower) if (current_user.is_authenticated and current_user.role) else '' %}
+
+<nav class="bg-primary text-white fixed top-0 inset-x-0 z-50 shadow-md">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="h-16 flex items-center justify-between {% if is_rtl %}flex-row-reverse{% endif %}" x-data="{ open:false }">
+      <!-- Logo -->
+      <a href="/" class="flex items-center gap-2 font-heading font-extrabold text-xl tracking-tight">
+        <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo" class="h-8 w-8 rounded"/>
+        <span>A1 Shipping</span>
+      </a>
+
+      <!-- Desktop Nav -->
+      <div class="hidden md:flex items-center gap-6">
+        {% if current_user.is_authenticated and role_name in ['admin','employee'] %}
+          <a href="{{ url_for('ops.cars_list') }}" class="hover:text-accent">{{ _('السيارات') }}</a>
+          <a href="{{ url_for('ops.customers_list') }}" class="hover:text-accent">{{ _('العملاء') }}</a>
+          <a href="{{ url_for('acct.bol_list') }}" class="hover:text-accent">{{ _('المستندات') }}</a>
+          <a href="{{ url_for('ops.dashboard') if role_name=='employee' else url_for('admin.dashboard') }}" class="hover:text-accent">{{ _('لوحة التحكم') }}</a>
+        {% elif current_user.is_authenticated and role_name == 'customer' %}
+          <a href="{{ url_for('cust.my_cars') }}" class="hover:text-accent">{{ _('سياراتي') }}</a>
+          <a href="{{ url_for('cust.invoices_list') }}" class="hover:text-accent">{{ _('فواتيري') }}</a>
+          <a href="{{ url_for('cust.dashboard') }}" class="hover:text-accent">{{ _('لوحة التحكم') }}</a>
+        {% else %}
+          <a href="/" class="hover:text-accent">{{ _('الرئيسية') }}</a>
+          <a href="{{ url_for('auth.login') }}" class="hover:text-accent">{{ _('تسجيل الدخول') }}</a>
+        {% endif %}
+
+        <!-- Search -->
+        <form id="vehicle-search-form" class="relative">
+          <input id="vehicle-search-input" type="search" inputmode="latin" dir="ltr" placeholder="VIN" aria-label="VIN"
+                 class="w-44 lg:w-56 rounded-md bg-white/10 placeholder-white/60 focus:bg-white/20 px-3 py-1.5 text-sm outline-none"/>
+          <button class="absolute {{ 'left-2' if is_rtl else 'right-2' }} top-1.5 text-white/80" type="submit">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+        </form>
+
+        <!-- Icons -->
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('ops.dashboard') if role_name in ['admin','employee'] else url_for('cust.dashboard') }}" class="hover:text-accent">
+            <i class="fa-regular fa-bell text-lg"></i>
+          </a>
+          <div class="relative" x-data="{ m:false }">
+            <button @click="m=!m" class="flex items-center gap-2 hover:text-accent">
+              <i class="fa-regular fa-user text-lg"></i>
+              <span class="hidden lg:inline text-sm">{{ current_user.name or current_user.email }}</span>
+            </button>
+            <div x-show="m" @click.outside="m=false" class="absolute {{ 'left-0' if is_rtl else 'right-0' }} mt-2 w-48 bg-white text-neutral rounded-md shadow-lg py-2 text-sm">
+              <div class="px-3 py-2 text-muted">{{ _('مرحبا،') }} {{ current_user.name or current_user.email }}</div>
+              <a href="{{ url_for('auth.logout') }}" class="block px-3 py-2 hover:bg-background text-red-600">{{ _('خروج') }}</a>
+            </div>
+          </div>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="px-3 py-1.5 rounded-md bg-accent text-neutral font-medium hover:opacity-90">{{ _('دخول') }}</a>
+        {% endif %}
+
+        <!-- Lang Switch -->
+        <div class="flex items-center gap-2">
+          <a href="{{ request.path }}?lang=en" class="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-xs">EN</a>
+          <a href="{{ request.path }}?lang=ar" class="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-xs">العربية</a>
+        </div>
+      </div>
+
+      <!-- Mobile -->
+      <button class="md:hidden" @click="open=!open">
+        <i class="fa-solid fa-bars text-xl"></i>
+      </button>
+      <div class="md:hidden absolute {{ 'left-4' if is_rtl else 'right-4' }} mt-2 w-60 bg-white text-neutral rounded-md shadow-lg py-2" x-show="open" @click.outside="open=false">
+        <div class="px-4 py-2 font-semibold text-primary">A1 Shipping</div>
+        <div class="px-3 py-2 border-t">
+          <form id="vehicle-search-form-mobile" class="flex items-center gap-2">
+            <input id="vehicle-search-input-mobile" type="search" inputmode="latin" dir="ltr" placeholder="VIN" class="flex-1 border rounded px-2 py-1.5 text-sm"/>
+            <button class="px-2 py-1.5 bg-primary text-white rounded" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+          </form>
+        </div>
+        <div class="py-1 text-sm">
+          {% if current_user.is_authenticated and role_name in ['admin','employee'] %}
+            <a href="{{ url_for('ops.cars_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('السيارات') }}</a>
+            <a href="{{ url_for('ops.customers_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('العملاء') }}</a>
+            <a href="{{ url_for('acct.bol_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('المستندات') }}</a>
+            <a href="{{ url_for('ops.dashboard') if role_name=='employee' else url_for('admin.dashboard') }}" class="block px-4 py-2 hover:bg-background">{{ _('لوحة التحكم') }}</a>
+          {% elif current_user.is_authenticated and role_name == 'customer' %}
+            <a href="{{ url_for('cust.my_cars') }}" class="block px-4 py-2 hover:bg-background">{{ _('سياراتي') }}</a>
+            <a href="{{ url_for('cust.invoices_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('فواتيري') }}</a>
+            <a href="{{ url_for('cust.dashboard') }}" class="block px-4 py-2 hover:bg-background">{{ _('لوحة التحكم') }}</a>
+          {% else %}
+            <a href="/" class="block px-4 py-2 hover:bg-background">{{ _('الرئيسية') }}</a>
+            <a href="{{ url_for('auth.login') }}" class="block px-4 py-2 hover:bg-background">{{ _('تسجيل الدخول') }}</a>
+          {% endif %}
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-red-600 hover:bg-background">{{ _('خروج') }}</a>
+          {% endif %}
+          <div class="flex items-center gap-2 px-4 py-2">
+            <a href="{{ request.path }}?lang=en" class="px-2 py-1 rounded bg-background">EN</a>
+            <a href="{{ request.path }}?lang=ar" class="px-2 py-1 rounded bg-background">العربية</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<script>
+  (function(){
+    function bindForm(formId, inputId){
+      const f = document.getElementById(formId); const inp = document.getElementById(inputId);
+      if(!f||!inp) return; f.addEventListener('submit', function(e){ e.preventDefault();
+        const vin = (inp.value||'').trim(); if(!vin) return; window.location.href = '/tracking/' + encodeURIComponent(vin);
+      });
+    }
+    bindForm('vehicle-search-form','vehicle-search-input');
+    bindForm('vehicle-search-form-mobile','vehicle-search-input-mobile');
+  })();
+</script>

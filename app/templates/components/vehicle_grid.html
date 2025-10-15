@@ -1,0 +1,15 @@
+{% import 'components/vehicle_card.html' as vc %}
+
+<section class="max-w-7xl mx-auto">
+  {% if vehicles %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for v in vehicles %}
+        {{ vc.vehicle_card(v, loop.index0, 'details') }}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="bg-white border border-slate-200 rounded-2xl p-8 text-center text-muted">
+      {{ _('لا توجد مركبات حالياً.') }}
+    </div>
+  {% endif %}
+</section>

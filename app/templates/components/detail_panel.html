@@ -1,0 +1,18 @@
+<aside class="sticky top-24 bg-white border border-slate-200 rounded-2xl shadow-sm p-4">
+  <h4 class="font-heading font-semibold text-neutral mb-3">{{ _('حالة السيارة') }}</h4>
+  <div class="space-y-2 text-sm">
+    <div class="flex items-center justify-between"><span class="text-muted">{{ _('الحالة:') }}</span><span class="font-medium">{{ vehicle.status or '-' }}</span></div>
+    <div class="flex items-center justify-between"><span class="text-muted">VIN</span><span class="font-mono">{{ vehicle.vin or '-' }}</span></div>
+    <div class="flex items-center justify-between"><span class="text-muted">{{ _('الموقع:') }}</span><span class="font-medium">{{ vehicle.current_location or '-' }}</span></div>
+  </div>
+  <div class="mt-4 flex gap-2">
+    <a href="{{ url_for('tracking_page', vin=vehicle.vin) }}" class="px-3 py-2 rounded-md bg-primary text-white text-sm hover:shadow-md hover:scale-105 transition">
+      {{ _('عرض التتبع') }}
+    </a>
+    {% if current_user.is_authenticated and current_user.role and (current_user.role.name|lower) in ['admin','employee'] %}
+    <a href="{{ url_for('ops.cars_edit', vehicle_id=vehicle.id) }}" class="px-3 py-2 rounded-md bg-accent text-neutral text-sm hover:shadow-md hover:scale-105 transition">
+      {{ _('تعديل') }}
+    </a>
+    {% endif %}
+  </div>
+</aside>

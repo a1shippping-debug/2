@@ -1,0 +1,35 @@
+{% set role_name = (current_user.role.name|lower) if (current_user.is_authenticated and current_user.role) else '' %}
+<section class="relative overflow-hidden bg-white rounded-2xl shadow-xl p-10 md:p-16 text-center">
+  <!-- dynamic background -->
+  <div class="absolute inset-0 -z-10">
+    <div class="absolute -top-10 -left-10 w-[28rem] h-[28rem] bg-primary/10 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-10 -right-10 w-[30rem] h-[30rem] bg-accent/30 rounded-full blur-3xl opacity-60"></div>
+  </div>
+
+  <!-- logo -->
+  <div class="flex justify-center mb-6">
+    <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="A1 Shipping" class="h-12 rounded"/>
+  </div>
+
+  <!-- heading -->
+  <h1 class="text-3xl md:text-5xl font-heading font-extrabold text-primary tracking-tight leading-tight animate-fadeInUp">
+    {{ _('مرحباً بكم في A1 Shipping') }}
+  </h1>
+
+  <!-- description -->
+  <p class="mt-6 md:mt-8 text-muted md:text-lg leading-relaxed max-w-3xl mx-auto animate-fadeInUp [animation-delay:.15s]">
+    {{ _('نظام متكامل لإدارة سيارات العملاء من المزادات حتى الشحن والفوترة — بتجربة عصرية وواجهة RTL.') }}
+  </p>
+
+  <!-- CTAs -->
+  <div class="mt-8 flex justify-center gap-3 md:gap-4 animate-fadeInUp [animation-delay:.25s]">
+    {% set add_url = url_for('ops.cars_new') if role_name in ['admin','employee'] else url_for('auth.login') %}
+    <a href="{{ add_url }}" class="px-6 md:px-8 py-3 rounded-xl bg-primary text-white font-semibold hover:scale-105 transition-transform shadow-md">
+      {{ _('إضافة سيارة') }}
+    </a>
+    {% set browse_url = url_for('ops.cars_list') if role_name in ['admin','employee'] else (url_for('cust.my_cars') if role_name=='customer' else url_for('auth.login')) %}
+    <a href="{{ browse_url }}" class="px-6 md:px-8 py-3 rounded-xl bg-accent text-neutral font-semibold hover:scale-105 transition-transform shadow-md">
+      {{ _('استعراض المخزون') }}
+    </a>
+  </div>
+</section>

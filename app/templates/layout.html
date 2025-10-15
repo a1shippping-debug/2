@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ _('CarTrade') }}{% endblock %}</title>
 
-  <!-- الخطوط -->
+  <!-- Fonts: Headings (Inter/Poppins/Source Sans Pro), Body (system sans) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Poppins:wght@400;600;700&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -19,11 +19,16 @@
       theme: {
         extend: {
           colors: {
-            primary: '#003366', // الأزرق الغامق
-            secondary: '#0066cc', // الأزرق الفاتح
+            primary: '#4B2E83', // Copart-like Dark Blue/Purple
+            accent: '#FFB800', // Accent Yellow/Orange
+            neutral: '#0F1724', // Neutral Dark for primary text
+            muted: '#6B7280', // Muted gray for secondary text
+            background: '#F3F4F6', // Light gray background
           },
           fontFamily: {
-            sans: ['Tajawal', 'ui-sans-serif', 'system-ui']
+            // Body uses system sans; headings use the custom set via font-heading
+            sans: ['ui-sans-serif','system-ui','-apple-system','Segoe UI','Roboto','Ubuntu','Cantarell','Noto Sans','Helvetica Neue','Arial','sans-serif'],
+            heading: ['Inter','Poppins','Source Sans Pro','ui-sans-serif','system-ui','-apple-system','Segoe UI','Roboto','Arial','sans-serif']
           },
           boxShadow: {
             soft: '0 8px 30px rgba(0, 0, 0, 0.05)'
@@ -33,6 +38,9 @@
     }
   </script>
 
+  <!-- Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
   <!-- Alpine.js -->
   <script src="https://unpkg.com/alpinejs" defer></script>
 
@@ -40,60 +48,20 @@
     html, body {
       scroll-behavior: smooth;
     }
-    @keyframes fadeDown {
-      from { opacity: 0; transform: translateY(-15px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    /* Animations */
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
     .animate-fadeDown { animation: fadeDown .7s ease forwards; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fadeInUp { animation: fadeInUp .8s ease forwards; }
+    @keyframes ctaPulse { from { transform: scale(1); box-shadow: 0 0 0 rgba(0,0,0,0); } to { transform: scale(1.05); box-shadow: 0 10px 20px rgba(0,0,0,.1); } }
+    .cta-pulse:hover { animation: ctaPulse .9s ease-in-out infinite alternate; }
   </style>
 </head>
 
-<body class="bg-gray-50 text-gray-800 font-sans">
+<body class="bg-background text-neutral font-sans">
 
-  <!-- الشريط العلوي -->
-  <nav class="bg-white shadow-md fixed top-0 w-full z-50 animate-fadeDown">
-    <div class="container mx-auto px-6 py-3 flex justify-between items-center">
-      <a href="/" class="flex items-center gap-2 text-primary font-extrabold text-2xl tracking-tight">
-        🚘 A1 Sipping
-      </a>
-
-      <div class="hidden md:flex items-center gap-6 text-sm">
-        {% if current_user.is_authenticated %}
-          <span class="text-gray-600">{{ current_user.name }}</span>
-          <a href="{{ url_for('auth.logout') }}" class="text-red-500 hover:underline">{{ _('خروج') }}</a>
-        {% else %}
-          <a href="{{ url_for('auth.login') }}" class="hover:text-secondary transition">{{ _('تسجيل الدخول') }}</a>
-          <a href="{{ url_for('auth.register') }}" class="hover:text-secondary transition">{{ _('إنشاء حساب') }}</a>
-        {% endif %}
-        <a href="{{ request.path }}?lang=en" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">EN</a>
-        <a href="{{ request.path }}?lang=ar" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">العربية</a>
-      </div>
-
-      <!-- زر القائمة للهاتف -->
-      <div class="md:hidden" x-data="{ open: false }">
-        <button @click="open = !open" class="text-primary focus:outline-none">
-          <svg x-show="!open" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-          <svg x-show="open" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-
-        <div x-show="open" class="absolute right-4 mt-3 w-48 bg-white shadow-lg rounded-lg py-2 text-sm">
-          {% if current_user.is_authenticated %}
-            <div class="px-4 py-2 text-gray-600">{{ current_user.name }}</div>
-            <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-red-600 hover:bg-gray-100">{{ _('خروج') }}</a>
-          {% else %}
-            <a href="{{ url_for('auth.login') }}" class="block px-4 py-2 hover:bg-gray-100">{{ _('تسجيل الدخول') }}</a>
-            <a href="{{ url_for('auth.register') }}" class="block px-4 py-2 hover:bg-gray-100">{{ _('إنشاء حساب') }}</a>
-          {% endif %}
-          <a href="{{ request.path }}?lang=en" class="block px-4 py-2 hover:bg-gray-100">EN</a>
-          <a href="{{ request.path }}?lang=ar" class="block px-4 py-2 hover:bg-gray-100">العربية</a>
-        </div>
-      </div>
-    </div>
-  </nav>
+  <!-- Header -->
+  {% include 'components/header.html' %}
 
   <!-- محتوى الصفحة -->
   <main class="pt-24 container mx-auto px-4">
@@ -110,10 +78,8 @@
     {% block content %}{% endblock %}
   </main>
 
-  <!-- التذييل -->
-  <footer class="mt-20 py-8 bg-white border-t text-center text-gray-500 text-sm">
-    © {{ _('2025 A1 Shipping. جميع الحقوق محفوظة') }}
-  </footer>
+  <!-- Footer -->
+  {% include 'components/footer.html' %}
 
 </body>
 {% block scripts %}{% endblock %}
