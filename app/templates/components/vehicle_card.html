@@ -1,0 +1,35 @@
+{% macro vehicle_card(v, index=0, cta='details') %}
+  {% set title = ((v.make or '-') ~ ' ' ~ (v.model or '') ~ ' ' ~ (v.year or ''))|trim %}
+  {% set price = v.purchase_price_usd %}
+  {% set details_url = url_for('tracking_page', vin=v.vin) if cta=='details' else url_for('ops.cars_edit', vehicle_id=v.id) %}
+  <article class="group bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden transform transition will-change-transform hover:scale-[1.03] hover:shadow-lg animate-fadeInUp" style="animation-delay: {{ (index * 90) | int }}ms">
+    <div class="relative aspect-[4/3] bg-background overflow-hidden">
+      <img loading="lazy" src="{{ url_for('static', filename='logo.jpeg') }}" alt="{{ title }}" class="w-full h-full object-cover transition-opacity duration-700 opacity-0" onload="this.classList.remove('opacity-0')">
+      <div class="absolute inset-0 bg-gradient-to-t from-neutral/50 via-neutral/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      <!-- hover specs -->
+      <div class="absolute bottom-0 left-0 right-0 p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity text-xs md:text-sm">
+        <div class="flex gap-4 flex-wrap">
+          <div><span class="text-white/80">VIN:</span> <span class="font-semibold">{{ v.vin or '-' }}</span></div>
+          <div><span class="text-white/80">{{ _('الموقع') }}:</span> <span class="font-semibold">{{ v.current_location or '-' }}</span></div>
+          <div><span class="text-white/80">{{ _('الحالة') }}:</span> <span class="font-semibold">{{ v.status or '-' }}</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="p-4">
+      <h3 class="font-heading font-semibold text-neutral text-base md:text-lg mb-1">{{ title }}</h3>
+      <div class="text-muted text-sm mb-2">
+        {{ _('سعر الشراء (تقريبي)') }}: 
+        <span class="text-neutral font-semibold">{{ ("$%.2f" % price) if price else '-' }}</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded bg-background text-neutral/80">
+          <i class="fa-solid fa-tag text-accent"></i>
+          {{ v.status or '-' }}
+        </span>
+        <a href="{{ details_url }}" class="px-3 py-1.5 rounded-md bg-primary text-white text-sm font-medium transition hover:shadow-md hover:scale-105">
+          {{ _('عرض التفاصيل') if cta=='details' else _('تحديث السيارة') }}
+        </a>
+      </div>
+    </div>
+  </article>
+{% endmacro %}
