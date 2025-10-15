@@ -41,87 +41,64 @@
       padding-bottom: 0.5rem;
     }
 
+    /* Reference-style horizontal steps with icon images */
     .timeline {
-      display: flex;
-      align-items: flex-start;
-      gap: 30px;
-      min-width: 1100px;
-      padding: 8px 8px 20px;
-      position: relative;
-    }
-
-    .stage {
-      position: relative;
-      text-align: center;
-      flex: 0 0 150px;
-      transition: transform .3s ease, opacity .3s ease;
-      opacity: 0;
-      transform: translateY(30px);
-      animation: slideUp 0.6s ease forwards;
-    }
-
-    .stage:nth-child(1) { animation-delay: .1s; }
-    .stage:nth-child(2) { animation-delay: .2s; }
-    .stage:nth-child(3) { animation-delay: .3s; }
-    .stage:nth-child(4) { animation-delay: .4s; }
-    .stage:nth-child(5) { animation-delay: .5s; }
-
-    .stage .icon-circle {
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
-      margin: 0 auto .5rem;
-      box-shadow: 0 6px 16px rgba(0,0,0,.1);
-      position: relative;
-      z-index: 2;
-      font-size: 1.2rem;
+      gap: 16px;
+      min-width: 1000px;
+      padding: 12px 8px 20px;
     }
 
-    .stage .connector {
-      position: absolute;
-      top: 26px;
-      left: calc(50% + 28px);
-      height: 6px;
-      width: 120px;
-      border-radius: 4px;
-      background: var(--muted-line);
-      z-index: 1;
-      transition: background-color 0.4s ease;
+    .step {
+      text-align: center;
+      min-width: 120px;
+      transition: transform .2s ease, opacity .3s ease;
+      opacity: 0;
+      transform: translateY(16px);
+      animation: slideUp .5s ease forwards;
+    }
+    .step:nth-child(1) { animation-delay: .05s; }
+    .step:nth-child(3) { animation-delay: .10s; }
+    .step:nth-child(5) { animation-delay: .15s; }
+    .step:nth-child(7) { animation-delay: .20s; }
+    .step:nth-child(9) { animation-delay: .25s; }
+    .step:nth-child(11) { animation-delay: .30s; }
+
+    .step img.icon-img {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+      margin-bottom: 8px;
     }
 
-    .stage.completed .icon-circle {
-      background: var(--success-color);
-    }
-
-    .stage.not-completed .icon-circle {
-      background: var(--danger-color);
-    }
-
-    .stage.completed .connector {
-      background: var(--success-color);
-    }
-
-    .stage.not-completed .connector {
-      background: var(--danger-color);
-    }
-
-    .stage .title {
+    .step p.title {
       font-weight: 600;
-      font-size: .95rem;
+      font-size: 0.9rem;
       color: var(--primary-color);
+      margin: 4px 0 0 0;
     }
 
-    .stage .date {
-      font-size: .8rem;
-      color: #6c757d;
+    .status {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      margin: 8px auto 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #fff;
     }
+    .status.completed { background: var(--success-color); }
+    .status.pending { background: var(--danger-color); }
 
-    .stage:hover {
-      transform: translateY(-5px);
+    .line {
+      width: 60px;
+      height: 3px;
+      background: var(--muted-line);
+      align-self: center;
     }
 
     @keyframes fadeIn {
@@ -135,8 +112,6 @@
 
     @media (max-width: 576px) {
       .timeline { min-width: 900px; }
-      .stage { flex-basis: 120px; }
-      .stage .connector { width: 100px; }
     }
   </style>
 </head>
@@ -153,28 +128,31 @@
       </div>
     </div>
 
+    <!-- VIN quick search -->
+    <div class="card tracking-card mb-3">
+      <div class="card-body">
+        <div class="d-flex gap-2 justify-content-center flex-wrap">
+          <input id="vin-input" class="form-control" style="max-width:360px" placeholder="Enter VIN to track" value="" />
+          <button id="vin-go" class="btn btn-primary">Submit</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Timeline -->
     <div class="card tracking-card mb-4">
       <div class="card-body">
         <div class="timeline-wrapper">
           <div class="timeline" id="timeline">
             {% for s in stages %}
-              <button class="stage btn p-0 border-0 bg-transparent {% if s.completed %}completed{% else %}not-completed{% endif %}"
-                      type="button" data-stage-name="{{ s.name }}">
-                <div class="connector"></div>
-                <div class="icon-circle">
-                  <i class="fa-solid {{ s.icon }}"></i>
-                </div>
-                <div class="title">{{ s.name }}</div>
-                <div class="date">{{ s.date_str }}</div>
-                <div class="mt-2">
-                  {% if s.completed %}
-                    <span class="badge bg-success">Completed</span>
-                  {% else %}
-                    <span class="badge bg-danger">Pending</span>
-                  {% endif %}
-                </div>
-              </button>
+              <div class="step" data-stage-name="{{ s.name }}">
+                <img class="icon-img" src="{{ url_for('static', filename='tracking-icons/' ~ loop.index ~ '.png') }}" alt="{{ s.name }}" />
+                <div class="status {% if s.completed %}completed{% else %}pending{% endif %}">{{ '✔' if s.completed else '✖' }}</div>
+                <p class="title">{{ s.name }}</p>
+                <div class="date text-muted small">{{ s.date_str }}</div>
+              </div>
+              {% if not loop.last %}
+                <div class="line"></div>
+              {% endif %}
             {% endfor %}
           </div>
         </div>
@@ -215,7 +193,7 @@
 
   <script>
     (function() {
-      const stageDetails = {{ stage_details | tojson }};
+      const stageDetails = {{ stage_details | default({}) | tojson }};
       const timeline = document.getElementById('timeline');
       const titleEl = document.getElementById('details-title');
       const contentEl = document.getElementById('details-content');
@@ -235,19 +213,26 @@
       }
 
       timeline.addEventListener('click', e => {
-        const target = e.target.closest('[data-stage-name]');
+        const target = e.target.closest('.step[data-stage-name]');
         if (!target) return;
         renderDetails(target.getAttribute('data-stage-name'));
-        timeline.querySelectorAll('[data-stage-name]').forEach(btn =>
-          btn.classList.toggle('active', btn === target)
-        );
       });
 
       // Auto-select latest completed stage
-      const buttons = Array.from(timeline.querySelectorAll('[data-stage-name]'));
+      const buttons = Array.from(timeline.querySelectorAll('.step[data-stage-name]'));
       const completedButtons = buttons.filter(b => b.classList.contains('completed'));
       const defaultBtn = completedButtons.at(-1) || buttons[0];
       if (defaultBtn) renderDetails(defaultBtn.getAttribute('data-stage-name'));
+
+      // VIN quick search
+      const vinInput = document.getElementById('vin-input');
+      const vinGo = document.getElementById('vin-go');
+      function go() {
+        const v = (vinInput.value || '').trim();
+        if (v) window.location.href = '/tracking/' + encodeURIComponent(v);
+      }
+      vinGo?.addEventListener('click', go);
+      vinInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go(); } });
     })();
   </script>
 </body>
