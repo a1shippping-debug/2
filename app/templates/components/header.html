@@ -24,6 +24,9 @@
           <a href="{{ url_for('cust.dashboard') }}" class="hover:text-accent">{{ _('لوحة التحكم') }}</a>
         {% else %}
           <a href="/" class="hover:text-accent">{{ _('الرئيسية') }}</a>
+          <a href="{{ url_for('about_page') }}" class="hover:text-accent">{{ _('من نحن') }}</a>
+          <a href="{{ url_for('services_page') }}" class="hover:text-accent">{{ _('خدماتنا') }}</a>
+          <a href="{{ url_for('contact_page') }}" class="hover:text-accent">{{ _('تواصل معنا') }}</a>
           <a href="{{ url_for('auth.login') }}" class="hover:text-accent">{{ _('تسجيل الدخول') }}</a>
         {% endif %}
 
@@ -86,6 +89,9 @@
             <a href="{{ url_for('cust.dashboard') }}" class="block px-4 py-2 hover:bg-background">{{ _('لوحة التحكم') }}</a>
           {% else %}
             <a href="/" class="block px-4 py-2 hover:bg-background">{{ _('الرئيسية') }}</a>
+            <a href="{{ url_for('about_page') }}" class="block px-4 py-2 hover:bg-background">{{ _('من نحن') }}</a>
+            <a href="{{ url_for('services_page') }}" class="block px-4 py-2 hover:bg-background">{{ _('خدماتنا') }}</a>
+            <a href="{{ url_for('contact_page') }}" class="block px-4 py-2 hover:bg-background">{{ _('تواصل معنا') }}</a>
             <a href="{{ url_for('auth.login') }}" class="block px-4 py-2 hover:bg-background">{{ _('تسجيل الدخول') }}</a>
           {% endif %}
           {% if current_user.is_authenticated %}

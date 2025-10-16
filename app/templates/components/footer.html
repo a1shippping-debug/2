@@ -2,6 +2,12 @@
   <div class="max-w-7xl mx-auto px-4 flex items-center justify-center gap-4 flex-wrap">
     <span>© {{ _('2025 A1 Shipping') }}</span>
     <span class="text-muted">•</span>
+    <a href="{{ url_for('about_page') }}" class="hover:text-primary">{{ _('من نحن') }}</a>
+    <span class="text-muted">•</span>
+    <a href="{{ url_for('services_page') }}" class="hover:text-primary">{{ _('خدماتنا') }}</a>
+    <span class="text-muted">•</span>
+    <a href="{{ url_for('contact_page') }}" class="hover:text-primary">{{ _('تواصل معنا') }}</a>
+    <span class="text-muted">•</span>
     <a href="#" class="hover:text-primary">{{ _('الخصوصية') }}</a>
     <span class="text-muted">•</span>
     <a href="#" class="hover:text-primary">{{ _('الشروط') }}</a>
