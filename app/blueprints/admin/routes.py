@@ -488,9 +488,10 @@ def bayarat_new():
         buyer_name = (request.form.get("buyer_name") or "").strip()
         customer_id_raw = (request.form.get("customer_id") or "").strip()
 
-        if not (provider or lot_number):
-            flash(_("Please enter at least Provider or Lot Number"), "danger")
-            return render_template("admin/bayarat_form.html", form=request.form)
+        # Creation form only shows Buyer, Buyer Number, Client; require Buyer Number
+        if not lot_number:
+            flash(_("Please enter Buyer Number"), "danger")
+            return render_template("admin/bayarat_form.html", form=request.form, buyers=buyers, customers=customers)
 
         # resolve buyer (create if not exists by exact case-insensitive name)
         buyer_obj = None
@@ -568,7 +569,7 @@ def bayarat_edit(auction_id: int):
 
         if not (provider or lot_number):
             flash(_("Please enter at least Provider or Lot Number"), "danger")
-            return render_template("admin/bayarat_form.html", form=request.form, auction=a)
+            return render_template("admin/bayarat_form.html", form=request.form, auction=a, buyers=buyers, customers=customers)
 
         a.provider = provider or None
         a.lot_number = lot_number or None
