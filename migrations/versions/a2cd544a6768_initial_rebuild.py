@@ -1,8 +1,8 @@
-"""initial migration
+"""initial rebuild
 
-Revision ID: ebca1bfc31e8
+Revision ID: a2cd544a6768
 Revises: 
-Create Date: 2025-10-16 10:00:56.109569
+Create Date: 2025-10-16 17:22:26.688297
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'ebca1bfc31e8'
+revision = 'a2cd544a6768'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -22,11 +22,6 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('path', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('buyers',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(length=200), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('notifications',
@@ -122,17 +117,12 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('account_number')
     )
-    op.create_table('auctions',
+    op.create_table('buyers',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('provider', sa.String(length=50), nullable=True),
-    sa.Column('auction_date', sa.DateTime(), nullable=True),
-    sa.Column('lot_number', sa.String(length=100), nullable=True),
-    sa.Column('location', sa.String(length=200), nullable=True),
-    sa.Column('notes', sa.Text(), nullable=True),
-    sa.Column('auction_url', sa.Text(), nullable=True),
-    sa.Column('buyer_id', sa.Integer(), nullable=True),
+    sa.Column('name', sa.String(length=200), nullable=False),
+    sa.Column('buyer_number', sa.String(length=100), nullable=True),
+    sa.Column('password', sa.String(length=200), nullable=True),
     sa.Column('customer_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['buyer_id'], ['buyers.id'], ),
     sa.ForeignKeyConstraint(['customer_id'], ['customers.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -147,6 +137,20 @@ def upgrade():
     sa.ForeignKeyConstraint(['customer_id'], ['customers.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('invoice_number')
+    )
+    op.create_table('auctions',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('provider', sa.String(length=50), nullable=True),
+    sa.Column('auction_date', sa.DateTime(), nullable=True),
+    sa.Column('lot_number', sa.String(length=100), nullable=True),
+    sa.Column('location', sa.String(length=200), nullable=True),
+    sa.Column('notes', sa.Text(), nullable=True),
+    sa.Column('auction_url', sa.Text(), nullable=True),
+    sa.Column('buyer_id', sa.Integer(), nullable=True),
+    sa.Column('customer_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['buyer_id'], ['buyers.id'], ),
+    sa.ForeignKeyConstraint(['customer_id'], ['customers.id'], ),
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('payments',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -175,11 +179,14 @@ def upgrade():
     sa.Column('purchase_price_usd', sa.Numeric(precision=12, scale=2), nullable=True),
     sa.Column('purchase_date', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('share_token', sa.String(length=64), nullable=True),
+    sa.Column('share_enabled', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['auction_id'], ['auctions.id'], ),
     sa.ForeignKeyConstraint(['owner_customer_id'], ['customers.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('vehicles', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_vehicles_share_token'), ['share_token'], unique=True)
         batch_op.create_index(batch_op.f('ix_vehicles_vin'), ['vin'], unique=True)
 
     op.create_table('cost_items',
@@ -235,6 +242,25 @@ def upgrade():
     with op.batch_alter_table('invoice_items', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_invoice_items_invoice_id'), ['invoice_id'], unique=False)
 
+    op.create_table('vehicle_sale_listings',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('vehicle_id', sa.Integer(), nullable=False),
+    sa.Column('customer_id', sa.Integer(), nullable=False),
+    sa.Column('asking_price_omr', sa.Numeric(precision=12, scale=3), nullable=False),
+    sa.Column('status', sa.String(length=20), nullable=True),
+    sa.Column('note_admin', sa.Text(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('decided_at', sa.DateTime(), nullable=True),
+    sa.Column('decided_by_user_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['customer_id'], ['customers.id'], ),
+    sa.ForeignKeyConstraint(['decided_by_user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['vehicle_id'], ['vehicles.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    with op.batch_alter_table('vehicle_sale_listings', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_vehicle_sale_listings_customer_id'), ['customer_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_vehicle_sale_listings_vehicle_id'), ['vehicle_id'], unique=False)
+
     op.create_table('vehicle_shipments',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('vehicle_id', sa.Integer(), nullable=True),
@@ -249,6 +275,11 @@ def upgrade():
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_table('vehicle_shipments')
+    with op.batch_alter_table('vehicle_sale_listings', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_vehicle_sale_listings_vehicle_id'))
+        batch_op.drop_index(batch_op.f('ix_vehicle_sale_listings_customer_id'))
+
+    op.drop_table('vehicle_sale_listings')
     with op.batch_alter_table('invoice_items', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_invoice_items_invoice_id'))
 
@@ -262,14 +293,16 @@ def downgrade():
     op.drop_table('cost_items')
     with op.batch_alter_table('vehicles', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_vehicles_vin'))
+        batch_op.drop_index(batch_op.f('ix_vehicles_share_token'))
 
     op.drop_table('vehicles')
     with op.batch_alter_table('payments', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_payments_invoice_id'))
 
     op.drop_table('payments')
-    op.drop_table('invoices')
     op.drop_table('auctions')
+    op.drop_table('invoices')
+    op.drop_table('buyers')
     op.drop_table('customers')
     op.drop_table('audit_logs')
     with op.batch_alter_table('users', schema=None) as batch_op:
@@ -281,6 +314,5 @@ def downgrade():
     op.drop_table('settings')
     op.drop_table('roles')
     op.drop_table('notifications')
-    op.drop_table('buyers')
     op.drop_table('backups')
     # ### end Alembic commands ###
