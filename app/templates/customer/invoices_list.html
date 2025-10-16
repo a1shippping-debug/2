@@ -30,32 +30,61 @@
   
 </div>
 <div class="bg-white rounded shadow overflow-hidden">
-  <table class="w-full text-sm">
-    <thead class="bg-gray-50">
-      <tr class="text-left text-gray-600">
-        <th class="px-3 py-2">{{ _('رقم الفاتورة') }}</th>
-        <th class="px-3 py-2">{{ _('الإجمالي (ر.ع)') }}</th>
-        <th class="px-3 py-2">{{ _('الحالة') }}</th>
-        <th class="px-3 py-2">{{ _('التاريخ') }}</th>
-        <th class="px-3 py-2">{{ _('الإجراءات') }}</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for inv in invoices %}
-      <tr class="border-t">
-        <td class="px-3 py-2">{{ inv.invoice_number }}</td>
-        <td class="px-3 py-2">{{ '%.3f'|format(inv.total_omr or 0) }}</td>
-        <td class="px-3 py-2">{{ inv.status or '-' }}</td>
-        <td class="px-3 py-2">{{ inv.created_at.strftime('%Y-%m-%d') if inv.created_at else '-' }}</td>
-        <td class="px-3 py-2 space-x-2">
-          <a class="text-blue-600" href="{{ url_for('cust.invoice_detail', invoice_id=inv.id) }}">{{ _('عرض') }}</a>
-          <a class="text-blue-600" href="{{ url_for('cust.invoice_pdf', invoice_id=inv.id) }}">PDF</a>
-        </td>
-      </tr>
-      {% else %}
-      <tr><td colspan="5" class="px-3 py-6 text-center text-gray-500">{{ _('لا توجد فواتير.') }}</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  {% if (active_filter or '') == 'auction' %}
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr class="text-left text-gray-600">
+          <th class="px-3 py-2">{{ _('السيارة') }}</th>
+          <th class="px-3 py-2">{{ _('نوع الملف') }}</th>
+          <th class="px-3 py-2">{{ _('التاريخ') }}</th>
+          <th class="px-3 py-2">{{ _('الإجراءات') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in (auction_rows or []) %}
+        {% set doc = row.doc %}
+        {% set v = row.vehicle %}
+        <tr class="border-t">
+          <td class="px-3 py-2">{{ v.vin or '-' }}</td>
+          <td class="px-3 py-2">{{ doc.doc_type }}</td>
+          <td class="px-3 py-2">{{ doc.created_at.strftime('%Y-%m-%d') if doc.created_at else '-' }}</td>
+          <td class="px-3 py-2">
+            <a class="text-blue-600" href="{{ url_for('cust.auction_invoice_download', doc_id=doc.id) }}">{{ _('تحميل') }}</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="px-3 py-6 text-center text-gray-500">{{ _('لا توجد فواتير مزاد مرفوعة.') }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr class="text-left text-gray-600">
+          <th class="px-3 py-2">{{ _('رقم الفاتورة') }}</th>
+          <th class="px-3 py-2">{{ _('الإجمالي (ر.ع)') }}</th>
+          <th class="px-3 py-2">{{ _('الحالة') }}</th>
+          <th class="px-3 py-2">{{ _('التاريخ') }}</th>
+          <th class="px-3 py-2">{{ _('الإجراءات') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in invoices %}
+        <tr class="border-t">
+          <td class="px-3 py-2">{{ inv.invoice_number }}</td>
+          <td class="px-3 py-2">{{ '%.3f'|format(inv.total_omr or 0) }}</td>
+          <td class="px-3 py-2">{{ inv.status or '-' }}</td>
+          <td class="px-3 py-2">{{ inv.created_at.strftime('%Y-%m-%d') if inv.created_at else '-' }}</td>
+          <td class="px-3 py-2 space-x-2">
+            <a class="text-blue-600" href="{{ url_for('cust.invoice_detail', invoice_id=inv.id) }}">{{ _('عرض') }}</a>
+            <a class="text-blue-600" href="{{ url_for('cust.invoice_pdf', invoice_id=inv.id) }}">PDF</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="px-3 py-6 text-center text-gray-500">{{ _('لا توجد فواتير.') }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
 </div>
 {% endblock %}
