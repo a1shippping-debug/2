@@ -120,6 +120,16 @@
       <input name="country" value="{{ customer.country if customer else '' }}" placeholder="{{ _('Country') }}" {% if not customer %}required{% endif %}>
     </div>
 
+    <div>
+      <label>{{ _('كلمة المرور') }}</label>
+      <input type="password" name="password" placeholder="{{ _('Password') }}" {% if not customer %}required{% endif %}>
+    </div>
+
+    <div>
+      <label>{{ _('تأكيد كلمة المرور') }}</label>
+      <input type="password" name="password_confirm" placeholder="{{ _('Confirm Password') }}" {% if not customer %}required{% endif %}>
+    </div>
+
     {% if customer %}
     <div class="md:col-span-2">
       <label>{{ _('العنوان') }}</label>
@@ -129,7 +139,7 @@
 
     <div class="md:col-span-2 flex justify-between items-center">
       <div class="text-sm text-gray-500">
-        {{ _('الحقول المطلوبة: الاسم، البريد الإلكتروني، رقم الجوال، الدولة، رقم البطاقة') }}
+        {{ _('الحقول المطلوبة: الاسم، البريد الإلكتروني، رقم الجوال، الدولة، رقم البطاقة، كلمة المرور') }}
       </div>
       <button class="btn-primary">{{ _('حفظ العميل') }}</button>
     </div>

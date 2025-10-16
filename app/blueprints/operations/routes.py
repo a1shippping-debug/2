@@ -671,6 +671,8 @@ def customers_new():
         country = (request.form.get('country') or '').strip()
         address = (request.form.get('address') or '').strip()
         account_number = (request.form.get('account_number') or '').strip()
+        password = (request.form.get('password') or '').strip()
+        password_confirm = (request.form.get('password_confirm') or '').strip()
 
         # Build a transient customer to repopulate the form on validation errors
         c = Customer(
@@ -683,12 +685,13 @@ def customers_new():
             account_number=account_number or None,
         )
 
-        # Required fields on create: name (company or full), phone, country, card number, email
+        # Required fields on create: name (company or full), phone, country, card number, email, password
         has_name = bool(company_name or full_name)
         has_phone = bool(phone)
         has_country = bool(country)
         has_card = bool(account_number)
         has_email = bool(email)
+        has_password = bool(password)
 
         if not has_name:
             flash(_('الاسم مطلوب (اسم الشركة أو الاسم الكامل)'), 'danger')
@@ -700,7 +703,11 @@ def customers_new():
             flash(_('رقم البطاقة مطلوب'), 'danger')
         if not has_email:
             flash(_('البريد الإلكتروني مطلوب'), 'danger')
-        if not (has_name and has_phone and has_country and has_card and has_email):
+        if not has_password:
+            flash(_('كلمة المرور مطلوبة'), 'danger')
+        if password and password_confirm and password != password_confirm:
+            flash(_('تأكيد كلمة المرور غير مطابق'), 'danger')
+        if not (has_name and has_phone and has_country and has_card and has_email and has_password and (password == password_confirm)):
             return render_template('operations/customer_form.html', customer=c)
 
         # Ensure user email is unique for login
@@ -716,18 +723,7 @@ def customers_new():
             flash(_('هذا البريد الإلكتروني مستخدم بالفعل'), 'danger')
             return render_template('operations/customer_form.html', customer=c)
 
-        # Create a login user for this customer with a generated password
-        import secrets, string
-
-        def _generate_password(length: int = 10) -> str:
-            alphabet = string.ascii_letters + string.digits
-            # Ensure at least one letter and one digit
-            while True:
-                pw = ''.join(secrets.choice(alphabet) for _ in range(length))
-                if any(ch.isalpha() for ch in pw) and any(ch.isdigit() for ch in pw):
-                    return pw
-
-        temp_password = _generate_password(10)
+        # Create a login user for this customer and set provided password
 
         # Ensure 'customer' role exists
         role_customer = db.session.query(Role).filter(db.func.lower(Role.name) == 'customer').first()
@@ -743,7 +739,7 @@ def customers_new():
             role=role_customer,
             active=True,
         )
-        user.set_password(temp_password)
+        user.set_password(password)
 
         db.session.add(user)
         db.session.flush()
@@ -755,14 +751,11 @@ def customers_new():
             db.session.commit()
             notify(f"Customer {c.company_name or c.full_name} added", 'Customer', c.id)
             flash(_('Customer saved successfully'), 'success')
-            # Provide login credentials to staff to share with the customer
+            # Provide login credentials (email only). Avoid flashing passwords.
             try:
                 flash(_('Email: %(email)s', email=email), 'info')
-                flash(_('Temporary password: %(password)s', password=temp_password), 'info')
             except Exception:
-                # Best-effort: ignore translation/format issues
                 flash(f"Email: {email}", 'info')
-                flash(f"Temporary password: {temp_password}", 'info')
             return redirect(url_for('ops.customers_edit', customer_id=c.id))
         except Exception as e:
             current_app.logger.exception('Failed to save customer')
@@ -793,6 +786,39 @@ def customers_edit(customer_id: int):
             val = request.form.get(fld)
             if val is not None:
                 setattr(c, fld, val)
+
+        # Optional password change for linked user
+        new_password = (request.form.get('password') or '').strip()
+        new_password_confirm = (request.form.get('password_confirm') or '').strip()
+        if new_password or new_password_confirm:
+            if not (new_password and new_password_confirm and new_password == new_password_confirm):
+                flash(_('تأكيد كلمة المرور غير مطابق'), 'danger')
+                return render_template('operations/customer_form.html', customer=c)
+            # Ensure customer has a linked user; if not, create one minimally
+            user = None
+            try:
+                if c.user_id:
+                    user = db.session.get(User, c.user_id)
+            except Exception:
+                user = None
+            if not user:
+                # Ensure 'customer' role exists
+                role_customer = db.session.query(Role).filter(db.func.lower(Role.name) == 'customer').first()
+                if not role_customer:
+                    role_customer = Role(name='customer')
+                    db.session.add(role_customer)
+                    db.session.flush()
+                user = User(
+                    name=(c.company_name or c.full_name) or None,
+                    email=c.email,
+                    phone=c.phone or None,
+                    role=role_customer,
+                    active=True,
+                )
+                db.session.add(user)
+                db.session.flush()
+                c.user_id = user.id
+            user.set_password(new_password)
         try:
             db.session.commit(); notify(f"Customer {c.company_name or c.full_name} updated", 'Customer', c.id)
             flash(_('Customer updated'), 'success')
