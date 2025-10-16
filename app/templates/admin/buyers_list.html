@@ -7,9 +7,13 @@
   .buyers-header { padding:16px 20px; display:flex; align-items:center; justify-content:space-between; }
   .buyers-title { margin:0; font-size:18px; font-weight:600; }
   .buyers-table { width:100%; border-collapse:collapse; font-size:14px; }
-  .buyers-table thead { background:#f9fafb; color:#6b7280; }
+  /* Copart-like clear palette */
+  .buyers-table thead { background:#003e7e; color:#ffffff; }
   .buyers-table th, .buyers-table td { padding:12px 14px; text-align:right; }
-  .buyers-table tbody tr { border-top:1px solid #f1f5f9; }
+  .buyers-table th { font-weight:700; letter-spacing:0.2px; }
+  .buyers-table tbody tr { border-top:1px solid #e5eefc; }
+  .buyers-table tbody tr:nth-child(even) { background:#f5f9ff; }
+  .buyers-table tbody tr:hover { background:#eaf2ff; }
   .muted { color:#6b7280; }
   @media (max-width: 640px) {
     .buyers-table th, .buyers-table td { padding:10px; font-size:13px; }
