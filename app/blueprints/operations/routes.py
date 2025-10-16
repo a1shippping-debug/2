@@ -196,7 +196,7 @@ def cars_list():
             .order_by(Shipment.created_at.asc())
             .all()
         )
-        shipments_by_vehicle = {}
+        shipments_by_vehicle: dict[int, list[Shipment]] = {}
         for vid, shp in rows:
             shipments_by_vehicle.setdefault(vid, []).append(shp)
 
@@ -215,47 +215,31 @@ def cars_list():
             "Delivered",
         ]
 
+        # Helper to get stage index safely
+        def stage_index_from_status(text: str | None) -> int:
+            norm = (text or "").strip().lower()
+            for idx, name in enumerate(order):
+                if name.lower() == norm:
+                    return idx
+            return 0
+
         for v in cars:
             shps = shipments_by_vehicle.get(v.id, [])
             primary = shps[0] if shps else None
             departed = bool(primary and primary.departure_date)
             arrived = bool(primary and primary.arrival_date)
-            shipment_status = (primary.status or '').strip().lower() if primary else ''
-            norm_status = (v.status or '').strip().lower()
+            shipment_status = (primary.status or "").strip().lower() if primary else ""
 
-            completed_map = {
-                "New car": True,
-                # Explicit stage name support
-                "Cashier Payment": bool(v.purchase_price_usd and float(v.purchase_price_usd) > 0)
-                or norm_status == "cashier payment",
-                "Auction Payment": bool(v.purchase_date) or norm_status == "auction payment",
-                # Use either shipment existence or vehicle status keywords
-                "Posted": bool(shps)
-                or norm_status in {"in shipping", "shipped", "delivered", "arrived", "in transit"}
-                or norm_status == "posted",
-                "Towing": any(k in norm_status for k in ["picked", "towing", "tow"]) or norm_status == "towing",
-                # Map cleared/warehouse statuses
-                "Warehouse": ("warehouse" in norm_status) or ("cleared" in norm_status) or norm_status == "warehouse",
-                # Loading is implied by shipped/in shipping too; also accept explicit name
-                "Loading": bool(shps and not departed)
-                or ("shipped" in norm_status)
-                or ("in shipping" in norm_status)
-                or norm_status == "loading",
-                # Shipping and Port can be status-driven or explicit
-                "Shipping": bool(departed)
-                or ("shipped" in norm_status)
-                or ("in shipping" in norm_status)
-                or norm_status == "shipping",
-                "Port": bool(departed) or ("shipped" in norm_status) or ("in shipping" in norm_status) or norm_status == "port",
-                # In transit -> On way
-                "On way": bool(departed and not arrived) or ("in transit" in norm_status) or norm_status == "on way",
-                # Arrived if either arrival date or status indicates
-                "Arrived": bool(arrived) or ("arrived" in norm_status) or norm_status == "arrived",
-                # Delivered by shipment or status
-                "Delivered": bool((shipment_status == "delivered") or ("delivered" in norm_status) or norm_status == "delivered"),
-            }
-            current = next((name for name in reversed(order) if completed_map.get(name)), None)
-            tracking_stage[v.id] = current or "-"
+            idx = stage_index_from_status(v.status)
+            # Promote index based on shipment signals
+            if departed and not arrived:
+                idx = max(idx, order.index("On way"))
+            if arrived:
+                idx = max(idx, order.index("Arrived"))
+            if shipment_status == "delivered":
+                idx = max(idx, order.index("Delivered"))
+
+            tracking_stage[v.id] = order[idx] if 0 <= idx < len(order) else "-"
 
     customers = db.session.query(Customer).order_by(Customer.company_name.asc()).all()
     return render_template('operations/cars_list.html', cars=cars, customers=customers, tracking_stage=tracking_stage)
@@ -952,32 +936,6 @@ def vehicle_tracking(vehicle_id: int):
         except Exception:
             return ""
 
-    completed_map = {
-        "New car": True,
-        # Consider explicit stage names as authoritative fallbacks
-        "Cashier Payment": bool(v.purchase_price_usd and float(v.purchase_price_usd) > 0)
-        or norm_status == "cashier payment",
-        "Auction Payment": bool(v.purchase_date) or norm_status == "auction payment",
-        # Consider status text for lifecycle
-        "Posted": bool(shipments) or norm_status in {"in shipping", "shipped", "delivered", "arrived", "in transit"}
-        or norm_status == "posted",
-        "Towing": any(k in norm_status for k in ["picked", "towing", "tow"]) or norm_status == "towing",
-        # Warehouse or cleared
-        "Warehouse": ("warehouse" in norm_status) or ("cleared" in norm_status) or norm_status == "warehouse",
-        # Loading implied by shipped/in shipping or explicit stage name
-        "Loading": bool(shipments and not departed) or ("shipped" in norm_status) or ("in shipping" in norm_status)
-        or norm_status == "loading",
-        # Shipping and Port can be status-driven or explicit
-        "Shipping": bool(departed) or ("shipped" in norm_status) or ("in shipping" in norm_status) or norm_status == "shipping",
-        "Port": bool(departed) or ("shipped" in norm_status) or ("in shipping" in norm_status) or norm_status == "port",
-        # In transit marks On way
-        "On way": bool(departed and not arrived) or ("in transit" in norm_status) or norm_status == "on way",
-        # Arrived by shipment or status
-        "Arrived": bool(arrived) or ("arrived" in norm_status) or norm_status == "arrived",
-        # Delivered as above
-        "Delivered": bool(delivered or ("delivered" in norm_status) or norm_status == "delivered"),
-    }
-
     date_map = {
         "New car": fmt_dt(v.created_at),
         "Cashier Payment": fmt_dt(v.purchase_date) or fmt_dt(v.created_at),
@@ -1023,13 +981,29 @@ def vehicle_tracking(vehicle_id: int):
         "Delivered",
     ]
 
+    # Determine current stage index from explicit status and shipment signals
+    def stage_index_from_status(text: str | None) -> int:
+        norm = (text or "").strip().lower()
+        for idx, name in enumerate(order):
+            if name.lower() == norm:
+                return idx
+        return 0
+
+    current_idx = stage_index_from_status(v.status)
+    if departed and not arrived:
+        current_idx = max(current_idx, order.index("On way"))
+    if arrived:
+        current_idx = max(current_idx, order.index("Arrived"))
+    if delivered:
+        current_idx = max(current_idx, order.index("Delivered"))
+
     stages = []
-    for name in order:
+    for idx, name in enumerate(order):
         stages.append(
             {
                 "name": name,
                 "icon": icons.get(name, "fa-circle"),
-                "completed": bool(completed_map.get(name)),
+                "completed": idx <= current_idx,  # Auto-complete all prior stages
                 "date_str": date_map.get(name, ""),
             }
         )
