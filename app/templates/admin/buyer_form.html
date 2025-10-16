@@ -1,0 +1,35 @@
+{% extends "base_admin.html" %}
+{% block title %}{{ _('New Buyer') }}{% endblock %}
+{% block header %}{{ _('New Buyer') }}{% endblock %}
+{% block content %}
+<form method="post" class="bg-white border border-gray-200 rounded-2xl p-6 max-w-3xl" dir="rtl">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm text-gray-700">اسم الباير</label>
+      <input name="name" value="{{ form.name or '' }}" class="w-full border border-gray-300 rounded p-2" placeholder="اكتب اسم الباير" required>
+    </div>
+    <div>
+      <label class="block text-sm text-gray-700">رقم الباير</label>
+      <input name="buyer_number" value="{{ form.buyer_number or '' }}" class="w-full border border-gray-300 rounded p-2" placeholder="اختياري">
+    </div>
+    <div>
+      <label class="block text-sm text-gray-700">الباسوورد</label>
+      <input name="password" value="{{ form.password or '' }}" class="w-full border border-gray-300 rounded p-2" placeholder="اختياري">
+    </div>
+    <div>
+      <label class="block text-sm text-gray-700">العميل</label>
+      <select name="customer_id" class="w-full border border-gray-300 rounded p-2">
+        <option value="">-</option>
+        {% for c in (customers or []) %}
+        <option value="{{ c.id }}" {% if (form.customer_id or '')|string == (c.id|string) %}selected{% endif %}>{{ c.company_name or c.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="mt-6 flex items-center gap-3">
+    <button class="px-4 py-2 bg-primary text-white rounded" type="submit">{{ _('Create') }}</button>
+    <a href="{{ url_for('admin.buyers_list') }}" class="text-gray-700">{{ _('Cancel') }}</a>
+  </div>
+</form>
+{% endblock %}
