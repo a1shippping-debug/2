@@ -89,16 +89,28 @@ def create_app():
 
     @app.route("/")
     def index():
-        # Show a small selection of available cars on the homepage
+        # Show a small selection of approved sale listings on the homepage
         try:
             from .extensions import db
-            from .models import Vehicle
+            from .models import Vehicle, VehicleSaleListing
 
-            q = db.session.query(Vehicle).filter(Vehicle.owner_customer_id.is_(None))
-            # Exclude vehicles that are already delivered/arrived/in-transit
-            excluded = ["delivered", "arrived", "shipping", "on way", "in transit"]
-            q = q.filter(db.func.lower(Vehicle.status).notin_(excluded))
-            cars_for_sale = q.order_by(Vehicle.created_at.desc()).limit(6).all()
+            # Prefer explicitly approved sale listings (latest first)
+            rows = (
+                db.session.query(VehicleSaleListing)
+                .join(Vehicle, Vehicle.id == VehicleSaleListing.vehicle_id)
+                .filter(VehicleSaleListing.status == "Approved")
+                .order_by(db.func.coalesce(VehicleSaleListing.decided_at, VehicleSaleListing.created_at).desc())
+                .limit(6)
+                .all()
+            )
+            cars_for_sale = [r.vehicle for r in rows if getattr(r, "vehicle", None)]
+
+            # Fallback to previously visible vehicles if there are no approved listings yet
+            if not cars_for_sale:
+                q = db.session.query(Vehicle).filter(Vehicle.owner_customer_id.is_(None))
+                excluded = ["delivered", "arrived", "shipping", "on way", "in transit"]
+                q = q.filter(db.func.lower(Vehicle.status).notin_(excluded))
+                cars_for_sale = q.order_by(Vehicle.created_at.desc()).limit(6).all()
         except Exception:
             cars_for_sale = []
         return render_template("landing.html", cars_for_sale=cars_for_sale)
