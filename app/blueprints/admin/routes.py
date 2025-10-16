@@ -286,6 +286,43 @@ def buyers_list():
     )
     return render_template("admin/buyers_list.html", buyers=buyers)
 
+
+@admin_bp.route("/buyers/new", methods=["GET", "POST"])
+@role_required("admin")
+def buyers_new():
+    customers = db.session.query(Customer).order_by(Customer.company_name.asc(), Customer.full_name.asc()).all()
+    if request.method == "POST":
+        name = (request.form.get("name") or "").strip()
+        buyer_number = (request.form.get("buyer_number") or "").strip()
+        password = (request.form.get("password") or "").strip()
+        customer_id_raw = request.form.get("customer_id")
+
+        if not name:
+            flash(_("Please fill in all required fields."), "danger")
+            return render_template("admin/buyer_form.html", customers=customers, form=request.form)
+
+        customer = None
+        if customer_id_raw:
+            try:
+                customer = db.session.get(Customer, int(customer_id_raw))
+            except Exception:
+                customer = None
+
+        buyer = Buyer(name=name, buyer_number=buyer_number or None, password=password or None, customer_id=(customer.id if customer else None))
+        db.session.add(buyer)
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            flash(_("Failed to create buyer. Please try again."), "danger")
+            return render_template("admin/buyer_form.html", customers=customers, form=request.form)
+
+        flash(_("Buyer created successfully."), "success")
+        log_action("create", "Buyer", buyer.id, {"buyer_number": buyer.buyer_number})
+        return redirect(url_for("admin.buyers_list"))
+
+    return render_template("admin/buyer_form.html", customers=customers, form=request.form)
+
 @admin_bp.route("/users")
 @role_required("admin")
 def users_list():
