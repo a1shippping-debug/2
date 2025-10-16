@@ -2,22 +2,22 @@
 <div id="image-lightbox" class="fixed inset-0 z-[1000] hidden bg-black/90 select-none" aria-hidden="true" role="dialog" aria-label="Image viewer">
   <!-- Controls -->
   <div class="absolute top-4 left-4 flex gap-2">
-    <button type="button" class="js-zoom-in px-3 py-2 rounded-md bg-white/10 text-white border border-white/20 hover:bg-white/20">
+    <button type="button" aria-label="تكبير" title="تكبير" class="js-zoom-in px-3 py-2 rounded-md bg-white/10 text-white border border-white/20 hover:bg-white/20">
       <i class="fa-solid fa-magnifying-glass-plus"></i>
     </button>
-    <button type="button" class="js-zoom-out px-3 py-2 rounded-md bg-white/10 text-white border border-white/20 hover:bg-white/20">
+    <button type="button" aria-label="تصغير" title="تصغير" class="js-zoom-out px-3 py-2 rounded-md bg-white/10 text-white border border-white/20 hover:bg-white/20">
       <i class="fa-solid fa-magnifying-glass-minus"></i>
     </button>
-    <button type="button" class="js-reset px-3 py-2 rounded-md bg-white/10 text-white border border-white/20 hover:bg-white/20">
+    <button type="button" aria-label="إعادة الضبط" title="إعادة الضبط" class="js-reset px-3 py-2 rounded-md bg-white/10 text-white border border-white/20 hover:bg-white/20">
       <i class="fa-solid fa-rotate-left"></i>
     </button>
   </div>
-  <button type="button" class="js-close absolute top-4 right-4 px-3 py-2 rounded-md bg-white/10 text-white border border-white/20 hover:bg-white/20" aria-label="Close">
+  <button type="button" class="js-close absolute top-4 right-4 px-3 py-2 rounded-md bg-white/10 text-white border border-white/20 hover:bg-white/20" aria-label="إغلاق" title="إغلاق">
     <i class="fa-solid fa-xmark"></i>
   </button>
 
   <!-- Stage -->
-  <div class="js-stage w-full h-full overflow-hidden flex items-center justify-center touch-pan-y">
+  <div class="js-stage w-full h-full overflow-hidden flex items-center justify-center touch-none">
     <img class="js-image max-w-none pointer-events-auto will-change-transform" alt="" draggable="false" />
   </div>
 </div>
@@ -43,6 +43,11 @@
   const MIN_SCALE = 1;
   const MAX_SCALE = 6;
   const ZOOM_STEP = 0.25;
+
+  // Touch pinch state
+  let isPinching = false;
+  let pinchStartDistance = 0;
+  let pinchStartScale = 1;
 
   function applyTransform(){
     img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
@@ -131,13 +136,48 @@
   window.addEventListener('mouseup', onPointerUp);
 
   // Touch
+  function distanceBetweenTouches(touches){
+    const [a, b] = [touches[0], touches[1]];
+    const dx = a.clientX - b.clientX;
+    const dy = a.clientY - b.clientY;
+    return Math.hypot(dx, dy);
+  }
+
   stage.addEventListener('touchstart', (e)=>{
-    if (e.touches.length === 1) { const t = e.touches[0]; onPointerDown(t.clientX, t.clientY); }
-  }, { passive: true });
-  stage.addEventListener('touchmove', (e)=>{
-    if (e.touches.length === 1) { const t = e.touches[0]; onPointerMove(t.clientX, t.clientY); }
+    if (!isOpen) return;
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      onPointerDown(t.clientX, t.clientY);
+    } else if (e.touches.length === 2) {
+      isPinching = true;
+      pinchStartDistance = distanceBetweenTouches(e.touches);
+      pinchStartScale = scale;
+      e.preventDefault();
+    }
   }, { passive: false });
-  stage.addEventListener('touchend', onPointerUp);
+
+  stage.addEventListener('touchmove', (e)=>{
+    if (!isOpen) return;
+    if (isPinching && e.touches.length === 2) {
+      const currentDistance = distanceBetweenTouches(e.touches);
+      const nextScale = pinchStartScale * (currentDistance / Math.max(1, pinchStartDistance));
+      const clamped = Math.min(MAX_SCALE, Math.max(MIN_SCALE, nextScale));
+      scale = clamped;
+      clampTranslation();
+      applyTransform();
+      e.preventDefault();
+    } else if (!isPinching && e.touches.length === 1) {
+      const t = e.touches[0];
+      onPointerMove(t.clientX, t.clientY);
+    }
+  }, { passive: false });
+
+  stage.addEventListener('touchend', (e)=>{
+    if (e.touches.length < 2) {
+      isPinching = false;
+    }
+    if (e.touches.length === 0) onPointerUp();
+  });
 
   // Double click/tap to toggle zoom
   let lastTap = 0;
