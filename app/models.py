@@ -49,6 +49,11 @@ class Customer(db.Model):
     country = db.Column(db.String(100))
     user = db.relationship("User", backref="customer_profile")
 
+class Buyer(db.Model):
+    __tablename__ = "buyers"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+
 class Auction(db.Model):
     __tablename__ = "auctions"
     id = db.Column(db.Integer, primary_key=True)
@@ -58,6 +63,11 @@ class Auction(db.Model):
     location = db.Column(db.String(200))
     notes = db.Column(db.Text)
     auction_url = db.Column(db.Text)
+    buyer_id = db.Column(db.Integer, db.ForeignKey("buyers.id"))
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"))
+
+    buyer = db.relationship("Buyer")
+    customer = db.relationship("Customer")
 
 class Vehicle(db.Model):
     __tablename__ = "vehicles"

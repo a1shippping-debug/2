@@ -16,6 +16,7 @@ from ...models import (
     Setting,
     AuditLog,
     Backup,
+    Buyer,
 )
 
 admin_bp = Blueprint("admin", __name__, template_folder="templates/admin")
@@ -469,6 +470,9 @@ def bayarat_list():
 @admin_bp.route("/bayarat/new", methods=["GET", "POST"])
 @role_required("admin")
 def bayarat_new():
+    buyers = db.session.query(Buyer).order_by(Buyer.name.asc()).all()
+    customers = db.session.query(Customer).order_by(Customer.company_name.asc()).all()
+
     if request.method == "POST":
         provider = (request.form.get("provider") or "").strip()
         lot_number = (request.form.get("lot_number") or "").strip()
@@ -476,10 +480,35 @@ def bayarat_new():
         auction_url = (request.form.get("auction_url") or "").strip()
         notes = (request.form.get("notes") or "").strip()
         auction_date_raw = (request.form.get("auction_date") or "").strip()
+        buyer_name = (request.form.get("buyer_name") or "").strip()
+        customer_id_raw = (request.form.get("customer_id") or "").strip()
 
         if not (provider or lot_number):
             flash(_("Please enter at least Provider or Lot Number"), "danger")
             return render_template("admin/bayarat_form.html", form=request.form)
+
+        # resolve buyer (create if not exists by exact case-insensitive name)
+        buyer_obj = None
+        if buyer_name:
+            try:
+                buyer_obj = (
+                    db.session.query(Buyer)
+                    .filter(db.func.lower(Buyer.name) == buyer_name.lower())
+                    .first()
+                )
+            except Exception:
+                buyer_obj = None
+            if not buyer_obj:
+                buyer_obj = Buyer(name=buyer_name)
+                db.session.add(buyer_obj)
+                db.session.flush()
+
+        # optional customer link
+        customer_id_val = None
+        try:
+            customer_id_val = int(customer_id_raw) if customer_id_raw else None
+        except Exception:
+            customer_id_val = None
 
         a = Auction(
             provider=provider or None,
@@ -487,6 +516,8 @@ def bayarat_new():
             location=location or None,
             auction_url=auction_url or None,
             notes=notes or None,
+            buyer_id=buyer_obj.id if buyer_obj else None,
+            customer_id=customer_id_val,
         )
 
         if auction_date_raw:
@@ -505,9 +536,9 @@ def bayarat_new():
         except Exception:
             db.session.rollback()
             flash(_("Failed to create auction"), "danger")
-            return render_template("admin/bayarat_form.html", form=request.form)
+            return render_template("admin/bayarat_form.html", form=request.form, buyers=buyers, customers=customers)
 
-    return render_template("admin/bayarat_form.html", form=request.form)
+    return render_template("admin/bayarat_form.html", form=request.form, buyers=buyers, customers=customers)
 
 
 @admin_bp.route("/bayarat/<int:auction_id>/edit", methods=["GET", "POST"])
@@ -517,6 +548,9 @@ def bayarat_edit(auction_id: int):
     if not a:
         abort(404)
 
+    buyers = db.session.query(Buyer).order_by(Buyer.name.asc()).all()
+    customers = db.session.query(Customer).order_by(Customer.company_name.asc()).all()
+
     if request.method == "POST":
         provider = (request.form.get("provider") or "").strip()
         lot_number = (request.form.get("lot_number") or "").strip()
@@ -524,6 +558,8 @@ def bayarat_edit(auction_id: int):
         auction_url = (request.form.get("auction_url") or "").strip()
         notes = (request.form.get("notes") or "").strip()
         auction_date_raw = (request.form.get("auction_date") or "").strip()
+        buyer_name = (request.form.get("buyer_name") or "").strip()
+        customer_id_raw = (request.form.get("customer_id") or "").strip()
 
         if not (provider or lot_number):
             flash(_("Please enter at least Provider or Lot Number"), "danger")
@@ -534,6 +570,27 @@ def bayarat_edit(auction_id: int):
         a.location = location or None
         a.auction_url = auction_url or None
         a.notes = notes or None
+
+        # resolve buyer
+        if buyer_name:
+            buyer_obj = (
+                db.session.query(Buyer)
+                .filter(db.func.lower(Buyer.name) == buyer_name.lower())
+                .first()
+            )
+            if not buyer_obj:
+                buyer_obj = Buyer(name=buyer_name)
+                db.session.add(buyer_obj)
+                db.session.flush()
+            a.buyer_id = buyer_obj.id
+        else:
+            a.buyer_id = None
+
+        # resolve customer
+        try:
+            a.customer_id = int(customer_id_raw) if customer_id_raw else None
+        except Exception:
+            a.customer_id = None
 
         if auction_date_raw:
             try:
@@ -560,8 +617,10 @@ def bayarat_edit(auction_id: int):
         "auction_url": a.auction_url or "",
         "notes": a.notes or "",
         "auction_date": a.auction_date.strftime("%Y-%m-%d") if a.auction_date else "",
+        "buyer_name": a.buyer.name if getattr(a, 'buyer', None) else "",
+        "customer_id": str(a.customer_id or ""),
     }
-    return render_template("admin/bayarat_form.html", form=form_defaults, auction=a)
+    return render_template("admin/bayarat_form.html", form=form_defaults, auction=a, buyers=buyers, customers=customers)
 
 
 @admin_bp.route("/bayarat/<int:auction_id>/delete", methods=["POST"])
