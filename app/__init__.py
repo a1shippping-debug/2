@@ -126,7 +126,8 @@ def create_app():
         """
         from datetime import datetime, timedelta
         from .extensions import db
-        from .models import Vehicle, Auction, Shipment, VehicleShipment
+        from .models import Vehicle, Auction, Shipment, VehicleShipment, InternationalCost
+        from decimal import Decimal
 
         vin_norm = (vin or "").strip()
 
@@ -152,6 +153,7 @@ def create_app():
                 .all()
             )
             primary_shipment = shipments[0] if shipments else None
+            latest_shipment = shipments[-1] if shipments else None
 
             departed = bool(primary_shipment and primary_shipment.departure_date)
             arrived = bool(primary_shipment and primary_shipment.arrival_date)
@@ -413,6 +415,38 @@ def create_app():
                 }
             )
 
+        # Summary fields for quick view
+        container_number = "-"
+        arrival_date = "-"
+        total_cost_omr = None
+
+        try:
+            if vehicle:
+                # Prefer the latest shipment for container/arrival summary
+                if 'latest_shipment' in locals() and latest_shipment:
+                    container_number = (latest_shipment.container_number or "-").strip() if getattr(latest_shipment, 'container_number', None) else "-"
+                    arrival_date = fmt_dt(getattr(latest_shipment, 'arrival_date', None)) or "-"
+
+                # Compute total cost in OMR if InternationalCost exists
+                cost_row = db.session.query(InternationalCost).filter_by(vehicle_id=vehicle.id).first()
+                if cost_row:
+                    def dec(x):
+                        try:
+                            return Decimal(str(x or 0))
+                        except Exception:
+                            return Decimal('0')
+
+                    usd_sum = dec(vehicle.purchase_price_usd) + dec(cost_row.freight_usd) + dec(cost_row.insurance_usd) + dec(cost_row.auction_fees_usd)
+                    omr_rate = Decimal(str(current_app.config.get("OMR_EXCHANGE_RATE", 0.385)))
+                    omr_from_usd = usd_sum * omr_rate
+                    omr_local = dec(cost_row.customs_omr) + dec(cost_row.vat_omr) + dec(cost_row.local_transport_omr) + dec(cost_row.misc_omr)
+                    total_cost_omr = omr_from_usd + omr_local
+        except Exception:
+            # Fail-safe: keep defaults
+            container_number = container_number or "-"
+            arrival_date = arrival_date or "-"
+            total_cost_omr = total_cost_omr
+
         return render_template(
             "tracking.html",
             vin=vin_norm.upper(),
@@ -420,6 +454,9 @@ def create_app():
             vehicle=vehicle,
             stages=stages,
             stage_details=stage_details,
+            container_number=container_number,
+            arrival_date=arrival_date,
+            total_cost_omr=total_cost_omr,
         )
 
     @app.route("/v/<string:token>")
