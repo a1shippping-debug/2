@@ -921,36 +921,85 @@ def cars_status():
         # Expect multiple repeated fields: status[vehicle_id] = new_status
         # Or pairs of vehicle_ids[] and statuses[] in the same order
         updated = 0
-        # Support style: status_123=Shipped
+
+        # Canonical order and helpers to advance status progressively
+        order = [
+            'New car',
+            'Cashier Payment',
+            'Auction Payment',
+            'Posted',
+            'Towing',
+            'Warehouse',
+            'Loading',
+            'Shipping',
+            'Port',
+            'On way',
+            'Arrived',
+            'Delivered',
+        ]
+
+        def stage_index_from_status(text: str | None) -> int:
+            norm = (text or '').strip().lower()
+            for idx, name in enumerate(order):
+                if name.lower() == norm:
+                    return idx
+            return 0
+
+        def advance_vehicle_status(v: Vehicle, target_status: str) -> bool:
+            # Advance vehicle status, auto-filling intermediate stages forward.
+            if not target_status or target_status == v.status:
+                return False
+            old_idx = stage_index_from_status(v.status)
+            new_idx = stage_index_from_status(target_status)
+            if new_idx > old_idx:
+                # Walk forward through intermediate stages and notify for each step
+                for idx in range(old_idx + 1, new_idx + 1):
+                    step = order[idx]
+                    v.status = step
+                    try:
+                        notify(f"Vehicle {v.vin} status updated to {step}", 'Vehicle', v.id)
+                    except Exception:
+                        pass
+                return True
+            else:
+                # Moving backward or to same/unknown: set directly and notify once
+                v.status = target_status
+                try:
+                    notify(f"Vehicle {v.vin} status updated to {v.status}", 'Vehicle', v.id)
+                except Exception:
+                    pass
+                return True
+
+        # Support style: status_123=TargetStatus
         for key, val in (request.form or {}).items():
             if key.startswith('status_'):
                 try:
                     vid = int(key.split('_', 1)[1])
                     v = db.session.get(Vehicle, vid)
-                    if v and val and val != v.status:
-                        v.status = val
-                        updated += 1
+                    if v and val:
+                        if advance_vehicle_status(v, val):
+                            updated += 1
                 except Exception:
                     continue
-        # Support style: status[123] = Shipped
+        # Support style: status[123] = TargetStatus
         for key in (request.form or {}).keys():
             if key.startswith('status[') and key.endswith(']'):
                 try:
                     vid = int(key[7:-1])
                     val = request.form.get(key)
                     v = db.session.get(Vehicle, vid)
-                    if v and val and val != v.status:
-                        v.status = val
-                        updated += 1
+                    if v and val:
+                        if advance_vehicle_status(v, val):
+                            updated += 1
                 except Exception:
                     continue
         try:
             if updated:
                 db.session.commit()
-            return jsonify({"updated": updated})
+            return jsonify({'updated': updated})
         except Exception:
             db.session.rollback()
-            return ("", 400)
+            return ('', 400)
 
     q = db.session.query(Vehicle)
     vin = (request.args.get('vin') or '').strip()
