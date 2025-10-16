@@ -17,6 +17,7 @@
           <a href="{{ url_for('ops.cars_list') }}" class="hover:text-accent">{{ _('السيارات') }}</a>
           <a href="{{ url_for('ops.customers_list') }}" class="hover:text-accent">{{ _('العملاء') }}</a>
           <a href="{{ url_for('acct.bol_list') }}" class="hover:text-accent">{{ _('المستندات') }}</a>
+          <a href="{{ url_for('ops.sale_listings_list') }}" class="hover:text-accent">{{ _('طلبات البيع') }}</a>
           <a href="{{ url_for('ops.dashboard') if role_name=='employee' else url_for('admin.dashboard') }}" class="hover:text-accent">{{ _('لوحة التحكم') }}</a>
         {% elif current_user.is_authenticated and role_name == 'customer' %}
           <a href="{{ url_for('cust.my_cars') }}" class="hover:text-accent">{{ _('سياراتي') }}</a>
@@ -82,6 +83,7 @@
             <a href="{{ url_for('ops.cars_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('السيارات') }}</a>
             <a href="{{ url_for('ops.customers_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('العملاء') }}</a>
             <a href="{{ url_for('acct.bol_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('المستندات') }}</a>
+            <a href="{{ url_for('ops.sale_listings_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('طلبات البيع') }}</a>
             <a href="{{ url_for('ops.dashboard') if role_name=='employee' else url_for('admin.dashboard') }}" class="block px-4 py-2 hover:bg-background">{{ _('لوحة التحكم') }}</a>
           {% elif current_user.is_authenticated and role_name == 'customer' %}
             <a href="{{ url_for('cust.my_cars') }}" class="block px-4 py-2 hover:bg-background">{{ _('سياراتي') }}</a>

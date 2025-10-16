@@ -1,0 +1,61 @@
+{% extends "base_admin.html" %}
+{% block title %}{{ _('طلبات بيع السيارات') }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto py-8">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="font-heading text-2xl text-neutral">{{ _('طلبات بيع السيارات') }}</h1>
+    <form class="flex items-center gap-2" method="get">
+      <select name="status" class="border rounded px-3 py-1.5 text-sm">
+        <option value="">{{ _('الكل') }}</option>
+        {% for s in ['Pending','Approved','Rejected'] %}
+        <option value="{{ s }}" {% if request.args.get('status')==s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+      <button class="px-3 py-1.5 bg-primary text-white rounded text-sm">{{ _('تصفية') }}</button>
+    </form>
+  </div>
+
+  <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-background text-neutral">
+        <tr>
+          <th class="text-right p-3">#</th>
+          <th class="text-right p-3">VIN</th>
+          <th class="text-right p-3">{{ _('العميل') }}</th>
+          <th class="text-right p-3">{{ _('السعر (OMR)') }}</th>
+          <th class="text-right p-3">{{ _('الحالة') }}</th>
+          <th class="text-right p-3">{{ _('التاريخ') }}</th>
+          <th class="text-right p-3">{{ _('إجراءات') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr class="border-t">
+          <td class="p-3">{{ r.id }}</td>
+          <td class="p-3">{{ r.vehicle.vin if r.vehicle else '-' }}</td>
+          <td class="p-3">{{ r.customer.company_name or r.customer.full_name if r.customer else '-' }}</td>
+          <td class="p-3">{{ '%.3f'|format(r.asking_price_omr) }}</td>
+          <td class="p-3">
+            <span class="px-2 py-1 rounded text-xs {{ 'bg-yellow-100 text-yellow-800' if r.status=='Pending' else ('bg-green-100 text-green-800' if r.status=='Approved' else 'bg-red-100 text-red-800') }}">{{ r.status }}</span>
+          </td>
+          <td class="p-3">{{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else '' }}</td>
+          <td class="p-3">
+            {% if r.status=='Pending' %}
+            <form method="post" action="{{ url_for('ops.sale_listings_approve', listing_id=r.id) }}" class="inline">
+              <button class="px-2 py-1 bg-green-600 text-white rounded">{{ _('موافقة') }}</button>
+            </form>
+            <form method="post" action="{{ url_for('ops.sale_listings_reject', listing_id=r.id) }}" class="inline">
+              <input type="text" name="reason" placeholder="{{ _('سبب الرفض (اختياري)') }}" class="border rounded px-2 py-1 text-xs"/>
+              <button class="px-2 py-1 bg-red-600 text-white rounded">{{ _('رفض') }}</button>
+            </form>
+            {% else %}-{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="p-6 text-center text-muted">{{ _('لا توجد طلبات') }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
