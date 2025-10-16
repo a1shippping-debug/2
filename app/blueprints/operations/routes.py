@@ -15,8 +15,8 @@ def dashboard():
     # Summary cards
     total_cars = db.session.query(Vehicle).count()
 
-    # Vehicles In Transit (via shipment association)
-    in_transit_cars = (
+    # Vehicles In Transit: include either shipment status or vehicle status keywords
+    in_transit_via_shipments = (
         db.session.query(db.func.count(db.distinct(Vehicle.id)))
         .join(VehicleShipment, Vehicle.id == VehicleShipment.vehicle_id)
         .join(Shipment, Shipment.id == VehicleShipment.shipment_id)
@@ -24,9 +24,16 @@ def dashboard():
         .scalar()
         or 0
     )
+    in_transit_via_vehicle = (
+        db.session.query(db.func.count(Vehicle.id))
+        .filter(db.func.lower(Vehicle.status).in_(["in transit", "on way", "shipping"]))
+        .scalar()
+        or 0
+    )
+    in_transit_cars = int(in_transit_via_shipments) + int(in_transit_via_vehicle)
 
-    # Vehicles Arrived (arrival date set or delivered status)
-    arrived_cars = (
+    # Vehicles Arrived: include shipment arrival or vehicle status keywords
+    arrived_via_shipments = (
         db.session.query(db.func.count(db.distinct(Vehicle.id)))
         .join(VehicleShipment, Vehicle.id == VehicleShipment.vehicle_id)
         .join(Shipment, Shipment.id == VehicleShipment.shipment_id)
@@ -36,6 +43,13 @@ def dashboard():
         .scalar()
         or 0
     )
+    arrived_via_vehicle = (
+        db.session.query(db.func.count(Vehicle.id))
+        .filter(db.func.lower(Vehicle.status).in_(["arrived", "delivered"]))
+        .scalar()
+        or 0
+    )
+    arrived_cars = int(arrived_via_shipments) + int(arrived_via_vehicle)
 
     open_shipments = db.session.query(Shipment).filter(db.func.lower(Shipment.status) == "open").count()
     customers_count = db.session.query(Customer).count()

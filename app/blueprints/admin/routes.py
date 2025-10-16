@@ -32,13 +32,18 @@ def dashboard():
             .join(Role, isouter=True)
             .filter(Role.name == "customer", User.active.is_(True)).count(),
         "vehicles": db.session.query(Vehicle).count(),
-        "vehicles_shipping": db.session.query(Vehicle).filter(Vehicle.status == "In Shipping").count(),
+        # Treat both "In Shipping" and "Shipping" as active shipping
+        "vehicles_shipping": db.session.query(Vehicle)
+            .filter(db.func.lower(Vehicle.status).in_(["in shipping", "shipping"]))
+            .count(),
         # vehicle status breakdown for admin cards
         "vehicles_in_auction": db.session.query(Vehicle).filter(Vehicle.status == "In Auction").count(),
         "vehicles_in_warehouse": db.session.query(Vehicle).filter(Vehicle.status.in_(["In Warehouse", "Arrived Warehouse"]))
             .count(),
         "vehicles_no_title": db.session.query(Vehicle).filter(Vehicle.status == "No Title").count(),
-        "vehicles_shipped": db.session.query(Vehicle).filter(Vehicle.status.in_(["In Shipping", "Shipped"]))
+        # Consider vehicles that are in shipping flow as "shipped" for this card
+        "vehicles_shipped": db.session.query(Vehicle)
+            .filter(db.func.lower(Vehicle.status).in_(["in shipping", "shipping", "shipped", "on way"]))
             .count(),
         "auctions": db.session.query(Auction).count(),
         "shipments": db.session.query(Shipment).count(),
