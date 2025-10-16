@@ -12,7 +12,17 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from ...extensions import db
-from ...models import Vehicle, Auction, Shipment, VehicleShipment, Customer, Invoice, InvoiceItem, VehicleSaleListing
+from ...models import (
+    Vehicle,
+    Auction,
+    Shipment,
+    VehicleShipment,
+    Customer,
+    Invoice,
+    InvoiceItem,
+    VehicleSaleListing,
+    Document,
+)
 from ...utils_pdf import render_invoice_pdf
 import os
 import secrets
@@ -281,41 +291,74 @@ def track():
 def invoices_list():
     """List invoices for the logged-in customer."""
     cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
-    invoices = []
+    invoices: list[Invoice] = []
+    auction_rows: list[dict] = []
     active_filter = (request.args.get("filter") or "").strip().lower()
-    if cust:
-        q = db.session.query(Invoice).filter(Invoice.customer_id == cust.id)
-        if active_filter in ("auction", "company"):
-            # Identify invoices that have at least one item linked to a vehicle (auction-related)
-            vehicle_invoice_ids_q = (
-                db.session.query(InvoiceItem.invoice_id)
-                .filter(InvoiceItem.vehicle_id.isnot(None))
-                .distinct()
-            )
-            if active_filter == "auction":
-                q = q.filter(Invoice.id.in_(vehicle_invoice_ids_q))
-            elif active_filter == "company":
-                q = q.filter(Invoice.id.notin_(vehicle_invoice_ids_q))
 
-        invoices = q.order_by(Invoice.created_at.desc()).all()
-    # Compute summary counts for paid vs unpaid (excluding cancelled)
+    if cust:
+        if active_filter == "auction":
+            # Show uploaded Auction Invoice documents for customer's vehicles
+            rows = (
+                db.session.query(Document, Vehicle)
+                .join(Vehicle, Vehicle.id == Document.vehicle_id)
+                .filter(
+                    Document.doc_type == "Auction Invoice",
+                    Vehicle.owner_customer_id == cust.id,
+                )
+                .order_by(Document.created_at.desc())
+                .all()
+            )
+            auction_rows = [{"doc": d, "vehicle": v} for d, v in rows]
+        else:
+            # Default and 'company': show system-created Invoices only
+            invoices = (
+                db.session.query(Invoice)
+                .filter(Invoice.customer_id == cust.id)
+                .order_by(Invoice.created_at.desc())
+                .all()
+            )
+
+    # Compute summary counts (for company invoices view only)
     def normalize_status(text: str | None) -> str:
         return (text or "").strip()
 
-    paid_count = sum(1 for inv in invoices if normalize_status(inv.status) == "Paid")
-    unpaid_count = sum(
-        1
-        for inv in invoices
-        if normalize_status(inv.status) != "Paid" and normalize_status(inv.status) != "Cancelled"
+    paid_count = sum(1 for inv in invoices if normalize_status(inv.status) == "Paid") if invoices else 0
+    unpaid_count = (
+        sum(1 for inv in invoices if normalize_status(inv.status) not in ("Paid", "Cancelled"))
+        if invoices
+        else 0
     )
 
     return render_template(
         "customer/invoices_list.html",
         invoices=invoices,
+        auction_rows=auction_rows,
         paid_count=paid_count,
         unpaid_count=unpaid_count,
         active_filter=active_filter,
     )
+
+
+@cust_bp.route("/auction-invoices/<int:doc_id>")
+@login_required
+def auction_invoice_download(doc_id: int):
+    """Allow a customer to download their uploaded auction invoice securely."""
+    cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
+    if not cust:
+        abort(404)
+    doc = db.session.get(Document, doc_id)
+    if not doc or (doc.doc_type or "") != "Auction Invoice":
+        abort(404)
+    # Ensure document belongs to one of customer's vehicles
+    v = db.session.get(Vehicle, doc.vehicle_id) if getattr(doc, "vehicle_id", None) else None
+    if not v or v.owner_customer_id != cust.id:
+        abort(404)
+    path = getattr(doc, "file_path", None)
+    if not path or not os.path.isfile(path):
+        flash("الملف غير متوفر للتحميل", "danger")
+        return redirect(url_for("cust.invoices_list", filter="auction"))
+    fname = os.path.basename(path)
+    return send_file(path, as_attachment=True, download_name=fname)
 
 
 @cust_bp.route("/invoices/<int:invoice_id>")
