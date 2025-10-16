@@ -12,7 +12,7 @@
   {% if cars %}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {% for v in cars %}
-        {{ vc.vehicle_card(v, loop.index0, 'details') }}
+        {{ vc.vehicle_card(v, loop.index0, 'details', true) }}
       {% endfor %}
     </div>
   {% else %}

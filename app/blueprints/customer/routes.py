@@ -4,6 +4,7 @@ from ...extensions import db
 from ...models import Vehicle, Auction, Shipment, VehicleShipment, Customer, Invoice, InvoiceItem
 from ...utils_pdf import render_invoice_pdf
 import os
+import secrets
 
 cust_bp = Blueprint("cust", __name__, template_folder="templates/customer")
 
@@ -28,6 +29,63 @@ def my_cars():
             .all()
         )
     return render_template("customer/my_cars.html", cars=cars)
+
+
+@cust_bp.post("/cars/<int:vehicle_id>/share")
+@login_required
+def share_vehicle(vehicle_id: int):
+    """Enable public sharing for a vehicle and generate a share link.
+
+    Redirects back to My Cars with a flash message containing the link.
+    """
+    cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
+    v = db.session.get(Vehicle, vehicle_id)
+    if not v or not cust or v.owner_customer_id != cust.id:
+        abort(404)
+
+    # Ensure token exists and is unique; enable sharing
+    if not getattr(v, "share_token", None):
+        # Retry a few times in the extremely unlikely case of collision
+        for _ in range(5):
+            candidate = secrets.token_urlsafe(24)[:64]
+            exists = db.session.query(Vehicle).filter(Vehicle.share_token == candidate).first()
+            if not exists:
+                v.share_token = candidate
+                break
+        if not v.share_token:
+            flash("تعذر إنشاء رابط المشاركة. حاول مرة أخرى.", "danger")
+            return redirect(url_for("cust.my_cars"))
+
+    v.share_enabled = True
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        flash("حدث خطأ أثناء حفظ رابط المشاركة.", "danger")
+        return redirect(url_for("cust.my_cars"))
+
+    share_url = url_for("vehicle_public_page", token=v.share_token, _external=True)
+    flash(f"تم إنشاء رابط المشاركة: {share_url}", "success")
+    return redirect(url_for("cust.my_cars"))
+
+
+@cust_bp.post("/cars/<int:vehicle_id>/share/disable")
+@login_required
+def disable_share_vehicle(vehicle_id: int):
+    """Disable public sharing for the vehicle."""
+    cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
+    v = db.session.get(Vehicle, vehicle_id)
+    if not v or not cust or v.owner_customer_id != cust.id:
+        abort(404)
+
+    v.share_enabled = False
+    try:
+        db.session.commit()
+        flash("تم إيقاف مشاركة السيارة.", "success")
+    except Exception:
+        db.session.rollback()
+        flash("تعذر إيقاف المشاركة.", "danger")
+    return redirect(url_for("cust.my_cars"))
 
 
 @cust_bp.route("/track")
