@@ -58,6 +58,7 @@
         <a href="{{ url_for('ops.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50">{{ _('Shipments') }}</a>
         <a href="{{ url_for('acct.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50">{{ _('Invoices') }}</a>
         <a href="{{ url_for('admin.reports') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint and request.endpoint.startswith('admin.reports') %}bg-blue-100 text-primary font-semibold{% endif %}">{{ _('Reports') }}</a>
+        <a href="{{ url_for('admin.shipping_prices_list') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint and request.endpoint.startswith('admin.shipping_prices_') %}bg-blue-100 text-primary font-semibold{% endif %}">{{ _('Shipping Prices') }}</a>
         <a href="{{ url_for('admin.settings') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint=='admin.settings' %}bg-blue-100 text-primary font-semibold{% endif %}">{{ _('Settings') }}</a>
         <a href="{{ url_for('admin.activity_log') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint and request.endpoint.startswith('admin.activity_log') %}bg-blue-100 text-primary font-semibold{% endif %}">{{ _('Activity Log') }}</a>
       </nav>

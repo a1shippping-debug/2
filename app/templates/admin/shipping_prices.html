@@ -1,0 +1,56 @@
+{% extends "base_admin.html" %}
+{% block title %}{{ _('Shipping Prices') }}{% endblock %}
+{% block header %}{{ _('Shipping Prices by Region') }}{% endblock %}
+{% block content %}
+<div class="grid md:grid-cols-3 gap-6">
+  <div class="md:col-span-2">
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden">
+      <div class="p-3 text-left text-slate-300 flex items-center justify-between">
+        <div class="text-sm">{{ _('Current Prices') }}</div>
+        <form method="post" action="{{ url_for('admin.shipping_prices_clear') }}" onsubmit="return confirm('{{ _('Clear all prices?') }}');">
+          <button class="text-xs px-3 py-1 rounded bg-rose-700 hover:bg-rose-600 text-white">{{ _('Clear All') }}</button>
+        </form>
+      </div>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-slate-400">
+            <th class="p-2">{{ _('Code') }}</th>
+            <th class="p-2">{{ _('Region') }}</th>
+            <th class="p-2">{{ _('Price (OMR)') }}</th>
+            <th class="p-2">{{ _('Effective') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr class="border-t border-slate-800">
+            <td class="p-2">{{ r.region_code }}</td>
+            <td class="p-2">{{ r.region_name or '-' }}</td>
+            <td class="p-2">{{ '%.3f'|format(r.price_omr or 0) }}</td>
+            <td class="p-2 text-xs">
+              {% if r.effective_from %}{{ r.effective_from }}{% endif %}
+              {% if r.effective_to %} → {{ r.effective_to }}{% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" class="p-3 text-slate-500">{{ _('No data') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div>
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 space-y-3 text-left">
+      <div class="font-semibold">{{ _('Upload File') }}</div>
+      <form method="post" action="{{ url_for('admin.shipping_prices_upload') }}" enctype="multipart/form-data" class="space-y-3">
+        <input type="file" name="file" accept=".csv,.xlsx" class="block w-full text-sm" required />
+        <div class="text-xs text-slate-400">
+          {{ _('Columns: region_code, region_name, price_omr, effective_from, effective_to') }}
+        </div>
+        <button class="px-4 py-2 rounded bg-primary text-white">{{ _('Import') }}</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
