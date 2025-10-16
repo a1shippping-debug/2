@@ -22,20 +22,36 @@
   <table class="w-full text-sm">
     <thead>
       <tr class="text-left text-gray-500">
-        <th class="p-2">{{ _('Client') }}</th>
+        <th class="p-2 whitespace-nowrap">{{ _('Provider') }}</th>
+        <th class="p-2 whitespace-nowrap">{{ _('Buyer Number') }}</th>
+        <th class="p-2 whitespace-nowrap">{{ _('Buyer') }}</th>
+        <th class="p-2 whitespace-nowrap">{{ _('Client') }}</th>
+        <th class="p-2 whitespace-nowrap">{{ _('Vehicles') }}</th>
+        <th class="p-2 whitespace-nowrap">{{ _('Date') }}</th>
+        <th class="p-2 whitespace-nowrap">{{ _('Location') }}</th>
+        <th class="p-2 whitespace-nowrap">{{ _('Actions') }}</th>
       </tr>
     </thead>
     <tbody>
       {% for a in auctions %}
       <tr class="border-t border-gray-100">
-        <td class="p-2">{{ a.customer.company_name if a.customer else '-' }}</td>
+        <td class="p-2">{{ a.provider or '-' }}</td>
+        <td class="p-2">{{ a.lot_number or '-' }}</td>
+        <td class="p-2">{{ a.buyer.name if a.buyer else '-' }}</td>
+        <td class="p-2">{{ a.customer.company_name or a.customer.full_name if a.customer else '-' }}</td>
+        <td class="p-2 text-center">{{ counts.get(a.id, 0) }}</td>
+        <td class="p-2">{{ a.auction_date.strftime('%Y-%m-%d') if a.auction_date else '-' }}</td>
+        <td class="p-2">{{ a.location or '-' }}</td>
+        <td class="p-2">
+          <a href="{{ url_for('admin.bayarat_edit', auction_id=a.id) }}" class="text-primary hover:underline">{{ _('Edit') }}</a>
+        </td>
       </tr>
       {% else %}
       <tr>
-        <td class="p-3 text-gray-500">{{ _('No auctions found') }}</td>
+        <td colspan="8" class="p-3 text-gray-500">{{ _('No auctions found') }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
-</div>
+ </div>
 {% endblock %}
