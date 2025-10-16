@@ -24,6 +24,9 @@
     <div class="bg-white border border-slate-200 rounded-2xl p-6">
       <h2 class="font-semibold text-lg mb-4">{{ _('تفاصيل السيارة') }}</h2>
       <div class="space-y-2 text-sm">
+        {% if sale_price_omr is defined and sale_price_omr %}
+        <div class="flex justify-between"><span class="text-muted">{{ _('سعر البيع') }}</span><span class="font-semibold">{{ ("OMR %.3f" % sale_price_omr) }}</span></div>
+        {% endif %}
         <div class="flex justify-between"><span class="text-muted">{{ _('الماركة') }}</span><span class="font-semibold">{{ vehicle.make or '-' }}</span></div>
         <div class="flex justify-between"><span class="text-muted">{{ _('الطراز') }}</span><span class="font-semibold">{{ vehicle.model or '-' }}</span></div>
         <div class="flex justify-between"><span class="text-muted">{{ _('السنة') }}</span><span class="font-semibold">{{ vehicle.year or '-' }}</span></div>
