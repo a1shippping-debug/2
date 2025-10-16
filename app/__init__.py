@@ -103,17 +103,45 @@ def create_app():
                 .limit(6)
                 .all()
             )
-            cars_for_sale = [r.vehicle for r in rows if getattr(r, "vehicle", None)]
+
+            # Build rich sale cards with first image and asking price
+            sale_cards = []
+            cars_for_sale = []
+            for r in rows:
+                v = getattr(r, "vehicle", None)
+                if not v:
+                    continue
+                cars_for_sale.append(v)
+                # Collect first image from static/uploads/<VIN>/ if exists
+                first_image = None
+                try:
+                    vin = (v.vin or "").strip()
+                    base_dir = os.path.join(current_app.static_folder, "uploads", vin)
+                    if vin and os.path.isdir(base_dir):
+                        for fname in sorted(os.listdir(base_dir)):
+                            lower = fname.lower()
+                            if any(lower.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]):
+                                first_image = url_for("static", filename=f"uploads/{vin}/{fname}")
+                                break
+                except Exception:
+                    first_image = None
+
+                sale_cards.append({
+                    "vehicle": v,
+                    "listing": r,
+                    "image_url": first_image,
+                })
 
             # Fallback to previously visible vehicles if there are no approved listings yet
-            if not cars_for_sale:
+            if not sale_cards:
                 q = db.session.query(Vehicle).filter(Vehicle.owner_customer_id.is_(None))
                 excluded = ["delivered", "arrived", "shipping", "on way", "in transit"]
                 q = q.filter(db.func.lower(Vehicle.status).notin_(excluded))
                 cars_for_sale = q.order_by(Vehicle.created_at.desc()).limit(6).all()
         except Exception:
+            sale_cards = []
             cars_for_sale = []
-        return render_template("landing.html", cars_for_sale=cars_for_sale)
+        return render_template("landing.html", sale_cards=sale_cards, cars_for_sale=cars_for_sale)
 
     # Public informational pages
     @app.route("/about")
@@ -524,6 +552,72 @@ def create_app():
             auction=auction,
             shipments=shipments,
             image_urls=image_urls,
+        )
+
+    @app.route("/sale/<string:vin>")
+    def vehicle_sale_detail(vin: str):
+        """Public vehicle sale detail page by VIN without tracking timeline.
+
+        Shows images, vehicle and shipment details, and the approved asking price (OMR).
+        """
+        from .extensions import db
+        from .models import Vehicle, VehicleSaleListing, Auction, Shipment, VehicleShipment
+
+        vin_norm = (vin or "").strip()
+        if not vin_norm:
+            abort(404)
+
+        v = (
+            db.session.query(Vehicle)
+            .filter(db.func.lower(Vehicle.vin) == db.func.lower(vin_norm))
+            .first()
+        )
+        if not v:
+            abort(404)
+
+        # Require an approved sale listing for public sale details
+        sale_listing = (
+            db.session.query(VehicleSaleListing)
+            .filter(
+                VehicleSaleListing.vehicle_id == v.id,
+                VehicleSaleListing.status == "Approved",
+            )
+            .order_by(db.func.coalesce(VehicleSaleListing.decided_at, VehicleSaleListing.created_at).desc())
+            .first()
+        )
+        if not sale_listing:
+            abort(404)
+
+        auction = v.auction
+        shipments = (
+            db.session.query(Shipment)
+            .join(VehicleShipment, Shipment.id == VehicleShipment.shipment_id)
+            .filter(VehicleShipment.vehicle_id == v.id)
+            .order_by(Shipment.created_at.asc())
+            .all()
+        )
+
+        # Collect image URLs from static/uploads/<VIN>/
+        image_urls = []
+        try:
+            vin_val = (v.vin or "").strip()
+            base_dir = os.path.join(current_app.static_folder, "uploads", vin_val)
+            if vin_val and os.path.isdir(base_dir):
+                for fname in sorted(os.listdir(base_dir)):
+                    lower = fname.lower()
+                    if any(lower.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]):
+                        image_urls.append(url_for("static", filename=f"uploads/{vin_val}/{fname}"))
+        except Exception:
+            # Fail silently; images are optional
+            image_urls = []
+
+        return render_template(
+            "public/vehicle_public.html",
+            vehicle=v,
+            auction=auction,
+            shipments=shipments,
+            image_urls=image_urls,
+            sale_listing=sale_listing,
         )
 
     @app.shell_context_processor
