@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% block title %}{{ _('من نحن') }}{% endblock %}
+
+{% block content %}
+<section class="py-16">
+  <div class="container mx-auto grid md:grid-cols-2 gap-12 items-center">
+    <div>
+      <h1 class="text-4xl font-extrabold mb-4">{{ _('من نحن') }}</h1>
+      <p class="text-gray-600 mb-6">
+        {{ _('نحن شركة متخصصة في شحن السيارات وإدارة المزادات وتتبع الشحنات من المصدر وحتى التسليم، مع التزام كامل بالشفافية والموثوقية.') }}
+      </p>
+      <ul class="space-y-3 text-gray-600">
+        <li>✔️ {{ _('خبرة تشغيلية واسعة في الشحن الدولي') }}</li>
+        <li>✔️ {{ _('نظام تتبع لحظي ودعم متعدد اللغات') }}</li>
+        <li>✔️ {{ _('تقارير مالية دقيقة ولوحات تحليلية') }}</li>
+      </ul>
+    </div>
+    <div>
+      <img src="{{ url_for('static', filename='images/about-us.png') }}" alt="{{ _('من نحن') }}" class="rounded-2xl shadow-soft w-full object-cover"/>
+    </div>
+  </div>
+</section>
+{% endblock %}

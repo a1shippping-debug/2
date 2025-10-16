@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block title %}{{ _('خدماتنا') }}{% endblock %}
+
+{% block content %}
+<section class="py-16">
+  <div class="container mx-auto text-center mb-12">
+    <h1 class="text-4xl font-extrabold mb-3">{{ _('خدماتنا') }}</h1>
+    <p class="text-gray-600 max-w-3xl mx-auto">{{ _('حلول متكاملة لشحن السيارات والمزادات وإدارة الوثائق والتقارير.') }}</p>
+  </div>
+  <div class="container mx-auto grid md:grid-cols-3 gap-8">
+    <div class="p-8 bg-white rounded-2xl border hover:shadow-2xl transition">
+      <div class="text-5xl mb-3">🚗</div>
+      <h3 class="text-xl font-semibold mb-2">{{ _('استيراد وشراء السيارات') }}</h3>
+      <p class="text-gray-600">{{ _('تنسيق المزادات والشراء الآمن مع متابعة كاملة حتى الاستلام.') }}</p>
+    </div>
+    <div class="p-8 bg-white rounded-2xl border hover:shadow-2xl transition">
+      <div class="text-5xl mb-3">⚓</div>
+      <h3 class="text-xl font-semibold mb-2">{{ _('الشحن البحري والبري') }}</h3>
+      <p class="text-gray-600">{{ _('خدمات شحن إلى معظم الموانئ العالمية مع تتبع دقيق.') }}</p>
+    </div>
+    <div class="p-8 bg-white rounded-2xl border hover:shadow-2xl transition">
+      <div class="text-5xl mb-3">📄</div>
+      <h3 class="text-xl font-semibold mb-2">{{ _('إدارة الوثائق والتخليص') }}</h3>
+      <p class="text-gray-600">{{ _('إصدار المستندات ومتابعة التخليص الجمركي بكل سلاسة.') }}</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

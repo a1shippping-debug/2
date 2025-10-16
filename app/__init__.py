@@ -91,6 +91,19 @@ def create_app():
     def index():
         return render_template("landing.html")
 
+    # Public informational pages
+    @app.route("/about")
+    def about_page():
+        return render_template("info/about.html")
+
+    @app.route("/services")
+    def services_page():
+        return render_template("info/services.html")
+
+    @app.route("/contact")
+    def contact_page():
+        return render_template("info/contact.html")
+
     @app.route("/tracking/<string:vin>")
     def tracking_page(vin: str):
         """Public vehicle shipment tracking by VIN.

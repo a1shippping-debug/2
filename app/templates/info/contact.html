@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block title %}{{ _('تواصل معنا') }}{% endblock %}
+
+{% block content %}
+<section class="py-16">
+  <div class="container mx-auto max-w-3xl">
+    <h1 class="text-4xl font-extrabold mb-6">{{ _('تواصل معنا') }}</h1>
+    <p class="text-gray-600 mb-8">{{ _('يسعدنا خدمتك والإجابة عن جميع استفساراتك. تواصل معنا بالطرق التالية:') }}</p>
+
+    <div class="grid md:grid-cols-2 gap-8 mb-12">
+      <div class="p-6 bg-white rounded-2xl border">
+        <h3 class="font-semibold mb-2">{{ _('البريد الإلكتروني') }}</h3>
+        <a href="mailto:info@example.com" class="text-primary hover:underline">info@example.com</a>
+      </div>
+      <div class="p-6 bg-white rounded-2xl border">
+        <h3 class="font-semibold mb-2">{{ _('رقم الهاتف') }}</h3>
+        <a href="tel:+11234567890" class="text-primary hover:underline">+1 123 456 7890</a>
+      </div>
+    </div>
+
+    <div class="p-6 bg-white rounded-2xl border">
+      <h3 class="font-semibold mb-4">{{ _('أرسل لنا رسالة') }}</h3>
+      <form class="grid gap-4">
+        <input type="text" placeholder="{{ _('الاسم') }}" class="border rounded px-3 py-2" required>
+        <input type="email" placeholder="{{ _('البريد الإلكتروني') }}" class="border rounded px-3 py-2" required>
+        <textarea rows="4" placeholder="{{ _('رسالتك') }}" class="border rounded px-3 py-2" required></textarea>
+        <button type="button" class="px-6 py-2 bg-primary text-white rounded">{{ _('إرسال') }}</button>
+      </form>
+      <p class="text-xs text-muted mt-3">{{ _('سيتم إرسال الرسالة عبر عميل بريدك.') }}</p>
+    </div>
+  </div>
+</section>
+{% endblock %}
