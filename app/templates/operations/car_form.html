@@ -186,6 +186,11 @@
       <label>رفع صور السيارة</label>
       <input type="file" name="photos" multiple>
     </div>
+
+    <div class="upload-section">
+      <label>إرفاق فاتورة المزاد (PDF/صور)</label>
+      <input type="file" name="auction_invoice" accept="application/pdf,image/*">
+    </div>
     {% endif %}
 
     <button class="submit-btn">{{ _('Save') }}</button>
