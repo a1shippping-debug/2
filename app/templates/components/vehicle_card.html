@@ -28,8 +28,8 @@
         </span>
         <div class="flex items-center gap-2">
           {% if show_share %}
-          <form method="post" action="{{ url_for('cust.share_vehicle', vehicle_id=v.id) }}">
-            <button type="submit" class="px-3 py-1.5 rounded-md bg-accent text-neutral text-sm font-medium transition hover:shadow-md hover:scale-105">
+          <form method="post" action="{{ url_for('cust.share_vehicle', vehicle_id=v.id) }}" class="js-share-form" data-vehicle-id="{{ v.id }}">
+            <button type="submit" class="px-3 py-1.5 rounded-md bg-accent text-neutral text-sm font-medium transition hover:shadow-md hover:scale-105 js-share-btn">
               <i class="fa-solid fa-share-nodes"></i> {{ _('مشاركة') }}
             </button>
           </form>

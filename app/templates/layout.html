@@ -81,6 +81,62 @@
   <!-- Footer -->
   {% include 'components/footer.html' %}
 
+  <script>
+    // Intercept share form submissions to copy link to clipboard without reload
+    document.addEventListener('click', async function (e) {
+      const btn = e.target.closest('.js-share-btn');
+      if (!btn) return;
+      const form = btn.closest('form.js-share-form');
+      if (!form) return;
+      e.preventDefault();
+      btn.disabled = true;
+      const originalHtml = btn.innerHTML;
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          credentials: 'same-origin'
+        });
+        const data = await res.json().catch(() => ({ success: false }));
+        if (!res.ok || !data || !data.success || !data.share_url) {
+          throw new Error((data && data.message) || 'تعذر إنشاء رابط المشاركة');
+        }
+        // Copy to clipboard
+        try {
+          await navigator.clipboard.writeText(data.share_url);
+          showToast('✅ تم نسخ رابط المشاركة إلى الحافظة');
+        } catch (_err) {
+          // Fallback prompt if clipboard API not available or blocked
+          const manual = prompt('انسخ الرابط التالي يدويًا:', data.share_url);
+          if (manual !== null) {
+            showToast('✅ تم عرض رابط المشاركة للنسخ');
+          }
+        }
+      } catch (err) {
+        showToast(err && err.message ? '⚠️ ' + err.message : '⚠️ حدث خطأ غير متوقع', true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+    }, { passive: false });
+
+    function showToast(message, isError = false) {
+      const el = document.createElement('div');
+      el.className = 'fixed top-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg shadow-soft border text-sm ' +
+        (isError ? 'bg-red-50 border-red-300 text-red-800' : 'bg-green-50 border-green-300 text-green-800');
+      el.textContent = message;
+      document.body.appendChild(el);
+      setTimeout(() => {
+        el.style.transition = 'opacity .3s ease';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 350);
+      }, 2200);
+    }
+  </script>
+
 </body>
 {% block scripts %}{% endblock %}
 </html>
