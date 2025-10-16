@@ -52,7 +52,7 @@
       <nav class="flex-1 px-4 py-5 space-y-1 text-sm">
         <a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint=='admin.dashboard' %}bg-blue-100 text-primary font-semibold{% endif %}">{{ _('Dashboard') }}</a>
         <a href="{{ url_for('admin.users_list') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint and request.endpoint.startswith('admin.users') %}bg-blue-100 text-primary font-semibold{% endif %}">{{ _('Users') }}</a>
-        <a href="{{ url_for('admin.bayarat_list') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint and request.endpoint.startswith('admin.bayarat_') %}bg-blue-100 text-primary font-semibold{% endif %}">{{ 'البايرات' if g.get('lang_code', 'ar') == 'ar' else _('Auctions') }}</a>
+        
         <a href="{{ url_for('admin.buyers_list') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 {% if request.endpoint and request.endpoint.startswith('admin.buyers_') %}bg-blue-100 text-primary font-semibold{% endif %}">بيانات الباير</a>
         <a href="{{ url_for('ops.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50">{{ _('Cars Management') }}</a>
         <a href="{{ url_for('ops.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50">{{ _('Shipments') }}</a>
