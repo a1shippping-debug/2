@@ -417,3 +417,165 @@ def users_delete(user_id: int):
     flash(_("User deleted."), "success")
     log_action("delete", "User", user.id, {"email": user.email})
     return redirect(url_for("admin.users_list"))
+
+
+@admin_bp.route("/bayarat")
+@role_required("admin")
+def bayarat_list():
+    # Filters: provider, lot_number, date range
+    q = db.session.query(Auction)
+    provider = (request.args.get("provider") or "").strip()
+    lot_number = (request.args.get("lot_number") or "").strip()
+    date_from = (request.args.get("date_from") or "").strip()
+    date_to = (request.args.get("date_to") or "").strip()
+
+    if provider:
+        q = q.filter(db.func.lower(Auction.provider).like(db.func.lower(f"%{provider}%")))
+    if lot_number:
+        q = q.filter(db.func.lower(Auction.lot_number).like(db.func.lower(f"%{lot_number}%")))
+
+    if date_from:
+        try:
+            from datetime import datetime
+            dt = datetime.fromisoformat(date_from)
+            q = q.filter(Auction.auction_date >= dt)
+        except Exception:
+            pass
+    if date_to:
+        try:
+            from datetime import datetime, timedelta
+            dt = datetime.fromisoformat(date_to)
+            # include the whole day by adding one day and using < next day
+            q = q.filter(Auction.auction_date < (dt + timedelta(days=1)))
+        except Exception:
+            pass
+
+    auctions = q.order_by(Auction.auction_date.desc(), Auction.id.desc()).limit(300).all()
+
+    # Pre-compute vehicles count per auction
+    counts = {}
+    if auctions:
+        ids = [a.id for a in auctions]
+        for aid, cnt in (
+            db.session.query(Vehicle.auction_id, db.func.count(Vehicle.id))
+            .filter(Vehicle.auction_id.in_(ids))
+            .group_by(Vehicle.auction_id)
+        ):
+            counts[aid] = cnt
+
+    return render_template("admin/bayarat_list.html", auctions=auctions, counts=counts)
+
+
+@admin_bp.route("/bayarat/new", methods=["GET", "POST"])
+@role_required("admin")
+def bayarat_new():
+    if request.method == "POST":
+        provider = (request.form.get("provider") or "").strip()
+        lot_number = (request.form.get("lot_number") or "").strip()
+        location = (request.form.get("location") or "").strip()
+        auction_url = (request.form.get("auction_url") or "").strip()
+        notes = (request.form.get("notes") or "").strip()
+        auction_date_raw = (request.form.get("auction_date") or "").strip()
+
+        if not (provider or lot_number):
+            flash(_("Please enter at least Provider or Lot Number"), "danger")
+            return render_template("admin/bayarat_form.html", form=request.form)
+
+        a = Auction(
+            provider=provider or None,
+            lot_number=lot_number or None,
+            location=location or None,
+            auction_url=auction_url or None,
+            notes=notes or None,
+        )
+
+        if auction_date_raw:
+            try:
+                from datetime import datetime
+                a.auction_date = datetime.fromisoformat(auction_date_raw)
+            except Exception:
+                pass
+
+        db.session.add(a)
+        try:
+            db.session.commit()
+            flash(_("Auction created"), "success")
+            log_action("create", "Auction", a.id, {"provider": a.provider, "lot": a.lot_number})
+            return redirect(url_for("admin.bayarat_list"))
+        except Exception:
+            db.session.rollback()
+            flash(_("Failed to create auction"), "danger")
+            return render_template("admin/bayarat_form.html", form=request.form)
+
+    return render_template("admin/bayarat_form.html", form=request.form)
+
+
+@admin_bp.route("/bayarat/<int:auction_id>/edit", methods=["GET", "POST"])
+@role_required("admin")
+def bayarat_edit(auction_id: int):
+    a = db.session.get(Auction, auction_id)
+    if not a:
+        abort(404)
+
+    if request.method == "POST":
+        provider = (request.form.get("provider") or "").strip()
+        lot_number = (request.form.get("lot_number") or "").strip()
+        location = (request.form.get("location") or "").strip()
+        auction_url = (request.form.get("auction_url") or "").strip()
+        notes = (request.form.get("notes") or "").strip()
+        auction_date_raw = (request.form.get("auction_date") or "").strip()
+
+        if not (provider or lot_number):
+            flash(_("Please enter at least Provider or Lot Number"), "danger")
+            return render_template("admin/bayarat_form.html", form=request.form, auction=a)
+
+        a.provider = provider or None
+        a.lot_number = lot_number or None
+        a.location = location or None
+        a.auction_url = auction_url or None
+        a.notes = notes or None
+
+        if auction_date_raw:
+            try:
+                from datetime import datetime
+                a.auction_date = datetime.fromisoformat(auction_date_raw)
+            except Exception:
+                pass
+        else:
+            a.auction_date = None
+
+        try:
+            db.session.commit()
+            flash(_("Auction updated"), "success")
+            log_action("update", "Auction", a.id, {"provider": a.provider, "lot": a.lot_number})
+            return redirect(url_for("admin.bayarat_list"))
+        except Exception:
+            db.session.rollback()
+            flash(_("Failed to update auction"), "danger")
+
+    form_defaults = {
+        "provider": a.provider or "",
+        "lot_number": a.lot_number or "",
+        "location": a.location or "",
+        "auction_url": a.auction_url or "",
+        "notes": a.notes or "",
+        "auction_date": a.auction_date.strftime("%Y-%m-%d") if a.auction_date else "",
+    }
+    return render_template("admin/bayarat_form.html", form=form_defaults, auction=a)
+
+
+@admin_bp.route("/bayarat/<int:auction_id>/delete", methods=["POST"])
+@role_required("admin")
+def bayarat_delete(auction_id: int):
+    a = db.session.get(Auction, auction_id)
+    if not a:
+        abort(404)
+    db.session.delete(a)
+    try:
+        db.session.commit()
+        flash(_("Auction deleted"), "success")
+        log_action("delete", "Auction", auction_id, None)
+    except Exception:
+        db.session.rollback()
+        flash(_("Failed to delete auction"), "danger")
+    return redirect(url_for("admin.bayarat_list"))
