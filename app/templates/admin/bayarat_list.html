@@ -22,38 +22,17 @@
   <table class="w-full text-sm">
     <thead>
       <tr class="text-left text-gray-500">
-        <th class="p-2">{{ _('Provider') }}</th>
-        <th class="p-2">{{ _('Date') }}</th>
-        <th class="p-2">{{ _('Lot Number') }}</th>
-        <th class="p-2">{{ _('Location') }}</th>
-        <th class="p-2">{{ _('Buyer') }}</th>
         <th class="p-2">{{ _('Client') }}</th>
-        <th class="p-2">{{ _('Vehicles') }}</th>
-        <th class="p-2">{{ _('URL') }}</th>
-        <th class="p-2">{{ _('Actions') }}</th>
       </tr>
     </thead>
     <tbody>
       {% for a in auctions %}
       <tr class="border-t border-gray-100">
-        <td class="p-2">{{ a.provider or '-' }}</td>
-        <td class="p-2">{{ a.auction_date.strftime('%Y-%m-%d') if a.auction_date else '-' }}</td>
-        <td class="p-2">{{ a.lot_number or '-' }}</td>
-        <td class="p-2">{{ a.location or '-' }}</td>
-        <td class="p-2">{{ a.buyer.name if a.buyer else '-' }}</td>
         <td class="p-2">{{ a.customer.company_name if a.customer else '-' }}</td>
-        <td class="p-2">{{ counts.get(a.id, 0) }}</td>
-        <td class="p-2">{% if a.auction_url %}<a class="text-blue-600 underline" href="{{ a.auction_url }}" target="_blank" rel="noopener">{{ _('Open') }}</a>{% else %}-{% endif %}</td>
-        <td class="p-2">
-          <a href="{{ url_for('admin.bayarat_edit', auction_id=a.id) }}" class="text-xs px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">{{ _('Edit') }}</a>
-          <form action="{{ url_for('admin.bayarat_delete', auction_id=a.id) }}" method="post" style="display:inline" onsubmit="return confirm('{{ _('Delete auction?') }}');">
-            <button class="text-xs px-2 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white">{{ _('Delete') }}</button>
-          </form>
-        </td>
       </tr>
       {% else %}
       <tr>
-        <td colspan="7" class="p-3 text-gray-500">{{ _('No auctions found') }}</td>
+        <td class="p-3 text-gray-500">{{ _('No auctions found') }}</td>
       </tr>
       {% endfor %}
     </tbody>
