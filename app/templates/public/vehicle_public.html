@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+{% block title %}{{ _('عرض السيارة') }}{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto py-8">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="font-heading text-2xl text-neutral">🚘 {{ vehicle.make or '-' }} {{ vehicle.model or '' }} {{ vehicle.year or '' }}</h1>
+    <span class="text-sm text-muted">VIN: <strong>{{ vehicle.vin or '-' }}</strong></span>
+  </div>
+
+  {% if image_urls %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+    {% for src in image_urls %}
+      <div class="rounded-xl overflow-hidden border border-slate-200 bg-white">
+        <img src="{{ src }}" alt="{{ vehicle.vin }}" class="w-full h-56 object-cover">
+      </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="mb-8 text-muted">{{ _('لا توجد صور مرفوعة لهذه السيارة.') }}</div>
+  {% endif %}
+
+  <div class="grid md:grid-cols-2 gap-6">
+    <div class="bg-white border border-slate-200 rounded-2xl p-6">
+      <h2 class="font-semibold text-lg mb-4">{{ _('تفاصيل السيارة') }}</h2>
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between"><span class="text-muted">{{ _('الماركة') }}</span><span class="font-semibold">{{ vehicle.make or '-' }}</span></div>
+        <div class="flex justify-between"><span class="text-muted">{{ _('الطراز') }}</span><span class="font-semibold">{{ vehicle.model or '-' }}</span></div>
+        <div class="flex justify-between"><span class="text-muted">{{ _('السنة') }}</span><span class="font-semibold">{{ vehicle.year or '-' }}</span></div>
+        <div class="flex justify-between"><span class="text-muted">{{ _('الحالة') }}</span><span class="font-semibold">{{ vehicle.status or '-' }}</span></div>
+        <div class="flex justify-between"><span class="text-muted">{{ _('الموقع الحالي') }}</span><span class="font-semibold">{{ vehicle.current_location or '-' }}</span></div>
+        <div class="flex justify-between"><span class="text-muted">{{ _('سعر الشراء (USD)') }}</span><span class="font-semibold">{{ ("$%.2f" % vehicle.purchase_price_usd) if vehicle.purchase_price_usd else '-' }}</span></div>
+        <div class="flex justify-between"><span class="text-muted">{{ _('تاريخ الشراء') }}</span><span class="font-semibold">{{ vehicle.purchase_date.strftime('%d-%m-%Y') if vehicle.purchase_date else '-' }}</span></div>
+      </div>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-2xl p-6">
+      <h2 class="font-semibold text-lg mb-4">{{ _('تفاصيل المزاد والشحن') }}</h2>
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between"><span class="text-muted">{{ _('المزاد') }}</span><span class="font-semibold">{{ auction.provider if auction else '-' }}</span></div>
+        <div class="flex justify-between"><span class="text-muted">{{ _('رقم اللوت') }}</span><span class="font-semibold">{{ auction.lot_number if auction and auction.lot_number else '-' }}</span></div>
+        <div class="flex justify-between"><span class="text-muted">{{ _('تاريخ المزاد') }}</span><span class="font-semibold">{{ auction.auction_date.strftime('%d-%m-%Y') if auction and auction.auction_date else '-' }}</span></div>
+        <div class="flex justify-between"><span class="text-muted">{{ _('رابط المزاد') }}</span><span class="font-semibold">{% if auction and auction.auction_url %}<a class="text-primary underline" href="{{ auction.auction_url }}" target="_blank" rel="noopener">{{ _('فتح') }}</a>{% else %}-{% endif %}</span></div>
+        <hr class="my-3">
+        {% if shipments and shipments|length > 0 %}
+          {% set s = shipments[-1] %}
+          <div class="flex justify-between"><span class="text-muted">{{ _('شركة الشحن') }}</span><span class="font-semibold">{{ s.shipping_company or '-' }}</span></div>
+          <div class="flex justify-between"><span class="text-muted">{{ _('ميناء الانطلاق') }}</span><span class="font-semibold">{{ s.origin_port or '-' }}</span></div>
+          <div class="flex justify-between"><span class="text-muted">{{ _('ميناء الوصول') }}</span><span class="font-semibold">{{ s.destination_port or '-' }}</span></div>
+          <div class="flex justify-between"><span class="text-muted">{{ _('تاريخ المغادرة') }}</span><span class="font-semibold">{{ s.departure_date.strftime('%d-%m-%Y') if s.departure_date else '-' }}</span></div>
+          <div class="flex justify-between"><span class="text-muted">{{ _('تاريخ الوصول') }}</span><span class="font-semibold">{{ s.arrival_date.strftime('%d-%m-%Y') if s.arrival_date else '-' }}</span></div>
+          <div class="flex justify-between"><span class="text-muted">{{ _('الحالة') }}</span><span class="font-semibold">{{ s.status or '-' }}</span></div>
+        {% else %}
+          <div class="text-muted">{{ _('لا توجد شحنات مرتبطة بعد.') }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -3,6 +3,7 @@ from flask_login import UserMixin
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from decimal import Decimal
+from typing import Optional
 
 class Role(db.Model):
     __tablename__ = "roles"
@@ -83,6 +84,9 @@ class Vehicle(db.Model):
     purchase_price_usd = db.Column(db.Numeric(12,2))
     purchase_date = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Public sharing fields
+    share_token: Optional[str] = db.Column(db.String(64), unique=True, index=True)
+    share_enabled: bool = db.Column(db.Boolean, default=False, nullable=False)
 
     auction = db.relationship("Auction")
     owner = db.relationship("Customer")

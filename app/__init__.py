@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, g, render_template
+from flask import Flask, request, g, render_template, current_app, url_for, abort
 from .config import Config
 from .extensions import db, migrate, login_manager, babel, mail
 from .blueprints.auth.routes import auth_bp
@@ -420,6 +420,61 @@ def create_app():
             vehicle=vehicle,
             stages=stages,
             stage_details=stage_details,
+        )
+
+    @app.route("/v/<string:token>")
+    def vehicle_public_page(token: str):
+        """Public vehicle detail page by share token.
+
+        Shows images and comprehensive details for the vehicle associated with
+        the provided share token, if sharing is enabled.
+        """
+        from .extensions import db
+        from .models import Vehicle, Auction, Shipment, VehicleShipment
+
+        token_norm = (token or "").strip()
+        if not token_norm:
+            abort(404)
+
+        vehicle = (
+            db.session.query(Vehicle)
+            .join(Auction, Vehicle.auction_id == Auction.id, isouter=True)
+            .filter(Vehicle.share_token == token_norm)
+            .first()
+        )
+        if not vehicle or not getattr(vehicle, "share_enabled", False):
+            abort(404)
+
+        # Gather related info
+        auction = vehicle.auction
+        shipments = (
+            db.session.query(Shipment)
+            .join(VehicleShipment, Shipment.id == VehicleShipment.shipment_id)
+            .filter(VehicleShipment.vehicle_id == vehicle.id)
+            .order_by(Shipment.created_at.asc())
+            .all()
+        )
+
+        # Collect image URLs from static/uploads/<VIN>/
+        image_urls = []
+        try:
+            vin = (vehicle.vin or "").strip()
+            base_dir = os.path.join(current_app.static_folder, "uploads", vin)
+            if vin and os.path.isdir(base_dir):
+                for fname in sorted(os.listdir(base_dir)):
+                    lower = fname.lower()
+                    if any(lower.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]):
+                        image_urls.append(url_for("static", filename=f"uploads/{vin}/{fname}"))
+        except Exception:
+            # Fail silently; images are optional
+            image_urls = []
+
+        return render_template(
+            "public/vehicle_public.html",
+            vehicle=vehicle,
+            auction=auction,
+            shipments=shipments,
+            image_urls=image_urls,
         )
 
     @app.shell_context_processor
