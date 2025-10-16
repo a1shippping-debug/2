@@ -101,44 +101,60 @@
     <p class="text-gray-600 max-w-3xl mx-auto animate-fadeInUp">ما يقوله عملاؤنا عن خدماتنا في شحن السيارات والمزادات.</p>
   </div>
   <div class="container mx-auto grid md:grid-cols-3 gap-8">
-    <div class="p-6 bg-gray-50 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-500 animate-fadeInUp" style="animation-delay:0.1s">
-      <div class="flex items-center mb-4">
-        <div class="w-12 h-12 bg-[#00AEEF] rounded-full flex items-center justify-center text-white font-bold">أ.م</div>
-        <div class="ml-4">
-          <h4 class="font-semibold">أحمد محمد</h4>
-          <p class="text-gray-500 text-sm">تاجر سيارات</p>
+    {% if testimonials %}
+      {% for t in testimonials %}
+        <div class="p-6 bg-gray-50 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-500 animate-fadeInUp" style="animation-delay:{{ (loop.index0 % 3) * 0.1 }}s">
+          <div class="flex items-center mb-4">
+            <div class="w-12 h-12 {{ 'bg-[#00AEEF]' if loop.index0 % 2 == 0 else 'bg-[#003366]' }} rounded-full flex items-center justify-center text-white font-bold">
+              {{ t.display_initials() or 'عميل' }}
+            </div>
+            <div class="ml-4 text-start">
+              <h4 class="font-semibold">{{ t.name }}</h4>
+              {% if t.role %}<p class="text-gray-500 text-sm">{{ t.role }}</p>{% endif %}
+            </div>
+          </div>
+          <p class="text-gray-600">{{ '"' ~ t.content ~ '"' }}</p>
+          <div class="flex text-[#00AEEF] mt-4" aria-label="{{ t.rating }} من 5">
+            {% for _ in range(t.rating or 5) %}★{% endfor %}{% for _ in range(5 - (t.rating or 5)) %}☆{% endfor %}
+          </div>
         </div>
-      </div>
-      <p class="text-gray-600">"خدمة ممتازة في تتبع الشحنات. تم شحن سيارتي بأمان ووصلت في الوقت المحدد."</p>
-      <div class="flex text-[#00AEEF] mt-4">
-        ★★★★★
-      </div>
-    </div>
-    <div class="p-6 bg-gray-50 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-500 animate-fadeInUp" style="animation-delay:0.2s">
-      <div class="flex items-center mb-4">
-        <div class="w-12 h-12 bg-[#003366] rounded-full flex items-center justify-center text-white font-bold">ف.ع</div>
-        <div class="ml-4">
-          <h4 class="font-semibold">فاطمة علي</h4>
-          <p class="text-gray-500 text-sm">مستوردة</p>
+      {% endfor %}
+    {% else %}
+      <div class="col-span-3 bg-gray-50 border border-gray-200 rounded-2xl p-10 text-gray-500 text-center">لا توجد آراء بعد.</div>
+    {% endif %}
+  </div>
+
+  <!-- Form: أضف رأيك -->
+  <div class="container mx-auto mt-16 max-w-3xl">
+    <div class="bg-gray-50 rounded-2xl shadow-soft border p-8 text-start">
+      <h3 class="text-2xl font-bold mb-6">شاركنا رأيك</h3>
+      <form method="post" action="{{ url_for('submit_testimonial') }}" class="grid grid-cols-1 gap-4">
+        <div>
+          <label for="name" class="block mb-1 text-sm text-gray-600">الاسم</label>
+          <input id="name" name="name" required class="w-full border rounded-lg px-3 py-2" placeholder="الاسم الكامل">
         </div>
-      </div>
-      <p class="text-gray-600">"الشفافية في التقارير والتحديثات اللحظية جعلت عملية الشحن سهلة ومريحة."</p>
-      <div class="flex text-[#00AEEF] mt-4">
-        ★★★★★
-      </div>
-    </div>
-    <div class="p-6 bg-gray-50 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-500 animate-fadeInUp" style="animation-delay:0.3s">
-      <div class="flex items-center mb-4">
-        <div class="w-12 h-12 bg-[#00AEEF] rounded-full flex items-center justify-center text-white font-bold">م.س</div>
-        <div class="ml-4">
-          <h4 class="font-semibold">محمد سالم</h4>
-          <p class="text-gray-500 text-sm">مالك مزاد</p>
+        <div>
+          <label for="role" class="block mb-1 text-sm text-gray-600">الصفة</label>
+          <input id="role" name="role" class="w-full border rounded-lg px-3 py-2" placeholder="مثل: تاجر سيارات">
         </div>
-      </div>
-      <p class="text-gray-600">"فريق محترف وخدمات موثوقة. أوصي بهم لجميع احتياجات الشحن."</p>
-      <div class="flex text-[#00AEEF] mt-4">
-        ★★★★★
-      </div>
+        <div>
+          <label for="content" class="block mb-1 text-sm text-gray-600">رأيك</label>
+          <textarea id="content" name="content" required rows="4" class="w-full border rounded-lg px-3 py-2" placeholder="اكتب رأيك هنا"></textarea>
+        </div>
+        <div>
+          <label for="rating" class="block mb-1 text-sm text-gray-600">التقييم</label>
+          <select id="rating" name="rating" class="w-full border rounded-lg px-3 py-2">
+            <option value="5">★★★★★ - 5</option>
+            <option value="4">★★★★☆ - 4</option>
+            <option value="3">★★★☆☆ - 3</option>
+            <option value="2">★★☆☆☆ - 2</option>
+            <option value="1">★☆☆☆☆ - 1</option>
+          </select>
+        </div>
+        <div class="text-end">
+          <button type="submit" class="px-6 py-2 rounded-xl bg-primary text-white font-semibold hover:scale-105 transition-transform">إرسال الرأي</button>
+        </div>
+      </form>
     </div>
   </div>
 </section>

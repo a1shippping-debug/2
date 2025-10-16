@@ -270,3 +270,25 @@ class VehicleSaleListing(db.Model):
     vehicle = db.relationship("Vehicle")
     customer = db.relationship("Customer")
     decided_by = db.relationship("User")
+
+
+class Testimonial(db.Model):
+    __tablename__ = "testimonials"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False)
+    role = db.Column(db.String(150))  # e.g., تاجر سيارات
+    content = db.Column(db.Text, nullable=False)
+    rating = db.Column(db.Integer, default=5)  # 1-5 stars
+    approved = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def display_initials(self) -> str:
+        try:
+            parts = (self.name or "").strip().split()
+            if not parts:
+                return ""
+            if len(parts) == 1:
+                return parts[0][:2]
+            return f"{parts[0][:1]}.{parts[-1][:1]}"
+        except Exception:
+            return ""
