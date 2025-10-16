@@ -29,7 +29,6 @@
         <div class="flex justify-between"><span class="text-muted">{{ _('السنة') }}</span><span class="font-semibold">{{ vehicle.year or '-' }}</span></div>
         <div class="flex justify-between"><span class="text-muted">{{ _('الحالة') }}</span><span class="font-semibold">{{ vehicle.status or '-' }}</span></div>
         <div class="flex justify-between"><span class="text-muted">{{ _('الموقع الحالي') }}</span><span class="font-semibold">{{ vehicle.current_location or '-' }}</span></div>
-        <div class="flex justify-between"><span class="text-muted">{{ _('سعر الشراء (USD)') }}</span><span class="font-semibold">{{ ("$%.2f" % vehicle.purchase_price_usd) if vehicle.purchase_price_usd else '-' }}</span></div>
         <div class="flex justify-between"><span class="text-muted">{{ _('تاريخ الشراء') }}</span><span class="font-semibold">{{ vehicle.purchase_date.strftime('%d-%m-%Y') if vehicle.purchase_date else '-' }}</span></div>
       </div>
     </div>
