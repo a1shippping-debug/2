@@ -1,4 +1,15 @@
-from flask import Blueprint, render_template, request, send_file, abort, redirect, url_for, flash, current_app
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    send_file,
+    abort,
+    redirect,
+    url_for,
+    flash,
+    current_app,
+    jsonify,
+)
 from flask_login import login_required, current_user
 from ...extensions import db
 from ...models import Vehicle, Auction, Shipment, VehicleShipment, Customer, Invoice, InvoiceItem
@@ -53,6 +64,13 @@ def share_vehicle(vehicle_id: int):
                 v.share_token = candidate
                 break
         if not v.share_token:
+            # AJAX/JSON response when requested
+            wants_json = (
+                "application/json" in request.accept_mimetypes
+                or (request.headers.get("X-Requested-With") or "").lower() == "xmlhttprequest"
+            )
+            if wants_json:
+                return jsonify(success=False, message="تعذر إنشاء رابط المشاركة. حاول مرة أخرى."), 400
             flash("تعذر إنشاء رابط المشاركة. حاول مرة أخرى.", "danger")
             return redirect(url_for("cust.my_cars"))
 
@@ -61,10 +79,26 @@ def share_vehicle(vehicle_id: int):
         db.session.commit()
     except Exception:
         db.session.rollback()
+        wants_json = (
+            "application/json" in request.accept_mimetypes
+            or (request.headers.get("X-Requested-With") or "").lower() == "xmlhttprequest"
+        )
+        if wants_json:
+            return jsonify(success=False, message="حدث خطأ أثناء حفظ رابط المشاركة."), 500
         flash("حدث خطأ أثناء حفظ رابط المشاركة.", "danger")
         return redirect(url_for("cust.my_cars"))
 
     share_url = url_for("vehicle_public_page", token=v.share_token, _external=True)
+
+    # If this is an AJAX/JSON request, return the link as JSON so the client can copy it
+    wants_json = (
+        "application/json" in request.accept_mimetypes
+        or (request.headers.get("X-Requested-With") or "").lower() == "xmlhttprequest"
+    )
+    if wants_json:
+        return jsonify(success=True, share_url=share_url, message="تم إنشاء رابط المشاركة")
+
+    # Fallback to legacy behavior with flash + redirect
     flash(f"تم إنشاء رابط المشاركة: {share_url}", "success")
     return redirect(url_for("cust.my_cars"))
 
