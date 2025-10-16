@@ -264,13 +264,22 @@ def invoices_list():
     """List invoices for the logged-in customer."""
     cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
     invoices = []
+    active_filter = (request.args.get("filter") or "").strip().lower()
     if cust:
-        invoices = (
-            db.session.query(Invoice)
-            .filter(Invoice.customer_id == cust.id)
-            .order_by(Invoice.created_at.desc())
-            .all()
-        )
+        q = db.session.query(Invoice).filter(Invoice.customer_id == cust.id)
+        if active_filter in ("auction", "company"):
+            # Identify invoices that have at least one item linked to a vehicle (auction-related)
+            vehicle_invoice_ids_q = (
+                db.session.query(InvoiceItem.invoice_id)
+                .filter(InvoiceItem.vehicle_id.isnot(None))
+                .distinct()
+            )
+            if active_filter == "auction":
+                q = q.filter(Invoice.id.in_(vehicle_invoice_ids_q))
+            elif active_filter == "company":
+                q = q.filter(Invoice.id.notin_(vehicle_invoice_ids_q))
+
+        invoices = q.order_by(Invoice.created_at.desc()).all()
     # Compute summary counts for paid vs unpaid (excluding cancelled)
     def normalize_status(text: str | None) -> str:
         return (text or "").strip()
@@ -287,6 +296,7 @@ def invoices_list():
         invoices=invoices,
         paid_count=paid_count,
         unpaid_count=unpaid_count,
+        active_filter=active_filter,
     )
 
 
