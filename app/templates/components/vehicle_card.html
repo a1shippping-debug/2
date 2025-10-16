@@ -1,7 +1,8 @@
 {% macro vehicle_card(v, index=0, cta='details', show_share=false) %}
   {% set title = ((v.make or '-') ~ ' ' ~ (v.model or '') ~ ' ' ~ (v.year or ''))|trim %}
-  {# Prefer sale price (OMR) if available; fallback to purchase (USD) #}
-  {% set price_sale = v.sale_price_omr if v is defined else None %}
+  {# Prefer sale price (OMR) if available; fallback to purchase (USD)
+     Use default(None, true) so missing attribute doesn't error #}
+  {% set price_sale = v.sale_price_omr|default(None, true) %}
   {% set has_sale = price_sale is not none and price_sale != '' %}
   {% set price_label = _('سعر البيع') if has_sale else _('سعر الشراء (تقريبي)') %}
   {% set price_value = price_sale if has_sale else v.purchase_price_usd %}
