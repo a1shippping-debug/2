@@ -80,3 +80,5 @@ def downgrade():
         batch_op.drop_column('phone')
         batch_op.drop_column('email')
         batch_op.drop_column('full_name')
+
+    # no buyer/customer changes in this revision

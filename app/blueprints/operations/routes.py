@@ -3,7 +3,7 @@ from flask_babel import gettext as _
 from flask_login import login_required
 from ...security import role_required
 from ...extensions import db
-from ...models import Vehicle, Shipment, VehicleShipment, Customer, Notification, Auction, Document, CostItem, User, Role
+from ...models import Vehicle, Shipment, VehicleShipment, Customer, Notification, Auction, Document, CostItem, User, Role, Invoice, InvoiceItem
 from datetime import datetime
 
 ops_bp = Blueprint("ops", __name__, template_folder="templates/operations")
@@ -304,6 +304,28 @@ def cars_new():
                 pass
         db.session.add(v)
         db.session.flush()
+
+        # If no client selected but auction linked to a customer, inherit it
+        if not client_id and auc and getattr(auc, 'customer_id', None):
+            v.owner_customer_id = auc.customer_id
+
+        # If purchase price/date provided and customer is known, create draft invoice
+        try:
+            should_invoice = bool(v.owner_customer_id and v.purchase_price_usd)
+        except Exception:
+            should_invoice = False
+        if should_invoice:
+            usd_to_omr = float(current_app.config.get('OMR_EXCHANGE_RATE', 0.385))
+            amount_omr = float(v.purchase_price_usd or 0) * usd_to_omr
+            inv = Invoice(
+                invoice_number=f"INV-{int(datetime.utcnow().timestamp())}",
+                customer_id=v.owner_customer_id,
+                status='Draft',
+                total_omr=amount_omr,
+            )
+            db.session.add(inv)
+            db.session.flush()
+            db.session.add(InvoiceItem(invoice_id=inv.id, vehicle_id=v.id, description=f"Vehicle {v.vin} purchase", amount_omr=amount_omr))
 
         # optional cost items
         try:

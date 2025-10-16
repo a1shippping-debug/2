@@ -26,6 +26,8 @@
         <th class="p-2">{{ _('Date') }}</th>
         <th class="p-2">{{ _('Lot Number') }}</th>
         <th class="p-2">{{ _('Location') }}</th>
+        <th class="p-2">{{ _('Buyer') }}</th>
+        <th class="p-2">{{ _('Client') }}</th>
         <th class="p-2">{{ _('Vehicles') }}</th>
         <th class="p-2">{{ _('URL') }}</th>
         <th class="p-2">{{ _('Actions') }}</th>
@@ -38,6 +40,8 @@
         <td class="p-2">{{ a.auction_date.strftime('%Y-%m-%d') if a.auction_date else '-' }}</td>
         <td class="p-2">{{ a.lot_number or '-' }}</td>
         <td class="p-2">{{ a.location or '-' }}</td>
+        <td class="p-2">{{ a.buyer.name if a.buyer else '-' }}</td>
+        <td class="p-2">{{ a.customer.company_name if a.customer else '-' }}</td>
         <td class="p-2">{{ counts.get(a.id, 0) }}</td>
         <td class="p-2">{% if a.auction_url %}<a class="text-blue-600 underline" href="{{ a.auction_url }}" target="_blank" rel="noopener">{{ _('Open') }}</a>{% else %}-{% endif %}</td>
         <td class="p-2">
