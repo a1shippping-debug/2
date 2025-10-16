@@ -269,6 +269,23 @@ def activity_log():
         return send_file(buf, mimetype="application/pdf", as_attachment=True, download_name="activity_log.pdf")
     return render_template("admin/activity_log.html", logs=logs)
 
+
+@admin_bp.route("/buyers")
+@role_required("admin")
+def buyers_list():
+    """Display Buyers (Bayarat) with number, password, and linked client.
+
+    Minimal table view in Arabic/RTL without extra details.
+    """
+    # Outer join to allow buyers without a linked customer
+    buyers = (
+        db.session.query(Buyer)
+        .join(Customer, Buyer.customer_id == Customer.id, isouter=True)
+        .order_by(Buyer.buyer_number.asc(), Buyer.name.asc())
+        .all()
+    )
+    return render_template("admin/buyers_list.html", buyers=buyers)
+
 @admin_bp.route("/users")
 @role_required("admin")
 def users_list():
