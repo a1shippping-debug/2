@@ -403,6 +403,13 @@ def cars_new():
             if saved:
                 db.session.add(Document(vehicle_id=v.id, doc_type='Vehicle Photo', file_path=saved))
 
+        # optional auction invoice upload
+        auction_invoice = request.files.get('auction_invoice')
+        if auction_invoice and getattr(auction_invoice, 'filename', ''):
+            saved = save_uploaded_file(v.vin or str(v.id), auction_invoice, filename_hint='auction_invoice')
+            if saved:
+                db.session.add(Document(vehicle_id=v.id, doc_type='Auction Invoice', file_path=saved))
+
         try:
             db.session.commit()
             notify(f"Vehicle {v.vin} added", 'Vehicle', v.id)
@@ -921,36 +928,85 @@ def cars_status():
         # Expect multiple repeated fields: status[vehicle_id] = new_status
         # Or pairs of vehicle_ids[] and statuses[] in the same order
         updated = 0
-        # Support style: status_123=Shipped
+
+        # Canonical order and helpers to advance status progressively
+        order = [
+            'New car',
+            'Cashier Payment',
+            'Auction Payment',
+            'Posted',
+            'Towing',
+            'Warehouse',
+            'Loading',
+            'Shipping',
+            'Port',
+            'On way',
+            'Arrived',
+            'Delivered',
+        ]
+
+        def stage_index_from_status(text: str | None) -> int:
+            norm = (text or '').strip().lower()
+            for idx, name in enumerate(order):
+                if name.lower() == norm:
+                    return idx
+            return 0
+
+        def advance_vehicle_status(v: Vehicle, target_status: str) -> bool:
+            # Advance vehicle status, auto-filling intermediate stages forward.
+            if not target_status or target_status == v.status:
+                return False
+            old_idx = stage_index_from_status(v.status)
+            new_idx = stage_index_from_status(target_status)
+            if new_idx > old_idx:
+                # Walk forward through intermediate stages and notify for each step
+                for idx in range(old_idx + 1, new_idx + 1):
+                    step = order[idx]
+                    v.status = step
+                    try:
+                        notify(f"Vehicle {v.vin} status updated to {step}", 'Vehicle', v.id)
+                    except Exception:
+                        pass
+                return True
+            else:
+                # Moving backward or to same/unknown: set directly and notify once
+                v.status = target_status
+                try:
+                    notify(f"Vehicle {v.vin} status updated to {v.status}", 'Vehicle', v.id)
+                except Exception:
+                    pass
+                return True
+
+        # Support style: status_123=TargetStatus
         for key, val in (request.form or {}).items():
             if key.startswith('status_'):
                 try:
                     vid = int(key.split('_', 1)[1])
                     v = db.session.get(Vehicle, vid)
-                    if v and val and val != v.status:
-                        v.status = val
-                        updated += 1
+                    if v and val:
+                        if advance_vehicle_status(v, val):
+                            updated += 1
                 except Exception:
                     continue
-        # Support style: status[123] = Shipped
+        # Support style: status[123] = TargetStatus
         for key in (request.form or {}).keys():
             if key.startswith('status[') and key.endswith(']'):
                 try:
                     vid = int(key[7:-1])
                     val = request.form.get(key)
                     v = db.session.get(Vehicle, vid)
-                    if v and val and val != v.status:
-                        v.status = val
-                        updated += 1
+                    if v and val:
+                        if advance_vehicle_status(v, val):
+                            updated += 1
                 except Exception:
                     continue
         try:
             if updated:
                 db.session.commit()
-            return jsonify({"updated": updated})
+            return jsonify({'updated': updated})
         except Exception:
             db.session.rollback()
-            return ("", 400)
+            return ('', 400)
 
     q = db.session.query(Vehicle)
     vin = (request.args.get('vin') or '').strip()
@@ -1071,10 +1127,56 @@ def vehicle_tracking(vehicle_id: int):
         )
 
     lot_number = v.auction.lot_number if v.auction and v.auction.lot_number else "-"
+
+    # Summary fields (align with public tracking page behavior)
+    container_number = "-"
+    arrival_date = "-"
+    total_cost_omr = None
+    try:
+        # Prefer primary shipment for quick summary
+        if primary:
+            try:
+                container_number = (primary.container_number or "-").strip() if getattr(primary, "container_number", None) else "-"
+            except Exception:
+                container_number = "-"
+            arrival_date = fmt_dt(getattr(primary, "arrival_date", None)) or "-"
+
+        # Compute total cost (OMR) from InternationalCost when available
+        try:
+            from decimal import Decimal
+            from ...models import InternationalCost
+
+            cost_row = db.session.query(InternationalCost).filter_by(vehicle_id=v.id).first()
+            if cost_row:
+                def dec(x):
+                    try:
+                        return Decimal(str(x or 0))
+                    except Exception:
+                        return Decimal('0')
+
+                usd_sum = dec(v.purchase_price_usd) + dec(cost_row.freight_usd) + dec(cost_row.insurance_usd) + dec(cost_row.auction_fees_usd)
+                omr_rate = Decimal(str(current_app.config.get("OMR_EXCHANGE_RATE", 0.385)))
+                omr_from_usd = usd_sum * omr_rate
+                omr_local = dec(cost_row.customs_omr) + dec(cost_row.vat_omr) + dec(cost_row.local_transport_omr) + dec(cost_row.misc_omr)
+                total_cost_omr = omr_from_usd + omr_local
+        except Exception:
+            # keep defaults if any issue in cost calculation
+            total_cost_omr = total_cost_omr
+    except Exception:
+        # Fail-safe: keep defaults
+        container_number = container_number or "-"
+        arrival_date = arrival_date or "-"
+        total_cost_omr = total_cost_omr
+
     return render_template(
         "tracking.html",
         vin=(v.vin or "").upper(),
         lot_number=lot_number,
         vehicle=v,
         stages=stages,
+        # Provide values to avoid template UndefinedError in staff view
+        container_number=container_number,
+        arrival_date=arrival_date,
+        total_cost_omr=total_cost_omr,
+        stage_details={},
     )
