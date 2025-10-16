@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+{% block title %}{{ _('تفاصيل السيارة') }}{% endblock %}
+{% block content %}
+
+<div class="max-w-6xl mx-auto py-8">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="font-heading text-2xl text-neutral">🚗 {{ _('تفاصيل السيارة') }}</h1>
+    <a href="{{ url_for('cust.my_cars') }}" class="text-primary hover:underline">{{ _('رجوع') }}</a>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="md:col-span-2 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+      <h2 class="font-semibold mb-4">{{ vehicle.make or '-' }} {{ vehicle.model or '' }} {{ vehicle.year or '' }}</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+        <div class="flex items-center justify-between"><span class="text-muted">VIN</span><span class="font-mono">{{ vehicle.vin or '-' }}</span></div>
+        <div class="flex items-center justify-between"><span class="text-muted">{{ _('الحالة') }}</span><span class="font-medium">{{ vehicle.status or '-' }}</span></div>
+        <div class="flex items-center justify-between"><span class="text-muted">{{ _('الموقع') }}</span><span class="font-medium">{{ vehicle.current_location or '-' }}</span></div>
+        <div class="flex items-center justify-between"><span class="text-muted">{{ _('رقم الحاوية') }}</span><span class="font-medium">{{ container_number or '-' }}</span></div>
+        <div class="flex items-center justify-between"><span class="text-muted">{{ _('تاريخ الوصول') }}</span><span class="font-medium">{{ arrival_date.strftime('%d-%m-%Y') if arrival_date else '-' }}</span></div>
+        <div class="flex items-center justify-between"><span class="text-muted">{{ _('التكلفة الإجمالية') }}</span><span class="font-semibold">{{ '%.3f'|format(total_omr or 0) }} OMR</span></div>
+      </div>
+
+      <div class="mt-6">
+        <a href="{{ url_for('tracking_page', vin=vehicle.vin) }}" class="px-3 py-2 rounded-md bg-primary text-white text-sm hover:shadow-md hover:scale-105 transition">{{ _('عرض التتبع') }}</a>
+      </div>
+    </div>
+
+    <aside class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+      <h3 class="font-semibold mb-3">{{ _('تفاصيل الفاتورة') }}</h3>
+      {% if invoice_items and invoice_items|length %}
+      <div class="divide-y">
+        {% for it in invoice_items %}
+        <div class="py-2 flex items-center justify-between text-sm">
+          <span class="text-muted">{{ it.description or '-' }}</span>
+          <span class="font-semibold">{{ '%.3f'|format(it.amount_omr or 0) }} OMR</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-sm text-gray-500">{{ _('لا توجد عناصر فاتورة مرتبطة بهذه السيارة.') }}</div>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+
+{% endblock %}

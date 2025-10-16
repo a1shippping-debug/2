@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, send_file, abort, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from ...extensions import db
-from ...models import Vehicle, Auction, Shipment, VehicleShipment, Customer, Invoice, InvoiceItem
+from ...models import Vehicle, Auction, Shipment, VehicleShipment, Customer, Invoice, InvoiceItem, InternationalCost
 from ...utils_pdf import render_invoice_pdf
 import os
 
@@ -57,6 +57,72 @@ def track():
 
     return render_template("customer/track.html")
 
+
+@cust_bp.route("/cars/<int:vehicle_id>")
+@login_required
+def car_detail(vehicle_id: int):
+    """Full vehicle details for the logged-in customer, including shipment/container and totals."""
+    cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
+    v = db.session.get(Vehicle, vehicle_id)
+    if not v or not cust or v.owner_customer_id != cust.id:
+        abort(404)
+
+    # Fetch shipments ordered by creation (primary first)
+    shipments = (
+        db.session.query(Shipment)
+        .join(VehicleShipment, Shipment.id == VehicleShipment.shipment_id)
+        .filter(VehicleShipment.vehicle_id == v.id)
+        .order_by(Shipment.created_at.asc())
+        .all()
+    )
+    primary = shipments[0] if shipments else None
+
+    # Container number and arrival date (from primary shipment when present)
+    container_number = primary.container_number if primary else None
+    arrival_date = primary.arrival_date if primary else None
+
+    # Compute total cost for this vehicle for the customer
+    # Prefer invoice items linked to this vehicle; otherwise estimate from InternationalCost/other known fields
+    inv_items = (
+        db.session.query(InvoiceItem)
+        .join(Invoice, InvoiceItem.invoice_id == Invoice.id)
+        .filter(Invoice.customer_id == cust.id, InvoiceItem.vehicle_id == v.id)
+        .all()
+    )
+    total_omr_actual = sum([float(it.amount_omr or 0) for it in inv_items]) if inv_items else 0.0
+
+    # Estimated total if no invoice items
+    try:
+        usd_to_omr = float(current_app.config.get("OMR_EXCHANGE_RATE", 0.385))
+    except Exception:
+        usd_to_omr = 0.385
+    est_total_omr = 0.0
+    ic = db.session.query(InternationalCost).filter_by(vehicle_id=v.id).first()
+    try:
+        base_usd = float(ic.cif_usd or 0) if ic else float(v.purchase_price_usd or 0)
+        est_total_omr += base_usd * usd_to_omr
+    except Exception:
+        pass
+    if ic:
+        try:
+            est_total_omr += float(ic.customs_omr or 0)
+            est_total_omr += float(ic.vat_omr or 0)
+            est_total_omr += float(ic.local_transport_omr or 0)
+            est_total_omr += float(ic.misc_omr or 0)
+        except Exception:
+            pass
+
+    total_omr = total_omr_actual or est_total_omr
+
+    return render_template(
+        "customer/car_detail.html",
+        vehicle=v,
+        primary_shipment=primary,
+        container_number=container_number,
+        arrival_date=arrival_date,
+        total_omr=total_omr,
+        invoice_items=inv_items,
+    )
 
 @cust_bp.route("/invoices")
 @login_required

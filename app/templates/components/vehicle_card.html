@@ -1,7 +1,7 @@
-{% macro vehicle_card(v, index=0, cta='details') %}
+{% macro vehicle_card(v, index=0, cta='details', details_href=none) %}
   {% set title = ((v.make or '-') ~ ' ' ~ (v.model or '') ~ ' ' ~ (v.year or ''))|trim %}
   {% set price = v.purchase_price_usd %}
-  {% set details_url = url_for('tracking_page', vin=v.vin) if cta=='details' else url_for('ops.cars_edit', vehicle_id=v.id) %}
+  {% set details_url = details_href or (url_for('tracking_page', vin=v.vin) if cta=='details' else url_for('ops.cars_edit', vehicle_id=v.id)) %}
   <article class="group bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden transform transition will-change-transform hover:scale-[1.03] hover:shadow-lg animate-fadeInUp" style="animation-delay: {{ (index * 90) | int }}ms">
     <div class="relative aspect-[4/3] bg-background overflow-hidden">
       <img loading="lazy" src="{{ url_for('static', filename='logo.jpeg') }}" alt="{{ title }}" class="w-full h-full object-cover transition-opacity duration-700 opacity-0" onload="this.classList.remove('opacity-0')">
