@@ -1,0 +1,58 @@
+{% extends "base_admin.html" %}
+{% block title %}{{ _('Auctions') }}{% endblock %}
+{% block header %}{{ _('Auctions') }}{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-2xl">{{ _('Auctions') }}</h1>
+  <a href="{{ url_for('admin.bayarat_new') }}" class="px-3 py-2 text-sm bg-primary text-white rounded">+ {{ _('New Auction') }}</a>
+</div>
+
+<form method="get" class="mb-4 grid grid-cols-1 md:grid-cols-5 gap-3 bg-white border border-gray-200 rounded-xl p-4">
+  <input name="provider" value="{{ request.args.get('provider','') }}" placeholder="{{ _('Provider') }}" class="w-full border border-gray-300 rounded p-2">
+  <input name="lot_number" value="{{ request.args.get('lot_number','') }}" placeholder="{{ _('Lot Number') }}" class="w-full border border-gray-300 rounded p-2">
+  <input type="date" name="date_from" value="{{ request.args.get('date_from','') }}" class="w-full border border-gray-300 rounded p-2">
+  <input type="date" name="date_to" value="{{ request.args.get('date_to','') }}" class="w-full border border-gray-300 rounded p-2">
+  <div class="flex items-center gap-2">
+    <button class="px-3 py-2 bg-primary text-white rounded" type="submit">{{ _('Filter') }}</button>
+    <a href="{{ url_for('admin.bayarat_list') }}" class="px-3 py-2 bg-gray-200 rounded">{{ _('Reset') }}</a>
+  </div>
+</form>
+
+<div class="bg-white border border-gray-200 rounded-2xl overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="text-left text-gray-500">
+        <th class="p-2">{{ _('Provider') }}</th>
+        <th class="p-2">{{ _('Date') }}</th>
+        <th class="p-2">{{ _('Lot Number') }}</th>
+        <th class="p-2">{{ _('Location') }}</th>
+        <th class="p-2">{{ _('Vehicles') }}</th>
+        <th class="p-2">{{ _('URL') }}</th>
+        <th class="p-2">{{ _('Actions') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in auctions %}
+      <tr class="border-t border-gray-100">
+        <td class="p-2">{{ a.provider or '-' }}</td>
+        <td class="p-2">{{ a.auction_date.strftime('%Y-%m-%d') if a.auction_date else '-' }}</td>
+        <td class="p-2">{{ a.lot_number or '-' }}</td>
+        <td class="p-2">{{ a.location or '-' }}</td>
+        <td class="p-2">{{ counts.get(a.id, 0) }}</td>
+        <td class="p-2">{% if a.auction_url %}<a class="text-blue-600 underline" href="{{ a.auction_url }}" target="_blank" rel="noopener">{{ _('Open') }}</a>{% else %}-{% endif %}</td>
+        <td class="p-2">
+          <a href="{{ url_for('admin.bayarat_edit', auction_id=a.id) }}" class="text-xs px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">{{ _('Edit') }}</a>
+          <form action="{{ url_for('admin.bayarat_delete', auction_id=a.id) }}" method="post" style="display:inline" onsubmit="return confirm('{{ _('Delete auction?') }}');">
+            <button class="text-xs px-2 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white">{{ _('Delete') }}</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="7" class="p-3 text-gray-500">{{ _('No auctions found') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
