@@ -54,6 +54,11 @@ class Buyer(db.Model):
     __tablename__ = "buyers"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
+    # Optional credentials and association for buyer accounts used in auctions
+    buyer_number = db.Column(db.String(100))
+    password = db.Column(db.String(200))
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"))
+    customer = db.relationship("Customer")
 
 class Auction(db.Model):
     __tablename__ = "auctions"
