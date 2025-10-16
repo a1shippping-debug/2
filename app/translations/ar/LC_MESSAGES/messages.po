@@ -613,6 +613,13 @@ msgstr "ضريبة القيمة المضافة (ر.ع)"
 
 msgid "Customs & VAT by Month"
 msgstr "الجمارك والضريبة حسب الشهر"
+#: app/templates/operations/dashboard.html
+msgid "Update Statuses"
+msgstr "تحديث الحالات"
+
+#: app/templates/operations/dashboard.html
+msgid "Shipped Cars"
+msgstr "السيارات المشحونة"
 #: app/templates/base_admin.html
 msgid "Admin"
 msgstr "لوحة التحكم"

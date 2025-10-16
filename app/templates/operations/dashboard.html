@@ -37,7 +37,8 @@
     transition: 0.2s;
   }
 
-  .btn span.material-icons {
+  .btn span.material-icons,
+  .btn i {
     font-size: 1.1rem;
     margin-right: 0.4rem;
   }
@@ -144,13 +145,13 @@
 </style>
 
 <div class="dashboard-header">
-  <h1>{{ _('لوحة العمليات') }}</h1>
+  <h1>{{ _('Operations Dashboard') }}</h1>
   <div class="action-buttons">
-    <a href="{{ url_for('cust.dashboard') }}" class="btn btn-green"><span class="material-icons">dashboard</span>لوحة العميل</a>
-    <a href="{{ url_for('cust.track') }}" class="btn btn-indigo"><span class="material-icons">map</span>تتبع السيارات</a>
-    <a href="{{ url_for('ops.cars_status') }}" class="btn btn-amber"><span class="material-icons">edit</span>{{ _('تحديث الحالات') }}</a>
-    <a href="{{ url_for('ops.customers_new') }}" class="btn btn-blue"><span class="material-icons">person_add</span>{{ _('إضافة عميل') }}</a>
-    <a href="{{ url_for('ops.cars_new') }}" class="btn btn-blue"><span class="material-icons">add</span>{{ _('إضافة سيارة') }}</a>
+    <a href="{{ url_for('cust.dashboard') }}" class="btn btn-green"><i class="fa-solid fa-gauge"></i>{{ _('Customer portal') }}</a>
+    <a href="{{ url_for('cust.track') }}" class="btn btn-indigo"><i class="fa-solid fa-map"></i>{{ _('Track Vehicles') }}</a>
+    <a href="{{ url_for('ops.cars_status') }}" class="btn btn-amber"><i class="fa-solid fa-pen-to-square"></i>{{ _('Update Statuses') }}</a>
+    <a href="{{ url_for('ops.customers_new') }}" class="btn btn-blue"><i class="fa-solid fa-user-plus"></i>{{ _('Add Customer') }}</a>
+    <a href="{{ url_for('ops.cars_new') }}" class="btn btn-blue"><i class="fa-solid fa-plus"></i>{{ _('Add Car') }}</a>
   </div>
 </div>
 
