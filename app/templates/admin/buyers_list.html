@@ -15,6 +15,9 @@
   .buyers-table tbody tr:nth-child(even) { background:#f5f9ff; }
   .buyers-table tbody tr:hover { background:#eaf2ff; }
   .muted { color:#6b7280; }
+  .action-link { font-weight:600; text-decoration:none; margin-inline:0.25rem; }
+  .action-link.edit { color:#003e7e; }
+  .action-link.delete { color:#dc2626; background:none; border:none; cursor:pointer; }
   @media (max-width: 640px) {
     .buyers-table th, .buyers-table td { padding:10px; font-size:13px; }
   }
@@ -42,6 +45,7 @@
             <th class="nowrap">رقم الباير</th>
             <th class="nowrap">الباسوورد</th>
             <th class="nowrap">العميل</th>
+            <th class="nowrap">الإجراءات</th>
           </tr>
         </thead>
         <tbody>
@@ -50,10 +54,16 @@
             <td>{{ b.buyer_number or '-' }}</td>
             <td>{{ b.password or '-' }}</td>
             <td>{{ (b.customer.company_name or b.customer.full_name) if b.customer else '-' }}</td>
+            <td class="nowrap">
+              <a href="{{ url_for('admin.buyers_edit', buyer_id=b.id) }}" class="action-link edit">تعديل</a>
+              <form action="{{ url_for('admin.buyers_delete', buyer_id=b.id) }}" method="post" style="display:inline" onsubmit="return confirm('هل تريد الحذف؟')">
+                <button type="submit" class="action-link delete">حذف</button>
+              </form>
+            </td>
           </tr>
           {% else %}
           <tr>
-            <td colspan="3" class="center muted">لا توجد بيانات حالياً</td>
+            <td colspan="4" class="center muted">لا توجد بيانات حالياً</td>
           </tr>
           {% endfor %}
         </tbody>

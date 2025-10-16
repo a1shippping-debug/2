@@ -323,6 +323,84 @@ def buyers_new():
 
     return render_template("admin/buyer_form.html", customers=customers, form=request.form)
 
+
+@admin_bp.route("/buyers/<int:buyer_id>/edit", methods=["GET", "POST"]) 
+@role_required("admin")
+def buyers_edit(buyer_id: int):
+    buyer = db.session.get(Buyer, buyer_id)
+    if not buyer:
+        abort(404)
+    customers = (
+        db.session.query(Customer)
+        .order_by(Customer.company_name.asc(), Customer.full_name.asc())
+        .all()
+    )
+
+    if request.method == "POST":
+        name = (request.form.get("name") or "").strip()
+        buyer_number = (request.form.get("buyer_number") or "").strip()
+        password = (request.form.get("password") or "").strip()
+        customer_id_raw = request.form.get("customer_id")
+
+        if not name:
+            flash(_("Please fill in all required fields."), "danger")
+            return render_template(
+                "admin/buyer_form.html", customers=customers, form=request.form, buyer=buyer
+            )
+
+        customer = None
+        if customer_id_raw:
+            try:
+                customer = db.session.get(Customer, int(customer_id_raw))
+            except Exception:
+                customer = None
+
+        buyer.name = name
+        buyer.buyer_number = buyer_number or None
+        buyer.password = password or None
+        buyer.customer_id = customer.id if customer else None
+
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            flash(_("Failed to update buyer."), "danger")
+            return render_template(
+                "admin/buyer_form.html", customers=customers, form=request.form, buyer=buyer
+            )
+
+        flash(_("Buyer updated successfully."), "success")
+        log_action("update", "Buyer", buyer.id, {"buyer_number": buyer.buyer_number})
+        return redirect(url_for("admin.buyers_list"))
+
+    form_defaults = {
+        "name": buyer.name,
+        "buyer_number": buyer.buyer_number or "",
+        "password": buyer.password or "",
+        "customer_id": str(buyer.customer_id) if buyer.customer_id else "",
+    }
+    return render_template(
+        "admin/buyer_form.html", customers=customers, form=form_defaults, buyer=buyer
+    )
+
+
+@admin_bp.route("/buyers/<int:buyer_id>/delete", methods=["POST"]) 
+@role_required("admin")
+def buyers_delete(buyer_id: int):
+    buyer = db.session.get(Buyer, buyer_id)
+    if not buyer:
+        abort(404)
+    db.session.delete(buyer)
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        flash(_("Failed to delete buyer."), "danger")
+        return redirect(url_for("admin.buyers_list"))
+    flash(_("Buyer deleted."), "success")
+    log_action("delete", "Buyer", buyer_id, {"buyer_number": buyer.buyer_number})
+    return redirect(url_for("admin.buyers_list"))
+
 @admin_bp.route("/users")
 @role_required("admin")
 def users_list():

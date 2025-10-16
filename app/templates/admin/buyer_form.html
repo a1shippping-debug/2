@@ -1,6 +1,6 @@
 {% extends "base_admin.html" %}
-{% block title %}ماستر باير جديد{% endblock %}
-{% block header %}ماستر باير جديد{% endblock %}
+{% block title %}{{ 'تعديل باير' if buyer else 'ماستر باير جديد' }}{% endblock %}
+{% block header %}{{ 'تعديل باير' if buyer else 'ماستر باير جديد' }}{% endblock %}
 {% block content %}
 <form method="post" class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 max-w-2xl" dir="rtl">
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
