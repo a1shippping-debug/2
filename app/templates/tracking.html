@@ -1,239 +1,108 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CarTrade - Vehicle Tracking ({{ vin }})</title>
+{% extends "layout.html" %}
+{% block title %}{{ _('تتبع السيارة') }}{% endblock %}
 
-  <!-- Bootstrap + Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+{% block content %}
+<section class="bg-[#F5F7FA] min-h-screen py-10">
 
-  <style>
-    :root {
-      --primary-color: #003366;
-      --secondary-color: #007bff;
-      --success-color: #28a745;
-      --danger-color: #dc3545;
-      --muted-line: #d6e0f0;
-    }
-    body {
-      background: linear-gradient(180deg, #f8fbff 0%, #eef3fa 100%);
-      font-family: 'Tajawal', sans-serif;
-    }
-
-    .header-title {
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      color: var(--primary-color);
-    }
-
-    .tracking-card {
-      border: none;
-      border-radius: 1.2rem;
-      background: white;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.05);
-      animation: fadeIn 0.8s ease;
-    }
-
-    .timeline-wrapper {
-      overflow-x: auto;
-      padding-bottom: 0.5rem;
-    }
-
-    /* Reference-style horizontal steps with icon images */
-    .timeline {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      min-width: 1000px;
-      padding: 12px 8px 20px;
-    }
-
-    .step {
-      text-align: center;
-      min-width: 120px;
-      transition: transform .2s ease, opacity .3s ease;
-      opacity: 0;
-      transform: translateY(16px);
-      animation: slideUp .5s ease forwards;
-    }
-    .step:nth-child(1) { animation-delay: .05s; }
-    .step:nth-child(3) { animation-delay: .10s; }
-    .step:nth-child(5) { animation-delay: .15s; }
-    .step:nth-child(7) { animation-delay: .20s; }
-    .step:nth-child(9) { animation-delay: .25s; }
-    .step:nth-child(11) { animation-delay: .30s; }
-
-    .step img.icon-img {
-      width: 50px;
-      height: 50px;
-      object-fit: contain;
-      margin-bottom: 8px;
-    }
-
-    .step p.title {
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: var(--primary-color);
-      margin: 4px 0 0 0;
-    }
-
-    .status {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      margin: 8px auto 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      color: #fff;
-    }
-    .status.completed { background: var(--success-color); }
-    .status.pending { background: var(--danger-color); }
-
-    .line {
-      width: 60px;
-      height: 3px;
-      background: var(--muted-line);
-      align-self: center;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes slideUp {
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    @media (max-width: 576px) {
-      .timeline { min-width: 900px; }
-    }
-  </style>
-</head>
-
-<body>
-  <div class="container py-5">
-    <!-- Header -->
-    <div class="text-center mb-4">
-      <h1 class="h3 header-title mb-2">🚘 Vehicle Shipment Tracking</h1>
-      <div class="fs-5 text-muted">
-        VIN: <strong class="text-dark">{{ vin }}</strong>
-        <span class="mx-2">|</span>
-        Lot: <strong class="text-dark">{{ lot_number }}</strong>
-      </div>
+  <div class="text-center mb-8">
+    <h1 class="text-3xl md:text-5xl font-bold text-[#004C97] animate-slideUp">
+      {{ _('تتبع حالة السيارة') }}
+    </h1>
+    <p class="text-gray-600 mt-2">{{ _('تابع كل المراحل الخاصة بطلبك') }}</p>
+    <div class="mt-1 text-gray-500">
+      VIN: <strong>{{ vin }}</strong> | Lot: <strong>{{ lot_number }}</strong>
     </div>
+  </div>
 
-    <!-- VIN quick search -->
-    <div class="card tracking-card mb-3">
-      <div class="card-body">
-        <div class="d-flex gap-2 justify-content-center flex-wrap">
-          <input id="vin-input" class="form-control" style="max-width:360px" placeholder="Enter VIN to track" value="" />
-          <button id="vin-go" class="btn btn-primary">Submit</button>
+  <!-- Timeline -->
+  <div class="max-w-6xl mx-auto px-2">
+    <div class="flex flex-wrap justify-between items-center gap-4">
+
+      {% for s in stages %}
+      <div class="flex flex-col items-center flex-1 animate-fadeIn delay-{{ loop.index0 * 100 }}">
+        <!-- أيقونة المرحلة -->
+        <img src="{{ url_for('static', filename='tracking-icons/' ~ loop.index ~ '.png') }}" class="w-12 h-12 mb-2" alt="{{ s.name }}">
+        
+        <!-- حالة المرحلة -->
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white
+          {% if s.completed %}bg-[#004C97]{% else %}bg-gray-300{% endif %}">
+          {% if s.completed %}✔{% else %}✖{% endif %}
         </div>
+
+        <!-- اسم المرحلة -->
+        <p class="text-[#004C97] font-semibold mt-2 text-center">{{ s.name }}</p>
       </div>
-    </div>
 
-    <!-- Timeline -->
-    <div class="card tracking-card mb-4">
-      <div class="card-body">
-        <div class="timeline-wrapper">
-          <div class="timeline" id="timeline">
-            {% for s in stages %}
-              <div class="step" data-stage-name="{{ s.name }}">
-                <img class="icon-img" src="{{ url_for('static', filename='tracking-icons/' ~ loop.index ~ '.png') }}" alt="{{ s.name }}" />
-                <div class="status {% if s.completed %}completed{% else %}pending{% endif %}">{{ '✔' if s.completed else '✖' }}</div>
-                <p class="title">{{ s.name }}</p>
-                <div class="date text-muted small">{{ s.date_str }}</div>
-              </div>
-              {% if not loop.last %}
-                <div class="line"></div>
-              {% endif %}
-            {% endfor %}
-          </div>
+      {% if not loop.last %}
+        <!-- الخط بين المراحل -->
+        <div class="flex-0.5 h-1 mt-7
+          {% if s.completed %}bg-[#004C97]{% else %}bg-gray-300{% endif %}">
         </div>
+      {% endif %}
+      {% endfor %}
+
+    </div>
+  </div>
+
+  <!-- Details panel -->
+  <div class="max-w-3xl mx-auto mt-12">
+    <div id="details-panel" class="bg-white rounded-2xl shadow-lg p-6">
+      <div class="flex justify-between mb-3">
+        <div>
+          <div class="text-gray-400 text-sm">{{ _('Stage') }}</div>
+          <div id="details-title" class="text-lg font-semibold">{{ _('Select a stage to view details') }}</div>
+        </div>
+        {% if vehicle %}
+        <div class="text-right">
+          <div class="text-gray-400 text-sm">{{ _('Vehicle') }}</div>
+          <div class="font-semibold">{{ vehicle.make or '-' }} {{ vehicle.model or '' }} {{ vehicle.year or '' }}</div>
+        </div>
+        {% endif %}
       </div>
-    </div>
-
-    <p class="text-muted small text-center">Swipe horizontally to view all stages on small screens.</p>
-
-    <!-- Details -->
-    <div class="row mt-4 justify-content-center">
-      <div class="col-12 col-md-10 col-lg-8">
-        <div id="details-panel" class="card border-0 shadow-sm">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <div>
-                <div class="text-muted small">Stage</div>
-                <div id="details-title" class="h6 mb-0">Select a stage to view details</div>
-              </div>
-              {% if vehicle %}
-              <div class="text-end">
-                <div class="text-muted small">Vehicle</div>
-                <div class="fw-semibold">{{ vehicle.make or '-' }} {{ vehicle.model or '' }} {{ vehicle.year or '' }}</div>
-              </div>
-              {% endif %}
-            </div>
-            <hr>
-            <div id="details-content" class="fade">
-              <div class="text-muted">Click any stage above to see more information here.</div>
-            </div>
-          </div>
-        </div>
+      <hr class="my-2">
+      <div id="details-content" class="text-gray-500">
+        {{ _('Click any stage above to see more information here.') }}
       </div>
     </div>
   </div>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</section>
 
-  <script>
-    (function() {
-      const stageDetails = {{ stage_details | default({}) | tojson }};
-      const timeline = document.getElementById('timeline');
-      const titleEl = document.getElementById('details-title');
-      const contentEl = document.getElementById('details-content');
-      if (!timeline) return;
+<style>
+@keyframes fadeIn { from {opacity:0; transform:translateY(15px);} to {opacity:1; transform:translateY(0);} }
+@keyframes slideUp { from {opacity:0; transform:translateY(30px);} to {opacity:1; transform:translateY(0);} }
+.animate-fadeIn { animation: fadeIn 0.8s ease forwards; }
+.animate-slideUp { animation: slideUp 0.8s ease forwards; }
+.delay-0 { animation-delay: 0s; }
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+</style>
 
-      function renderDetails(stageName) {
-        titleEl.textContent = stageName;
-        const rows = (stageDetails[stageName] || []).map(item => `
-          <div class="row py-1">
-            <div class="col-5 col-md-4 text-muted small">${item.label || '-'}</div>
-            <div class="col-7 col-md-8 fw-semibold">${item.value || '-'}</div>
-          </div>
-        `).join('');
-        contentEl.innerHTML = rows || '<div class="text-muted">No details available.</div>';
-        contentEl.classList.add('fade');
-        setTimeout(() => contentEl.classList.remove('fade'), 500);
-      }
+<script>
+(function(){
+  const stageDetails = {{ stage_details | default({}) | tojson }};
+  const timelineSteps = document.querySelectorAll('.flex-1');
+  const titleEl = document.getElementById('details-title');
+  const contentEl = document.getElementById('details-content');
 
-      timeline.addEventListener('click', e => {
-        const target = e.target.closest('.step[data-stage-name]');
-        if (!target) return;
-        renderDetails(target.getAttribute('data-stage-name'));
-      });
+  timelineSteps.forEach(step=>{
+    step.addEventListener('click', ()=>{
+      const stageName = step.querySelector('p').innerText;
+      titleEl.innerText = stageName;
+      const rows = (stageDetails[stageName]||[]).map(item=>{
+        return `<div class="flex justify-between py-1"><span class="text-gray-400 text-sm">${item.label||'-'}</span><span class="font-semibold">${item.value||'-'}</span></div>`;
+      }).join('');
+      contentEl.innerHTML = rows || '<div class="text-gray-400">No details available.</div>';
+    });
+  });
 
-      // Auto-select latest completed stage
-      const buttons = Array.from(timeline.querySelectorAll('.step[data-stage-name]'));
-      const completedButtons = buttons.filter(b => b.classList.contains('completed'));
-      const defaultBtn = completedButtons.at(-1) || buttons[0];
-      if (defaultBtn) renderDetails(defaultBtn.getAttribute('data-stage-name'));
-
-      // VIN quick search
-      const vinInput = document.getElementById('vin-input');
-      const vinGo = document.getElementById('vin-go');
-      function go() {
-        const v = (vinInput.value || '').trim();
-        if (v) window.location.href = '/tracking/' + encodeURIComponent(v);
-      }
-      vinGo?.addEventListener('click', go);
-      vinInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go(); } });
-    })();
-  </script>
-</body>
-</html>
+  // Auto-select latest completed stage
+  const completedSteps = Array.from(timelineSteps).filter(s=>s.querySelector('div').classList.contains('bg-[#004C97]'));
+  const defaultStep = completedSteps.at(-1) || timelineSteps[0];
+  if(defaultStep) defaultStep.click();
+})();
+</script>
+{% endblock %}
