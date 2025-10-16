@@ -113,7 +113,68 @@ def create_app():
                 cars_for_sale = q.order_by(Vehicle.created_at.desc()).limit(6).all()
         except Exception:
             cars_for_sale = []
-        return render_template("landing.html", cars_for_sale=cars_for_sale)
+
+        # Load latest approved testimonials
+        try:
+            from .models import Testimonial
+            testimonials = (
+                db.session.query(Testimonial)
+                .filter(Testimonial.approved.is_(True))
+                .order_by(Testimonial.created_at.desc())
+                .limit(6)
+                .all()
+            )
+        except Exception:
+            testimonials = []
+
+        return render_template("landing.html", cars_for_sale=cars_for_sale, testimonials=testimonials)
+
+    @app.route("/testimonials", methods=["POST"])
+    def submit_testimonial():
+        name = (request.form.get("name") or "").strip()
+        role = (request.form.get("role") or "").strip()
+        content = (request.form.get("content") or "").strip()
+        rating_raw = (request.form.get("rating") or "").strip()
+
+        if not name or not content:
+            # basic validation; show message and redirect back to homepage
+            try:
+                from flask import flash
+                flash("الرجاء إدخال الاسم والمحتوى", "danger")
+            except Exception:
+                pass
+            return render_template("landing.html", cars_for_sale=[], testimonials=[]), 400
+
+        try:
+            rating = int(rating_raw) if rating_raw else 5
+        except Exception:
+            rating = 5
+        rating = max(1, min(5, rating))
+
+        try:
+            from .models import Testimonial
+            t = Testimonial(name=name, role=role or None, content=content, rating=rating, approved=True)
+            db.session.add(t)
+            db.session.commit()
+            try:
+                from flask import flash
+                flash("تم إرسال رأيك بنجاح. شكرًا لك!", "success")
+            except Exception:
+                pass
+        except Exception:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            try:
+                from flask import flash
+                flash("تعذر حفظ رأيك. حاول مرة أخرى.", "danger")
+            except Exception:
+                pass
+
+        # redirect back to homepage after submission
+        from flask import redirect
+        return redirect(url_for("index"))
 
     # Public informational pages
     @app.route("/about")
