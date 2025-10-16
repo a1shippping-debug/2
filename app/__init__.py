@@ -89,7 +89,19 @@ def create_app():
 
     @app.route("/")
     def index():
-        return render_template("landing.html")
+        # Show a small selection of available cars on the homepage
+        try:
+            from .extensions import db
+            from .models import Vehicle
+
+            q = db.session.query(Vehicle).filter(Vehicle.owner_customer_id.is_(None))
+            # Exclude vehicles that are already delivered/arrived/in-transit
+            excluded = ["delivered", "arrived", "shipping", "on way", "in transit"]
+            q = q.filter(db.func.lower(Vehicle.status).notin_(excluded))
+            cars_for_sale = q.order_by(Vehicle.created_at.desc()).limit(6).all()
+        except Exception:
+            cars_for_sale = []
+        return render_template("landing.html", cars_for_sale=cars_for_sale)
 
     # Public informational pages
     @app.route("/about")
