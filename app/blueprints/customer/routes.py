@@ -71,7 +71,23 @@ def invoices_list():
             .order_by(Invoice.created_at.desc())
             .all()
         )
-    return render_template("customer/invoices_list.html", invoices=invoices)
+    # Compute summary counts for paid vs unpaid (excluding cancelled)
+    def normalize_status(text: str | None) -> str:
+        return (text or "").strip()
+
+    paid_count = sum(1 for inv in invoices if normalize_status(inv.status) == "Paid")
+    unpaid_count = sum(
+        1
+        for inv in invoices
+        if normalize_status(inv.status) != "Paid" and normalize_status(inv.status) != "Cancelled"
+    )
+
+    return render_template(
+        "customer/invoices_list.html",
+        invoices=invoices,
+        paid_count=paid_count,
+        unpaid_count=unpaid_count,
+    )
 
 
 @cust_bp.route("/invoices/<int:invoice_id>")
