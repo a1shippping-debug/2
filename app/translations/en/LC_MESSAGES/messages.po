@@ -662,6 +662,13 @@ msgstr "Database schema is outdated. Please run the database migrations."
 
 msgid "Account number already exists"
 msgstr "Account number already exists"
+#: app/templates/operations/dashboard.html
+msgid "Update Statuses"
+msgstr "Update Statuses"
+
+#: app/templates/operations/dashboard.html
+msgid "Shipped Cars"
+msgstr "Shipped Cars"
 
 msgid "Customer updated"
 msgstr "Customer updated"
