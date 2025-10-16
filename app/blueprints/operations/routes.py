@@ -403,6 +403,13 @@ def cars_new():
             if saved:
                 db.session.add(Document(vehicle_id=v.id, doc_type='Vehicle Photo', file_path=saved))
 
+        # optional auction invoice upload
+        auction_invoice = request.files.get('auction_invoice')
+        if auction_invoice and getattr(auction_invoice, 'filename', ''):
+            saved = save_uploaded_file(v.vin or str(v.id), auction_invoice, filename_hint='auction_invoice')
+            if saved:
+                db.session.add(Document(vehicle_id=v.id, doc_type='Auction Invoice', file_path=saved))
+
         try:
             db.session.commit()
             notify(f"Vehicle {v.vin} added", 'Vehicle', v.id)
