@@ -12,7 +12,7 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from ...extensions import db
-from ...models import Vehicle, Auction, Shipment, VehicleShipment, Customer, Invoice, InvoiceItem
+from ...models import Vehicle, Auction, Shipment, VehicleShipment, Customer, Invoice, InvoiceItem, VehicleSaleListing
 from ...utils_pdf import render_invoice_pdf
 import os
 import secrets
@@ -39,7 +39,74 @@ def my_cars():
             .order_by(Vehicle.created_at.desc())
             .all()
         )
-    return render_template("customer/my_cars.html", cars=cars)
+    # fetch pending/last sale listing per vehicle for quick UI state
+    listings_by_vehicle = {}
+    if cars:
+        vids = [v.id for v in cars]
+        rows = (
+            db.session.query(VehicleSaleListing)
+            .filter(VehicleSaleListing.vehicle_id.in_(vids))
+            .order_by(VehicleSaleListing.created_at.desc())
+            .all()
+        )
+        for row in rows:
+            # keep latest per vehicle
+            if row.vehicle_id not in listings_by_vehicle:
+                listings_by_vehicle[row.vehicle_id] = row
+    return render_template("customer/my_cars.html", cars=cars, sale_listings=listings_by_vehicle)
+
+
+@cust_bp.post("/cars/<int:vehicle_id>/sell")
+@login_required
+def request_sale_listing(vehicle_id: int):
+    """Customer submits a request to list a car for sale with asking price.
+
+    Creates a VehicleSaleListing in Pending status for Operations to approve.
+    """
+    cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
+    v = db.session.get(Vehicle, vehicle_id)
+    if not v or not cust or v.owner_customer_id != cust.id:
+        abort(404)
+
+    price_str = (request.form.get("asking_price_omr") or "").strip()
+    try:
+        asking_price = float(price_str)
+    except Exception:
+        asking_price = None
+    if not asking_price or asking_price <= 0:
+        flash("الرجاء إدخال سعر صحيح بالريال العماني", "danger")
+        return redirect(url_for("cust.my_cars"))
+
+    # prevent multiple active pending for same vehicle
+    existing = (
+        db.session.query(VehicleSaleListing)
+        .filter(VehicleSaleListing.vehicle_id == v.id, VehicleSaleListing.status == "Pending")
+        .first()
+    )
+    if existing:
+        flash("يوجد طلب بيع قيد الموافقة بالفعل لهذه السيارة", "warning")
+        return redirect(url_for("cust.my_cars"))
+
+    sl = VehicleSaleListing(
+        vehicle_id=v.id,
+        customer_id=cust.id,
+        asking_price_omr=asking_price,
+        status="Pending",
+    )
+    db.session.add(sl)
+    try:
+        db.session.commit()
+        # Notify operations
+        try:
+            from ...blueprints.operations.routes import notify as ops_notify
+            ops_notify(f"New sale request for {v.vin} (OMR {asking_price:.3f})", 'Vehicle', v.id)
+        except Exception:
+            pass
+        flash("تم إرسال طلب عرض السيارة للبيع للموافقة", "success")
+    except Exception:
+        db.session.rollback()
+        flash("تعذر حفظ الطلب. حاول مرة أخرى.", "danger")
+    return redirect(url_for("cust.my_cars"))
 
 
 @cust_bp.route("/cars/<int:vehicle_id>")

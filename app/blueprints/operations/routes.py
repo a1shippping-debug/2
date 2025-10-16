@@ -3,7 +3,7 @@ from flask_babel import gettext as _
 from flask_login import login_required
 from ...security import role_required
 from ...extensions import db
-from ...models import Vehicle, Shipment, VehicleShipment, Customer, Notification, Auction, Document, CostItem, User, Role, Invoice, InvoiceItem
+from ...models import Vehicle, Shipment, VehicleShipment, Customer, Notification, Auction, Document, CostItem, User, Role, Invoice, InvoiceItem, VehicleSaleListing
 from datetime import datetime
 
 ops_bp = Blueprint("ops", __name__, template_folder="templates/operations")
@@ -243,6 +243,68 @@ def cars_list():
 
     customers = db.session.query(Customer).order_by(Customer.company_name.asc()).all()
     return render_template('operations/cars_list.html', cars=cars, customers=customers, tracking_stage=tracking_stage)
+
+
+# Sale Listings: list and approve/reject
+@ops_bp.route('/sale-listings')
+@role_required('employee', 'admin')
+def sale_listings_list():
+    status = (request.args.get('status') or '').strip()
+    q = db.session.query(VehicleSaleListing).order_by(VehicleSaleListing.created_at.desc())
+    if status:
+        q = q.filter(VehicleSaleListing.status == status)
+    rows = q.limit(300).all()
+    return render_template('operations/sale_listings.html', rows=rows)
+
+
+@ops_bp.post('/sale-listings/<int:listing_id>/approve')
+@role_required('employee', 'admin')
+def sale_listings_approve(listing_id: int):
+    from datetime import datetime
+    sl = db.session.get(VehicleSaleListing, listing_id)
+    if not sl or sl.status != 'Pending':
+        return ("Not found", 404)
+    sl.status = 'Approved'
+    sl.decided_at = datetime.utcnow()
+    try:
+        # who approved
+        from flask_login import current_user
+        if current_user and getattr(current_user, 'id', None):
+            sl.decided_by_user_id = int(current_user.id)
+    except Exception:
+        pass
+    try:
+        db.session.commit(); notify(f"Sale listing approved for vehicle {sl.vehicle.vin}", 'Vehicle', sl.vehicle_id)
+        # Optional: could change vehicle status to 'Posted' to indicate sale
+    except Exception:
+        db.session.rollback()
+        return ("", 400)
+    return redirect(url_for('ops.sale_listings_list'))
+
+
+@ops_bp.post('/sale-listings/<int:listing_id>/reject')
+@role_required('employee', 'admin')
+def sale_listings_reject(listing_id: int):
+    from datetime import datetime
+    sl = db.session.get(VehicleSaleListing, listing_id)
+    if not sl or sl.status != 'Pending':
+        return ("Not found", 404)
+    reason = (request.form.get('reason') or '').strip() or None
+    sl.status = 'Rejected'
+    sl.note_admin = reason
+    sl.decided_at = datetime.utcnow()
+    try:
+        from flask_login import current_user
+        if current_user and getattr(current_user, 'id', None):
+            sl.decided_by_user_id = int(current_user.id)
+    except Exception:
+        pass
+    try:
+        db.session.commit(); notify(f"Sale listing rejected for vehicle {sl.vehicle.vin}", 'Vehicle', sl.vehicle_id)
+    except Exception:
+        db.session.rollback()
+        return ("", 400)
+    return redirect(url_for('ops.sale_listings_list'))
 
 
 @ops_bp.route('/cars/new', methods=['GET', 'POST'])

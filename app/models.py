@@ -253,3 +253,20 @@ class Notification(db.Model):
     target_id = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     read = db.Column(db.Boolean, default=False, nullable=False)
+
+
+class VehicleSaleListing(db.Model):
+    __tablename__ = "vehicle_sale_listings"
+    id = db.Column(db.Integer, primary_key=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey("vehicles.id"), nullable=False, index=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False, index=True)
+    asking_price_omr = db.Column(db.Numeric(12, 3), nullable=False)
+    status = db.Column(db.String(20), default="Pending")  # Pending / Approved / Rejected
+    note_admin = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    decided_at = db.Column(db.DateTime)
+    decided_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+
+    vehicle = db.relationship("Vehicle")
+    customer = db.relationship("Customer")
+    decided_by = db.relationship("User")
