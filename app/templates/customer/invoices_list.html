@@ -2,6 +2,18 @@
 {% block title %}{{ _('فواتيري') }}{% endblock %}
 {% block content %}
 <h1 class="text-2xl mb-4">{{ _('فواتيري') }}</h1>
+<!-- Summary tiles: Paid / Unpaid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+  <div class="bg-green-50 hover:bg-green-100 transition rounded-xl p-5 shadow-sm border border-green-100">
+    <div class="text-sm text-green-700">{{ _('الفواتير المدفوعة') }}</div>
+    <div class="text-2xl font-bold text-green-900 mt-1">{{ paid_count or 0 }}</div>
+  </div>
+  <div class="bg-yellow-50 hover:bg-yellow-100 transition rounded-xl p-5 shadow-sm border border-yellow-100">
+    <div class="text-sm text-yellow-700">{{ _('الفواتير غير المدفوعة') }}</div>
+    <div class="text-2xl font-bold text-yellow-900 mt-1">{{ unpaid_count or 0 }}</div>
+  </div>
+  
+</div>
 <div class="bg-white rounded shadow overflow-hidden">
   <table class="w-full text-sm">
     <thead class="bg-gray-50">
