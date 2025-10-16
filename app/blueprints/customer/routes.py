@@ -141,6 +141,23 @@ def car_detail(vehicle_id: int):
     except Exception:
         image_urls = []
 
+    # Fetch approved sale price (OMR) if any
+    sale_price_omr = None
+    try:
+        row = (
+            db.session.query(VehicleSaleListing)
+            .filter(
+                VehicleSaleListing.vehicle_id == v.id,
+                VehicleSaleListing.status == "Approved",
+            )
+            .order_by(db.func.coalesce(VehicleSaleListing.decided_at, VehicleSaleListing.created_at).desc())
+            .first()
+        )
+        if row and getattr(row, "asking_price_omr", None) is not None:
+            sale_price_omr = row.asking_price_omr
+    except Exception:
+        sale_price_omr = None
+
     # Reuse the public details template (no timeline)
     return render_template(
         "public/vehicle_public.html",
@@ -148,6 +165,7 @@ def car_detail(vehicle_id: int):
         auction=auction,
         shipments=shipments,
         image_urls=image_urls,
+        sale_price_omr=sale_price_omr,
     )
 
 @cust_bp.post("/cars/<int:vehicle_id>/share")

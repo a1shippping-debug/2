@@ -105,6 +105,14 @@ def create_app():
             )
             cars_for_sale = [r.vehicle for r in rows if getattr(r, "vehicle", None)]
 
+            # Annotate vehicles with sale (asking) price for display
+            for r in rows:
+                try:
+                    if getattr(r, "vehicle", None) is not None:
+                        setattr(r.vehicle, "sale_price_omr", getattr(r, "asking_price_omr", None))
+                except Exception:
+                    pass
+
             # Fallback to previously visible vehicles if there are no approved listings yet
             if not cars_for_sale:
                 q = db.session.query(Vehicle).filter(Vehicle.owner_customer_id.is_(None))
@@ -113,6 +121,26 @@ def create_app():
                 cars_for_sale = q.order_by(Vehicle.created_at.desc()).limit(6).all()
         except Exception:
             cars_for_sale = []
+
+        # Attach primary image URL for each vehicle card on the homepage
+        try:
+            for v in cars_for_sale or []:
+                try:
+                    vin = (v.vin or "").strip()
+                    base_dir = os.path.join(current_app.static_folder, "uploads", vin)
+                    primary_url = None
+                    if vin and os.path.isdir(base_dir):
+                        for fname in sorted(os.listdir(base_dir)):
+                            lower = fname.lower()
+                            if lower.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif")):
+                                primary_url = url_for("static", filename=f"uploads/{vin}/{fname}")
+                                break
+                    setattr(v, "primary_image_url", primary_url)
+                except Exception:
+                    setattr(v, "primary_image_url", None)
+        except Exception:
+            # Fail-safe: don't block homepage if image probing fails
+            pass
 
         # Load latest approved testimonials
         try:
@@ -532,6 +560,77 @@ def create_app():
             total_cost_omr=total_cost_omr,
         )
 
+    @app.route("/vehicle/<string:vin>")
+    def vehicle_detail_page(vin: str):
+        """Public vehicle detail page by VIN without tracking timeline.
+
+        Shows images and comprehensive details similar to the shared public page,
+        and includes the sale price (OMR) when an approved sale listing exists.
+        """
+        from .extensions import db
+        from .models import Vehicle, Auction, Shipment, VehicleShipment, VehicleSaleListing
+
+        vin_norm = (vin or "").strip()
+        if not vin_norm:
+            abort(404)
+
+        vehicle = (
+            db.session.query(Vehicle)
+            .join(Auction, Vehicle.auction_id == Auction.id, isouter=True)
+            .filter(db.func.lower(Vehicle.vin) == db.func.lower(vin_norm))
+            .first()
+        )
+        if not vehicle:
+            abort(404)
+
+        auction = vehicle.auction
+        shipments = (
+            db.session.query(Shipment)
+            .join(VehicleShipment, Shipment.id == VehicleShipment.shipment_id)
+            .filter(VehicleShipment.vehicle_id == vehicle.id)
+            .order_by(Shipment.created_at.asc())
+            .all()
+        )
+
+        # Collect image URLs from static/uploads/<VIN>/
+        image_urls = []
+        try:
+            vin2 = (vehicle.vin or "").strip()
+            base_dir = os.path.join(current_app.static_folder, "uploads", vin2)
+            if vin2 and os.path.isdir(base_dir):
+                for fname in sorted(os.listdir(base_dir)):
+                    lower = fname.lower()
+                    if any(lower.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]):
+                        image_urls.append(url_for("static", filename=f"uploads/{vin2}/{fname}"))
+        except Exception:
+            image_urls = []
+
+        # Fetch approved sale price (OMR) if any
+        sale_price_omr = None
+        try:
+            row = (
+                db.session.query(VehicleSaleListing)
+                .filter(
+                    VehicleSaleListing.vehicle_id == vehicle.id,
+                    VehicleSaleListing.status == "Approved",
+                )
+                .order_by(db.func.coalesce(VehicleSaleListing.decided_at, VehicleSaleListing.created_at).desc())
+                .first()
+            )
+            if row and getattr(row, "asking_price_omr", None) is not None:
+                sale_price_omr = row.asking_price_omr
+        except Exception:
+            sale_price_omr = None
+
+        return render_template(
+            "public/vehicle_public.html",
+            vehicle=vehicle,
+            auction=auction,
+            shipments=shipments,
+            image_urls=image_urls,
+            sale_price_omr=sale_price_omr,
+        )
+
     @app.route("/v/<string:token>")
     def vehicle_public_page(token: str):
         """Public vehicle detail page by share token.
@@ -540,7 +639,7 @@ def create_app():
         the provided share token, if sharing is enabled.
         """
         from .extensions import db
-        from .models import Vehicle, Auction, Shipment, VehicleShipment
+        from .models import Vehicle, Auction, Shipment, VehicleShipment, VehicleSaleListing
 
         token_norm = (token or "").strip()
         if not token_norm:
@@ -579,12 +678,30 @@ def create_app():
             # Fail silently; images are optional
             image_urls = []
 
+        # Fetch approved sale price (OMR) if any
+        sale_price_omr = None
+        try:
+            row = (
+                db.session.query(VehicleSaleListing)
+                .filter(
+                    VehicleSaleListing.vehicle_id == vehicle.id,
+                    VehicleSaleListing.status == "Approved",
+                )
+                .order_by(db.func.coalesce(VehicleSaleListing.decided_at, VehicleSaleListing.created_at).desc())
+                .first()
+            )
+            if row and getattr(row, "asking_price_omr", None) is not None:
+                sale_price_omr = row.asking_price_omr
+        except Exception:
+            sale_price_omr = None
+
         return render_template(
             "public/vehicle_public.html",
             vehicle=vehicle,
             auction=auction,
             shipments=shipments,
             image_urls=image_urls,
+            sale_price_omr=sale_price_omr,
         )
 
     @app.shell_context_processor

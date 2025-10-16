@@ -1,14 +1,21 @@
 {% macro vehicle_card(v, index=0, cta='details', show_share=false) %}
   {% set title = ((v.make or '-') ~ ' ' ~ (v.model or '') ~ ' ' ~ (v.year or ''))|trim %}
-  {% set price = v.purchase_price_usd %}
+  {# Prefer sale price (OMR) if available; fallback to purchase (USD) #}
+  {% set price_sale = v.sale_price_omr if v is defined else None %}
+  {% set has_sale = price_sale is not none and price_sale != '' %}
+  {% set price_label = _('سعر البيع') if has_sale else _('سعر الشراء (تقريبي)') %}
+  {% set price_value = price_sale if has_sale else v.purchase_price_usd %}
   {#
     cta options:
     - 'details': public tracking page (timeline)
+    - 'public_details': public vehicle details by VIN (no tracking)
     - 'cust_details': customer details page (no tracking)
     - 'edit': operations edit page
   #}
   {% if cta=='details' %}
     {% set details_url = url_for('tracking_page', vin=v.vin) %}
+  {% elif cta=='public_details' %}
+    {% set details_url = url_for('vehicle_detail_page', vin=v.vin) %}
   {% elif cta=='cust_details' %}
     {% set details_url = url_for('cust.car_detail', vehicle_id=v.id) %}
   {% else %}
@@ -16,7 +23,7 @@
   {% endif %}
   <article class="group bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden transform transition will-change-transform hover:scale-[1.03] hover:shadow-lg animate-fadeInUp" style="animation-delay: {{ (index * 90) | int }}ms">
     <div class="relative aspect-[4/3] bg-background overflow-hidden">
-      <img loading="lazy" src="{{ url_for('static', filename='logo.jpeg') }}" alt="{{ title }}" class="w-full h-full object-cover transition-opacity duration-700 opacity-0" onload="this.classList.remove('opacity-0')">
+      <img loading="lazy" src="{{ v.primary_image_url or url_for('static', filename='logo.jpeg') }}" alt="{{ title }}" class="w-full h-full object-cover transition-opacity duration-700 opacity-0" onload="this.classList.remove('opacity-0')">
       <div class="absolute inset-0 bg-gradient-to-t from-neutral/50 via-neutral/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
       <!-- hover specs -->
       <div class="absolute bottom-0 left-0 right-0 p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity text-xs md:text-sm">
@@ -30,8 +37,14 @@
     <div class="p-4">
       <h3 class="font-heading font-semibold text-neutral text-base md:text-lg mb-1">{{ title }}</h3>
       <div class="text-muted text-sm mb-2">
-        {{ _('سعر الشراء (تقريبي)') }}: 
-        <span class="text-neutral font-semibold">{{ ("$%.2f" % price) if price else '-' }}</span>
+        {{ price_label }}:
+        <span class="text-neutral font-semibold">
+          {% if has_sale %}
+            {{ ("OMR %.3f" % price_value) }}
+          {% else %}
+            {{ ("$%.2f" % price_value) if price_value else '-' }}
+          {% endif %}
+        </span>
       </div>
       <div class="flex items-center justify-between">
         <span class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded bg-background text-neutral/80">
