@@ -1,7 +1,19 @@
 {% macro vehicle_card(v, index=0, cta='details', show_share=false) %}
   {% set title = ((v.make or '-') ~ ' ' ~ (v.model or '') ~ ' ' ~ (v.year or ''))|trim %}
   {% set price = v.purchase_price_usd %}
-  {% set details_url = url_for('tracking_page', vin=v.vin) if cta=='details' else url_for('ops.cars_edit', vehicle_id=v.id) %}
+  {#
+    cta options:
+    - 'details': public tracking page (timeline)
+    - 'cust_details': customer details page (no tracking)
+    - 'edit': operations edit page
+  #}
+  {% if cta=='details' %}
+    {% set details_url = url_for('tracking_page', vin=v.vin) %}
+  {% elif cta=='cust_details' %}
+    {% set details_url = url_for('cust.car_detail', vehicle_id=v.id) %}
+  {% else %}
+    {% set details_url = url_for('ops.cars_edit', vehicle_id=v.id) %}
+  {% endif %}
   <article class="group bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden transform transition will-change-transform hover:scale-[1.03] hover:shadow-lg animate-fadeInUp" style="animation-delay: {{ (index * 90) | int }}ms">
     <div class="relative aspect-[4/3] bg-background overflow-hidden">
       <img loading="lazy" src="{{ url_for('static', filename='logo.jpeg') }}" alt="{{ title }}" class="w-full h-full object-cover transition-opacity duration-700 opacity-0" onload="this.classList.remove('opacity-0')">
@@ -35,7 +47,7 @@
           </form>
           {% endif %}
           <a href="{{ details_url }}" class="px-3 py-1.5 rounded-md bg-primary text-white text-sm font-medium transition hover:shadow-md hover:scale-105">
-            {{ _('عرض التفاصيل') if cta=='details' else _('تحديث السيارة') }}
+            {% if cta=='edit' %}{{ _('تحديث السيارة') }}{% else %}{{ _('عرض التفاصيل') }}{% endif %}
           </a>
         </div>
       </div>

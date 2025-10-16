@@ -42,6 +42,47 @@ def my_cars():
     return render_template("customer/my_cars.html", cars=cars)
 
 
+@cust_bp.route("/cars/<int:vehicle_id>")
+@login_required
+def car_detail(vehicle_id: int):
+    """Show car details for the current customer without tracking timeline."""
+    cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
+    v = db.session.get(Vehicle, vehicle_id)
+    if not v or not cust or v.owner_customer_id != cust.id:
+        abort(404)
+
+    # Related data
+    auction = v.auction
+    shipments = (
+        db.session.query(Shipment)
+        .join(VehicleShipment, Shipment.id == VehicleShipment.shipment_id)
+        .filter(VehicleShipment.vehicle_id == v.id)
+        .order_by(Shipment.created_at.asc())
+        .all()
+    )
+
+    # Collect image URLs from static/uploads/<VIN>/
+    image_urls: list[str] = []
+    try:
+        vin = (v.vin or "").strip()
+        base_dir = os.path.join(current_app.static_folder, "uploads", vin)
+        if vin and os.path.isdir(base_dir):
+            for fname in sorted(os.listdir(base_dir)):
+                lower = fname.lower()
+                if any(lower.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]):
+                    image_urls.append(url_for("static", filename=f"uploads/{vin}/{fname}"))
+    except Exception:
+        image_urls = []
+
+    # Reuse the public details template (no timeline)
+    return render_template(
+        "public/vehicle_public.html",
+        vehicle=v,
+        auction=auction,
+        shipments=shipments,
+        image_urls=image_urls,
+    )
+
 @cust_bp.post("/cars/<int:vehicle_id>/share")
 @login_required
 def share_vehicle(vehicle_id: int):
