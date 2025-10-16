@@ -1127,10 +1127,56 @@ def vehicle_tracking(vehicle_id: int):
         )
 
     lot_number = v.auction.lot_number if v.auction and v.auction.lot_number else "-"
+
+    # Summary fields (align with public tracking page behavior)
+    container_number = "-"
+    arrival_date = "-"
+    total_cost_omr = None
+    try:
+        # Prefer primary shipment for quick summary
+        if primary:
+            try:
+                container_number = (primary.container_number or "-").strip() if getattr(primary, "container_number", None) else "-"
+            except Exception:
+                container_number = "-"
+            arrival_date = fmt_dt(getattr(primary, "arrival_date", None)) or "-"
+
+        # Compute total cost (OMR) from InternationalCost when available
+        try:
+            from decimal import Decimal
+            from ...models import InternationalCost
+
+            cost_row = db.session.query(InternationalCost).filter_by(vehicle_id=v.id).first()
+            if cost_row:
+                def dec(x):
+                    try:
+                        return Decimal(str(x or 0))
+                    except Exception:
+                        return Decimal('0')
+
+                usd_sum = dec(v.purchase_price_usd) + dec(cost_row.freight_usd) + dec(cost_row.insurance_usd) + dec(cost_row.auction_fees_usd)
+                omr_rate = Decimal(str(current_app.config.get("OMR_EXCHANGE_RATE", 0.385)))
+                omr_from_usd = usd_sum * omr_rate
+                omr_local = dec(cost_row.customs_omr) + dec(cost_row.vat_omr) + dec(cost_row.local_transport_omr) + dec(cost_row.misc_omr)
+                total_cost_omr = omr_from_usd + omr_local
+        except Exception:
+            # keep defaults if any issue in cost calculation
+            total_cost_omr = total_cost_omr
+    except Exception:
+        # Fail-safe: keep defaults
+        container_number = container_number or "-"
+        arrival_date = arrival_date or "-"
+        total_cost_omr = total_cost_omr
+
     return render_template(
         "tracking.html",
         vin=(v.vin or "").upper(),
         lot_number=lot_number,
         vehicle=v,
         stages=stages,
+        # Provide values to avoid template UndefinedError in staff view
+        container_number=container_number,
+        arrival_date=arrival_date,
+        total_cost_omr=total_cost_omr,
+        stage_details={},
     )
