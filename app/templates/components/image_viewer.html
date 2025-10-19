@@ -1,6 +1,6 @@
 <!-- Global fullscreen image viewer -->
 <div id="image-lightbox" class="fixed inset-0 z-[1000] hidden bg-black/90 select-none" aria-hidden="true" role="dialog" aria-label="Image viewer">
-  <!-- Controls -->
+  <!-- Controls (top-left) -->
   <div class="absolute top-4 left-4 flex gap-2">
     <button type="button" aria-label="تكبير" title="تكبير" class="js-zoom-in px-3 py-2 rounded-md bg-white/10 text-white border border-white/20 hover:bg-white/20">
       <i class="fa-solid fa-magnifying-glass-plus"></i>
@@ -12,14 +12,26 @@
       <i class="fa-solid fa-rotate-left"></i>
     </button>
   </div>
+  <!-- Close (top-right) -->
   <button type="button" class="js-close absolute top-4 right-4 px-3 py-2 rounded-md bg-white/10 text-white border border-white/20 hover:bg-white/20" aria-label="إغلاق" title="إغلاق">
     <i class="fa-solid fa-xmark"></i>
+  </button>
+
+  <!-- Prev/Next -->
+  <button type="button" class="js-prev absolute left-4 top-1/2 -translate-y-1/2 px-3 py-2 rounded-md bg-white/10 text-white border border-white/20 hover:bg-white/20" aria-label="السابق" title="السابق">
+    <i class="fa-solid fa-chevron-left"></i>
+  </button>
+  <button type="button" class="js-next absolute right-4 top-1/2 -translate-y-1/2 px-3 py-2 rounded-md bg-white/10 text-white border border-white/20 hover:bg-white/20" aria-label="التالي" title="التالي">
+    <i class="fa-solid fa-chevron-right"></i>
   </button>
 
   <!-- Stage -->
   <div class="js-stage w-full h-full overflow-hidden flex items-center justify-center touch-none">
     <img class="js-image max-w-none pointer-events-auto will-change-transform" alt="" draggable="false" />
   </div>
+
+  <!-- Counter (bottom center) -->
+  <div class="js-counter absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm"></div>
 </div>
 
 <script>
@@ -35,6 +47,9 @@
   const btnZoomIn = overlay.querySelector('.js-zoom-in');
   const btnZoomOut = overlay.querySelector('.js-zoom-out');
   const btnReset = overlay.querySelector('.js-reset');
+  const btnPrev = overlay.querySelector('.js-prev');
+  const btnNext = overlay.querySelector('.js-next');
+  const counterEl = overlay.querySelector('.js-counter');
 
   let isOpen = false;
   let scale = 1;
@@ -43,6 +58,10 @@
   const MIN_SCALE = 1;
   const MAX_SCALE = 6;
   const ZOOM_STEP = 0.25;
+
+  // Slideshow state
+  let currentList = null; // [{ src, alt }]
+  let currentIndex = 0;
 
   // Touch pinch state
   let isPinching = false;
@@ -63,15 +82,44 @@
     translateY = Math.min(maxY, Math.max(-maxY, translateY));
   }
 
-  function openViewer(src, alt){
+  function updateCounter(){
+    if (!counterEl) return;
+    if (!currentList || currentList.length <= 1) { counterEl.textContent = ''; return; }
+    counterEl.textContent = (currentIndex + 1) + ' / ' + currentList.length;
+  }
+
+  function showNavButtons(){
+    const visible = currentList && currentList.length > 1;
+    if (btnPrev) btnPrev.style.display = visible ? '' : 'none';
+    if (btnNext) btnNext.style.display = visible ? '' : 'none';
+  }
+
+  function renderCurrent(){
+    const item = currentList && currentList[currentIndex];
+    const src = item ? item.src : '';
+    const alt = item ? (item.alt || '') : '';
     if (!src) return;
     img.src = src;
-    img.alt = alt || '';
+    img.alt = alt;
     scale = 1; translateX = 0; translateY = 0; applyTransform();
+    updateCounter();
+  }
+
+  function openViewer(src, alt){
+    if (!src) return;
+    openViewerFromList([{ src, alt: alt || '' }], 0);
+  }
+
+  function openViewerFromList(list, startIndex){
+    if (!list || !list.length) return;
+    currentList = list.slice();
+    currentIndex = Math.min(Math.max(0, startIndex || 0), currentList.length - 1);
     overlay.classList.remove('hidden');
     overlay.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
     isOpen = true;
+    showNavButtons();
+    renderCurrent();
     img.focus && img.focus();
   }
 
@@ -81,6 +129,9 @@
     document.body.style.overflow = '';
     img.removeAttribute('src');
     isOpen = false;
+    currentList = null;
+    currentIndex = 0;
+    updateCounter();
   }
 
   function zoomBy(delta){
@@ -92,13 +143,23 @@
   }
 
   // Expose helper
-  window.openImageLightbox = openViewer;
+  window.openImageLightbox = openViewer; // single image
+  window.openImageSlideshow = openViewerFromList; // list variant
 
   // Buttons
   btnClose.addEventListener('click', closeViewer);
   btnZoomIn.addEventListener('click', () => zoomBy(ZOOM_STEP));
   btnZoomOut.addEventListener('click', () => zoomBy(-ZOOM_STEP));
   btnReset.addEventListener('click', () => { scale = 1; translateX = 0; translateY = 0; applyTransform(); });
+  if (btnPrev) btnPrev.addEventListener('click', () => navigate(-1));
+  if (btnNext) btnNext.addEventListener('click', () => navigate(1));
+
+  function navigate(delta){
+    if (!isOpen || !currentList || currentList.length < 2) return;
+    const len = currentList.length;
+    currentIndex = (currentIndex + (delta % len) + len) % len;
+    renderCurrent();
+  }
 
   // Close on overlay click (except when clicking the image itself)
   overlay.addEventListener('click', (e) => {
@@ -197,16 +258,49 @@
     if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomBy(ZOOM_STEP); }
     if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomBy(-ZOOM_STEP); }
     if (e.key === '0') { e.preventDefault(); scale = 1; translateX = 0; translateY = 0; applyTransform(); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); navigate(1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); navigate(-1); }
   });
 
-  // Delegated open on click for any image with .js-zoomable or [data-zoomable]
+  // Delegated open (groups supported via [data-gallery])
   document.addEventListener('click', (e)=>{
     const target = e.target.closest('img.js-zoomable, img[data-zoomable]');
     if (!target) return;
     e.preventDefault();
-    const src = target.getAttribute('data-full') || target.currentSrc || target.src;
-    const alt = target.getAttribute('alt') || '';
-    openViewer(src, alt);
+
+    // Prefer grouping by nearest container with [data-gallery]
+    const container = target.closest('[data-gallery]');
+    let list = [];
+    let startIndex = 0;
+    if (container) {
+      const imgs = Array.from(container.querySelectorAll('img.js-zoomable, img[data-zoomable]'));
+      list = imgs.map(el => ({
+        src: el.getAttribute('data-full') || el.currentSrc || el.src,
+        alt: el.getAttribute('alt') || ''
+      }));
+      startIndex = Math.max(0, imgs.indexOf(target));
+    } else {
+      const groupName = target.getAttribute('data-gallery');
+      if (groupName) {
+        const selector = `img.js-zoomable[data-gallery="${groupName}"], img[data-zoomable][data-gallery="${groupName}"]`;
+        const imgs = Array.from(document.querySelectorAll(selector));
+        if (imgs.length > 0) {
+          list = imgs.map(el => ({
+            src: el.getAttribute('data-full') || el.currentSrc || el.src,
+            alt: el.getAttribute('alt') || ''
+          }));
+          startIndex = Math.max(0, imgs.indexOf(target));
+        }
+      }
+    }
+
+    if (list.length > 1) {
+      openViewerFromList(list, startIndex);
+    } else {
+      const src = target.getAttribute('data-full') || target.currentSrc || target.src;
+      const alt = target.getAttribute('alt') || '';
+      openViewer(src, alt);
+    }
   });
 })();
 </script>

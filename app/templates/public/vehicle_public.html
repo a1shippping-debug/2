@@ -9,7 +9,7 @@
   </div>
 
   {% if image_urls %}
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8" data-gallery>
     {% for src in image_urls %}
       <div class="rounded-xl overflow-hidden border border-slate-200 bg-white">
         <img src="{{ src }}" data-full="{{ src }}" alt="{{ vehicle.vin }}" class="w-full h-56 object-cover js-zoomable cursor-zoom-in">
