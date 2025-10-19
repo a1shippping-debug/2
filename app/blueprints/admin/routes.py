@@ -17,6 +17,7 @@ from ...models import (
     AuditLog,
     Backup,
     Buyer,
+    ShippingRegionPrice,
 )
 
 admin_bp = Blueprint("admin", __name__, template_folder="templates/admin")
@@ -269,6 +270,65 @@ def activity_log():
         return send_file(buf, mimetype="application/pdf", as_attachment=True, download_name="activity_log.pdf")
     return render_template("admin/activity_log.html", logs=logs)
 
+
+# Shipping Region Prices: list, upload, and clear
+@admin_bp.route("/shipping-prices")
+@role_required("admin")
+def shipping_prices_list():
+    rows = db.session.query(ShippingRegionPrice).order_by(ShippingRegionPrice.region_code.asc()).all()
+    return render_template("admin/shipping_prices.html", rows=rows)
+
+
+@admin_bp.route("/shipping-prices/upload", methods=["POST"])
+@role_required("admin")
+def shipping_prices_upload():
+    from ...utils.shipping_prices import parse_shipping_prices_file
+    f = request.files.get("file")
+    if not f or not getattr(f, "filename", ""):
+        flash(_("Please select a file."), "danger")
+        return redirect(url_for("admin.shipping_prices_list"))
+
+    try:
+        data = f.read()
+        rows = parse_shipping_prices_file(data, f.filename)
+        # Upsert by region_code
+        codes_seen = set()
+        for r in rows:
+            codes_seen.add(r.region_code.lower())
+            existing = (
+                db.session.query(ShippingRegionPrice)
+                .filter(db.func.lower(ShippingRegionPrice.region_code) == r.region_code.lower())
+                .first()
+            )
+            if not existing:
+                existing = ShippingRegionPrice(region_code=r.region_code)
+                db.session.add(existing)
+            existing.region_name = r.region_name
+            existing.price_omr = r.price_omr
+            existing.effective_from = r.effective_from
+            existing.effective_to = r.effective_to
+        db.session.commit()
+        flash(_(f"Imported {len(rows)} rows successfully."), "success")
+    except Exception as e:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        flash(_("Failed to import file."), "danger")
+    return redirect(url_for("admin.shipping_prices_list"))
+
+
+@admin_bp.route("/shipping-prices/clear", methods=["POST"])
+@role_required("admin")
+def shipping_prices_clear():
+    try:
+        db.session.query(ShippingRegionPrice).delete()
+        db.session.commit()
+        flash(_("All shipping prices cleared."), "success")
+    except Exception:
+        db.session.rollback()
+        flash(_("Failed to clear shipping prices."), "danger")
+    return redirect(url_for("admin.shipping_prices_list"))
 
 @admin_bp.route("/buyers")
 @role_required("admin")

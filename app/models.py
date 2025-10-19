@@ -292,3 +292,31 @@ class Testimonial(db.Model):
             return f"{parts[0][:1]}.{parts[-1][:1]}"
         except Exception:
             return ""
+
+
+class ShippingRegionPrice(db.Model):
+    __tablename__ = "shipping_region_prices"
+
+    id = db.Column(db.Integer, primary_key=True)
+    # Short code or identifier for the region (e.g., MCT, SLL, IBRA)
+    region_code = db.Column(db.String(50), unique=True, index=True, nullable=False)
+    # Human-friendly name in any language (Arabic recommended for admin UI)
+    region_name = db.Column(db.String(200))
+    # Price stored in OMR with 3 fractional digits
+    price_omr = db.Column(db.Numeric(12, 3), nullable=False)
+    effective_from = db.Column(db.DateTime)
+    effective_to = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<ShippingRegionPrice {self.region_code} {self.price_omr}>"
+
+
+class ShippingRegionPrice(db.Model):
+    __tablename__ = "shipping_region_prices"
+    id = db.Column(db.Integer, primary_key=True)
+    # Human-friendly region/area name (e.g., محافظة/ولاية/مدينة)
+    region_name = db.Column(db.String(150), unique=True, nullable=False, index=True)
+    # Price in OMR for shipping to this region
+    price_omr = db.Column(db.Numeric(12, 3), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

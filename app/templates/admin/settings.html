@@ -20,5 +20,18 @@
       <button class="px-4 py-2 rounded bg-primary text-white">{{ _('Save') }}</button>
     </div>
   </form>
+  <div class="mt-6 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-3 text-left">
+    <div class="flex items-center justify-between">
+      <div class="font-semibold">{{ _('Shipping Prices by Region') }}</div>
+      <a href="{{ url_for('admin.shipping_prices_list') }}" class="text-sm text-primary hover:underline">{{ _('Open Page') }}</a>
+    </div>
+    <form method="post" action="{{ url_for('admin.shipping_prices_upload') }}" enctype="multipart/form-data" class="space-y-3">
+      <input type="file" name="file" accept=".csv,.xlsx" class="block w-full text-sm" required />
+      <div class="text-xs text-slate-400">
+        {{ _('Columns: region_code, region_name, price_omr, effective_from, effective_to') }}
+      </div>
+      <button class="px-4 py-2 rounded bg-primary text-white">{{ _('Import') }}</button>
+    </form>
+  </div>
 </div>
 {% endblock %}
