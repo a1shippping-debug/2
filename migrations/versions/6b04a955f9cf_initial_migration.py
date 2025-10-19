@@ -1,8 +1,8 @@
-"""initial rebuild
+"""initial migration
 
-Revision ID: a2cd544a6768
+Revision ID: 6b04a955f9cf
 Revises: 
-Create Date: 2025-10-16 17:22:26.688297
+Create Date: 2025-10-19 08:43:03.383198
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'a2cd544a6768'
+revision = '6b04a955f9cf'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -64,6 +64,29 @@ def upgrade():
     sa.Column('container_number', sa.String(length=100), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('shipment_number')
+    )
+    op.create_table('shipping_region_prices',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('region_code', sa.String(length=50), nullable=False),
+    sa.Column('region_name', sa.String(length=200), nullable=True),
+    sa.Column('price_omr', sa.Numeric(precision=12, scale=3), nullable=False),
+    sa.Column('effective_from', sa.DateTime(), nullable=True),
+    sa.Column('effective_to', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    with op.batch_alter_table('shipping_region_prices', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_shipping_region_prices_region_code'), ['region_code'], unique=True)
+
+    op.create_table('testimonials',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=150), nullable=False),
+    sa.Column('role', sa.String(length=150), nullable=True),
+    sa.Column('content', sa.Text(), nullable=False),
+    sa.Column('rating', sa.Integer(), nullable=True),
+    sa.Column('approved', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('bills_of_lading',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -310,6 +333,11 @@ def downgrade():
 
     op.drop_table('users')
     op.drop_table('bills_of_lading')
+    op.drop_table('testimonials')
+    with op.batch_alter_table('shipping_region_prices', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_shipping_region_prices_region_code'))
+
+    op.drop_table('shipping_region_prices')
     op.drop_table('shipments')
     op.drop_table('settings')
     op.drop_table('roles')
