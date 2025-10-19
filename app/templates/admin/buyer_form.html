@@ -1,37 +1,73 @@
 {% extends "base_admin.html" %}
+<<<<<<< Updated upstream
 {% block title %}{{ 'تعديل باير' if buyer else 'ماستر باير جديد' }}{% endblock %}
 {% block header %}{{ 'تعديل باير' if buyer else 'ماستر باير جديد' }}{% endblock %}
+=======
+{% block title %}ماستر باير جديد{% endblock %}
+{% block header %}إضافة ماستر باير جديد{% endblock %}
+>>>>>>> Stashed changes
 {% block content %}
-<form method="post" class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 max-w-2xl" dir="rtl">
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div class="md:col-span-2">
-      <label class="block text-sm text-slate-300">اسم الماستر باير</label>
-      <input name="name" value="{{ form.name or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" required>
-    </div>
-    <div>
-      <label class="block text-sm text-slate-300">رقم الماستر باير</label>
-      <input name="buyer_number" value="{{ form.buyer_number or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
-    </div>
-    <div>
-      <label class="block text-sm text-slate-300">الباسوورد</label>
-      <input name="password" value="{{ form.password or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
-    </div>
-    <div class="md:col-span-2">
-      <label class="block text-sm text-slate-300">العميل المرتبط (اختياري)</label>
-      <select name="customer_id" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
-        <option value="">-- اختر عميل --</option>
-        {% for c in customers %}
-          <option value="{{ c.id }}" {% if form.customer_id == c.id|string %}selected{% endif %}>
-            {{ c.company_name or c.full_name }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-  </div>
 
-  <div class="mt-6 flex items-center gap-3">
-    <button class="px-4 py-2 bg-primary text-white rounded" type="submit">حفظ</button>
-    <a href="{{ url_for('admin.buyers_list') }}" class="text-slate-300">إلغاء</a>
-  </div>
-</form>
+<div class="flex justify-center items-center py-10">
+  <form method="post" dir="rtl"
+        class="w-full max-w-2xl bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 border border-slate-700/60 shadow-2xl rounded-2xl p-8 space-y-6 relative overflow-hidden">
+    
+    <!-- ديكور خفيف في الخلفية -->
+    <div class="absolute -top-24 -left-24 w-96 h-96 bg-blue-700/20 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-32 right-10 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl"></div>
+
+    <h2 class="text-center text-2xl font-bold text-slate-100 border-b border-slate-700 pb-4">
+      إضافة ماستر باير جديد
+    </h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+      <!-- الاسم -->
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-slate-300 mb-1">اسم الماستر باير</label>
+        <input name="name" value="{{ form.name or '' }}" required
+               class="w-full bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/40 transition">
+      </div>
+
+      <!-- رقم الماستر باير -->
+      <div>
+        <label class="block text-sm font-medium text-slate-300 mb-1">رقم الماستر باير</label>
+        <input name="buyer_number" value="{{ form.buyer_number or '' }}"
+               class="w-full bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/40 transition">
+      </div>
+
+      <!-- الباسوورد -->
+      <div>
+        <label class="block text-sm font-medium text-slate-300 mb-1">كلمة المرور</label>
+        <input name="password" value="{{ form.password or '' }}"
+               class="w-full bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/40 transition">
+      </div>
+
+      <!-- العميل -->
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-slate-300 mb-1">العميل المرتبط (اختياري)</label>
+        <select name="customer_id"
+                class="w-full bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/40 transition">
+          <option value="">-- اختر عميل --</option>
+          {% for c in customers %}
+            <option value="{{ c.id }}" {% if form.customer_id == c.id|string %}selected{% endif %}>
+              {{ c.company_name or c.full_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- الأزرار -->
+    <div class="flex items-center justify-between pt-6 border-t border-slate-700">
+      <button type="submit"
+              class="px-6 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-900 font-semibold rounded-lg shadow-md transition-transform hover:-translate-y-0.5">
+        💾 حفظ
+      </button>
+      <a href="{{ url_for('admin.buyers_list') }}" class="text-slate-400 hover:text-slate-200 transition">
+        إلغاء
+      </a>
+    </div>
+  </form>
+</div>
+
 {% endblock %}
