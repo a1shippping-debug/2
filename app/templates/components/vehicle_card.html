@@ -24,7 +24,7 @@
   {% endif %}
   <article class="group bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden transform transition will-change-transform hover:scale-[1.03] hover:shadow-lg animate-fadeInUp" style="animation-delay: {{ (index * 90) | int }}ms">
     <div class="relative aspect-[4/3] bg-background overflow-hidden">
-      <img loading="lazy" src="{{ v.primary_image_url or url_for('static', filename='logo.jpeg') }}" alt="{{ title }}" class="w-full h-full object-cover transition-opacity duration-700 opacity-0" onload="this.classList.remove('opacity-0')">
+      <img loading="lazy" src="{{ v.primary_image_url or url_for('static', filename='logo.jpeg') }}" data-full="{{ v.primary_image_url or url_for('static', filename='logo.jpeg') }}" alt="{{ title }}" class="w-full h-full object-cover transition-opacity duration-700 opacity-0 js-zoomable cursor-zoom-in" onload="this.classList.remove('opacity-0')">
       <div class="absolute inset-0 bg-gradient-to-t from-neutral/50 via-neutral/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
       <!-- hover specs -->
       <div class="absolute bottom-0 left-0 right-0 p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity text-xs md:text-sm">
