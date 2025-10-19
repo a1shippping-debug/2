@@ -310,13 +310,3 @@ class ShippingRegionPrice(db.Model):
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<ShippingRegionPrice {self.region_code} {self.price_omr}>"
-
-
-class ShippingRegionPrice(db.Model):
-    __tablename__ = "shipping_region_prices"
-    id = db.Column(db.Integer, primary_key=True)
-    # Human-friendly region/area name (e.g., محافظة/ولاية/مدينة)
-    region_name = db.Column(db.String(150), unique=True, nullable=False, index=True)
-    # Price in OMR for shipping to this region
-    price_omr = db.Column(db.Numeric(12, 3), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
