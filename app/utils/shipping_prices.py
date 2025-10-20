@@ -47,6 +47,24 @@ def _coerce_datetime(value) -> Optional[datetime]:
         return None
 
 
+def _norm_key(value: object) -> str:
+    """Lowercase, trim, and normalize basic whitespace for header matching."""
+    try:
+        text = str(value).replace("\u00A0", " ")  # convert NBSP to space
+    except Exception:
+        return ""
+    return text.strip().lower()
+
+
+def _simplify_key(value: object) -> str:
+    """Aggressive normalization: remove non-alphanumeric to match variants like 'Region Code' -> 'regioncode'.
+
+    This preserves Unicode letters (e.g., Arabic), and removes spaces, punctuation, and symbols.
+    """
+    k = _norm_key(value)
+    return "".join(ch for ch in k if ch.isalnum())
+
+
 def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegionRow]:
     """
     Parse CSV/XLSX content and return rows.
@@ -64,15 +82,44 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
     else:
         df = pd.read_excel(io.BytesIO(data))
 
-    # Normalize column names
+    # Normalize column names with robust matching and expanded aliases
     rename_map = {}
     for col in list(df.columns):
-        key = str(col).strip().lower()
-        if key in {"region_code", "code", "رمز", "الرمز"}:
-            rename_map[col] = "region_code"
-        elif key in {"region_name", "name", "destination", "dest", "المنطقة", "اسم المنطقة", "اسم", "الوجهة"}:
-            rename_map[col] = "region_name"
-        elif key in {
+        key = _norm_key(col)
+        simple = _simplify_key(col)
+
+        # region_code aliases
+        region_code_keys = {
+            # direct keys
+            "region_code",
+            "code",
+            "رمز",
+            "الرمز",
+            "الكود",
+            "كود",
+            # simplified keys (no spaces/punct)
+            "regioncode",
+            "codeno",
+            "codenum",
+            "code#",
+            "codeid",
+        }
+        # region_name aliases (destination/name)
+        region_name_keys = {
+            "region_name",
+            "name",
+            "destination",
+            "dest",
+            "المنطقة",
+            "اسم المنطقة",
+            "اسم",
+            "الوجهة",
+            # simplified variants
+            "regionname",
+            "region",
+        }
+        # price/OMR aliases
+        price_keys = {
             # English variants
             "price",
             "price omr",
@@ -87,12 +134,47 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
             "السعر / ريال",
             "السعر / omr",
             "السعر / omر",
-        }:
+            # simplified
+            "priceomr",
+        }
+        # effective dates aliases
+        eff_from_keys = {
+            "effective_from",
+            "from",
+            "start",
+            "start date",
+            "effective date",
+            "valid from",
+            "بداية السريان",
+            "تاريخ البداية",
+            "effectivefrom",
+            "startdate",
+            "validfrom",
+        }
+        eff_to_keys = {
+            "effective_to",
+            "to",
+            "end",
+            "end date",
+            "valid to",
+            "نهاية السريان",
+            "تاريخ النهاية",
+            "effectiveto",
+            "enddate",
+            "validto",
+        }
+
+        if key in region_code_keys or simple in region_code_keys:
+            rename_map[col] = "region_code"
+        elif key in region_name_keys or simple in region_name_keys:
+            rename_map[col] = "region_name"
+        elif key in price_keys or simple in price_keys:
             rename_map[col] = "price_omr"
-        elif key in {"effective_from", "from", "بداية السريان", "تاريخ البداية"}:
+        elif key in eff_from_keys or simple in eff_from_keys:
             rename_map[col] = "effective_from"
-        elif key in {"effective_to", "to", "نهاية السريان", "تاريخ النهاية"}:
+        elif key in eff_to_keys or simple in eff_to_keys:
             rename_map[col] = "effective_to"
+
     if rename_map:
         df = df.rename(columns=rename_map)
 
