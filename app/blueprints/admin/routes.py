@@ -325,7 +325,8 @@ def shipping_prices_upload():
             db.session.rollback()
         except Exception:
             pass
-        flash(_("Failed to import file."), "danger")
+        # Show specific error to help admins fix their files
+        flash(_(f"Failed to import file: {e}"), "danger")
     return redirect(url_for("admin.shipping_prices_list"))
 
 

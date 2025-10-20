@@ -72,7 +72,22 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
             rename_map[col] = "region_code"
         elif key in {"region_name", "name", "المنطقة", "اسم المنطقة", "اسم"}:
             rename_map[col] = "region_name"
-        elif key in {"price", "price_omr", "السعر", "سعر الشحن"}:
+        elif key in {
+            # English variants
+            "price",
+            "price omr",
+            "price / omr",
+            "price_omr",
+            "omr",
+            "omr price",
+            "price (omr)",
+            # Arabic variants
+            "السعر",
+            "سعر الشحن",
+            "السعر / ريال",
+            "السعر / omr",
+            "السعر / omر",
+        }:
             rename_map[col] = "price_omr"
         elif key in {"effective_from", "from", "بداية السريان", "تاريخ البداية"}:
             rename_map[col] = "effective_from"
