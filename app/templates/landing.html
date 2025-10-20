@@ -165,7 +165,7 @@
         <a href="#services">خدماتنا</a>
         <a href="#cars">مركبات</a>
         <a href="#projects">مشاريع</a>
-        <a href="#contact" class="btn-cta" style="margin-inline-start:14px">تتبع الشحنة</a>
+        <a href="{{ url_for('cust.track') }}" class="btn-cta" style="margin-inline-start:14px">تتبع الشحنة</a>
       </div>
     </nav>
   </header>
@@ -182,7 +182,7 @@
           <p class="reveal">نقدّم حلول شحن بحري وبري احترافية مع تتبع فوري، تأمين، وتخليص جمركي — تجربة شفافة من المزاد حتى باب العميل.</p>
 
           <div style="display:flex; gap:12px; align-items:center; margin-top:14px;">
-            <button class="btn-cta reveal">اطلب عرض سعر</button>
+            <button class="btn-cta reveal" type="button" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">اطلب عرض سعر</button>
             <a href="#cars" style="background:transparent;border-radius:999px;padding:10px 16px;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.95);text-decoration:none" class="reveal">تصفح المركبات</a>
           </div>
 
@@ -392,12 +392,13 @@
         <div style="height:12px"></div>
 
         <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:18px">
-          <form class="form reveal" onsubmit="event.preventDefault(); alert('تم إرسال النموذج (وهو اختبار)');">
-            <input placeholder="الاسم" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e6e7eb; margin-bottom:8px">
-            <input placeholder="البريد الإلكتروني" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e6e7eb; margin-bottom:8px">
-            <input placeholder="رقم الجوال" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e6e7eb; margin-bottom:8px">
-            <textarea placeholder="رسالتك" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e6e7eb; margin-bottom:8px"></textarea>
-            <button class="btn-cta" style="width:100%">أرسل</button>
+          <form class="form reveal" method="post" action="{{ url_for('contact_page') }}">
+            <input type="hidden" name="from_page" value="landing">
+            <input name="name" placeholder="الاسم" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e6e7eb; margin-bottom:8px" required>
+            <input name="email" placeholder="البريد الإلكتروني" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e6e7eb; margin-bottom:8px">
+            <input name="phone" placeholder="رقم الجوال" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e6e7eb; margin-bottom:8px">
+            <textarea name="message" placeholder="رسالتك" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e6e7eb; margin-bottom:8px" required></textarea>
+            <button type="submit" class="btn-cta" style="width:100%">أرسل</button>
           </form>
 
           <div class="card reveal">
