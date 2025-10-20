@@ -70,7 +70,7 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
         key = str(col).strip().lower()
         if key in {"region_code", "code", "رمز", "الرمز"}:
             rename_map[col] = "region_code"
-        elif key in {"region_name", "name", "المنطقة", "اسم المنطقة", "اسم"}:
+        elif key in {"region_name", "name", "destination", "dest", "المنطقة", "اسم المنطقة", "اسم", "الوجهة"}:
             rename_map[col] = "region_name"
         elif key in {
             # English variants
