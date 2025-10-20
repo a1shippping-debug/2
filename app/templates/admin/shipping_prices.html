@@ -14,29 +14,29 @@
       <table class="w-full text-sm">
         <thead>
           <tr class="text-left text-slate-400">
-            <th class="p-2">{{ _('N') }}</th>
-            <th class="p-2">{{ _('DESTINATION') }}</th>
-            <th class="p-2">{{ _('CODE') }}</th>
-            <th class="p-2">{{ _('STATE') }}</th>
-            <th class="p-2">{{ _('CITY') }}</th>
-            <th class="p-2">{{ _('Auction Location') }}</th>
-            <th class="p-2">{{ _('Shipping Line') }}</th>
-            <th class="p-2">{{ _('PRICE / OMR') }}</th>
             <th class="p-2">{{ _('NOTE') }}</th>
+            <th class="p-2">{{ _('PRICE / OMR') }}</th>
+            <th class="p-2">{{ _('Shipping Line') }}</th>
+            <th class="p-2">{{ _('Auction Location') }}</th>
+            <th class="p-2">{{ _('CITY') }}</th>
+            <th class="p-2">{{ _('STATE') }}</th>
+            <th class="p-2">{{ _('CODE') }}</th>
+            <th class="p-2">{{ _('DESTINATION') }}</th>
+            <th class="p-2">{{ _('N') }}</th>
           </tr>
         </thead>
         <tbody>
           {% for r in rows %}
           <tr class="border-t border-slate-800">
-            <td class="p-2">{{ loop.index }}</td>
-            <td class="p-2">{{ r.region_name or '-' }}</td>
-            <td class="p-2">{{ r.region_code }}</td>
-            <td class="p-2">-</td>
-            <td class="p-2">-</td>
-            <td class="p-2">-</td>
             <td class="p-2">-</td>
             <td class="p-2">{{ '%.3f'|format(r.price_omr or 0) }}</td>
             <td class="p-2">-</td>
+            <td class="p-2">-</td>
+            <td class="p-2">-</td>
+            <td class="p-2">-</td>
+            <td class="p-2">{{ r.region_code }}</td>
+            <td class="p-2">{{ r.region_name or '-' }}</td>
+            <td class="p-2">{{ loop.index }}</td>
           </tr>
           {% else %}
           <tr>
