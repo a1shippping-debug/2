@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, abort, request, redirect, url_for, flash, send_file
+from flask import Blueprint, render_template, abort, request, redirect, url_for, flash, send_file, jsonify
 from flask_babel import gettext as _
 from flask_login import login_required, current_user
 from ...security import role_required
@@ -615,6 +615,133 @@ def users_delete(user_id: int):
     flash(_("User deleted."), "success")
     log_action("delete", "User", user.id, {"email": user.email})
     return redirect(url_for("admin.users_list"))
+
+
+# ------------------------------
+# Shipping Price Extraction from Documents (PDF/XLSX)
+# ------------------------------
+@admin_bp.route("/shipping-price/extract", methods=["GET", "POST"])
+@role_required("admin")
+def shipping_price_extract():
+    """Upload a PDF/Excel, verify columns, and query prices by criteria.
+
+    UI flow (GET): show upload + criteria form
+    POST: parse document, validate columns, run query, render results
+    """
+    if request.method == "GET":
+        return render_template("admin/shipping_price_extract.html")
+
+    f = request.files.get("file")
+    if not f or not getattr(f, "filename", ""):
+        flash(_("Please select a file."), "danger")
+        return render_template("admin/shipping_price_extract.html")
+
+    from ...utils.shipping_doc_extractor import (
+        parse_document_to_dataframe,
+        QueryCriteria,
+        query_prices,
+        results_table,
+    )
+
+    try:
+        data = f.read()
+        df = parse_document_to_dataframe(data, f.filename)
+    except Exception as e:
+        flash(_(f"Failed to parse file: {e}"), "danger")
+        return render_template("admin/shipping_price_extract.html")
+
+    dest = (request.form.get("destination") or "").strip()
+    state = (request.form.get("state") or "").strip()
+    city = (request.form.get("city") or "").strip()
+    auction = (request.form.get("auction_location") or "").strip()
+
+    criteria = QueryCriteria(
+        destination=(dest or None),
+        state=(state or None),
+        city=(city or None),
+        auction_location=(auction or None),
+    )
+
+    try:
+        filtered, is_exact = query_prices(df, criteria)
+        view = results_table(filtered)
+        # Render as HTML table; price values are shown as-is (no rounding)
+        rows = [
+            {
+                "Destination": str(r.get("destination", "")),
+                "State": str(r.get("state", "")),
+                "City": str(r.get("city", "")),
+                "Auction Location": str(r.get("auction_location", "")),
+                "Shipping Line": str(r.get("shipping_line", "")),
+                "Price / OMR": str(r.get("price_omr", r.get("price_omر", ""))),
+            }
+            for _, r in view.iterrows()
+        ]
+        return render_template(
+            "admin/shipping_price_extract.html",
+            rows=rows,
+            is_exact=is_exact,
+            criteria={
+                "destination": dest,
+                "state": state,
+                "city": city,
+                "auction_location": auction,
+            },
+        )
+    except Exception as e:
+        flash(_(f"Failed to query: {e}"), "danger")
+        return render_template("admin/shipping_price_extract.html")
+
+
+@admin_bp.route("/shipping-price/extract.json", methods=["POST"])
+@role_required("admin")
+def shipping_price_extract_json():
+    """JSON API: returns rows for exact or partial matches.
+
+    Body: multipart/form-data with file + fields: destination, state, city, auction_location
+    Response: { is_exact: bool, rows: [ {Destination, State, City, Auction Location, Shipping Line, Price / OMR} ] }
+    """
+    f = request.files.get("file")
+    if not f or not getattr(f, "filename", ""):
+        return jsonify({"error": "missing file"}), 400
+
+    from ...utils.shipping_doc_extractor import (
+        parse_document_to_dataframe,
+        QueryCriteria,
+        query_prices,
+        results_table,
+    )
+
+    data = f.read()
+    df = parse_document_to_dataframe(data, f.filename)
+
+    dest = (request.form.get("destination") or "").strip()
+    state = (request.form.get("state") or "").strip()
+    city = (request.form.get("city") or "").strip()
+    auction = (request.form.get("auction_location") or "").strip()
+
+    filtered, is_exact = query_prices(
+        df,
+        QueryCriteria(
+            destination=(dest or None),
+            state=(state or None),
+            city=(city or None),
+            auction_location=(auction or None),
+        ),
+    )
+    view = results_table(filtered)
+    rows = [
+        {
+            "Destination": str(r.get("destination", "")),
+            "State": str(r.get("state", "")),
+            "City": str(r.get("city", "")),
+            "Auction Location": str(r.get("auction_location", "")),
+            "Shipping Line": str(r.get("shipping_line", "")),
+            "Price / OMR": str(r.get("price_omr", r.get("price_omر", ""))),
+        }
+        for _, r in view.iterrows()
+    ]
+    return jsonify({"is_exact": bool(is_exact), "rows": rows})
 
 
 

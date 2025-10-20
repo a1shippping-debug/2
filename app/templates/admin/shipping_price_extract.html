@@ -1,0 +1,79 @@
+{% extends "base_admin.html" %}
+{% block title %}{{ _('Extract Shipping Price') }}{% endblock %}
+{% block header %}{{ _('Extract Shipping Price') }}{% endblock %}
+{% block content %}
+<div class="grid md:grid-cols-3 gap-6 text-left">
+  <div class="md:col-span-1">
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-3">
+      <div class="font-semibold">{{ _('Upload Document') }}</div>
+      <form method="post" enctype="multipart/form-data" class="space-y-3">
+        <input type="file" name="file" accept=".pdf,.xlsx,.xls,.csv" class="block w-full text-sm" required />
+        <div class="grid grid-cols-1 gap-2">
+          <input type="text" name="destination" value="{{ criteria.destination if criteria else '' }}" placeholder="Destination (e.g., Georgia)" class="border rounded px-3 py-2 w-full" />
+          <input type="text" name="state" value="{{ criteria.state if criteria else '' }}" placeholder="State (e.g., FL or Florida)" class="border rounded px-3 py-2 w-full" />
+          <input type="text" name="city" value="{{ criteria.city if criteria else '' }}" placeholder="City (e.g., Miami)" class="border rounded px-3 py-2 w-full" />
+          <input type="text" name="auction_location" value="{{ criteria.auction_location if criteria else '' }}" placeholder="Auction Location (e.g., Copart)" class="border rounded px-3 py-2 w-full" />
+        </div>
+        <div class="text-xs text-gray-500">
+          {{ _('Required columns: Destination | State | City | Auction Location | Shipping Line | Price / OMR') }}
+        </div>
+        <button class="px-4 py-2 rounded bg-primary text-white">{{ _('Extract') }}</button>
+      </form>
+      <div class="text-xs text-gray-500">{{ _('Exact match preferred; partial results returned when exact not found.') }}</div>
+      <div class="text-xs text-gray-500">{{ _('Prices shown exactly as in the file (no rounding).') }}</div>
+    </div>
+  </div>
+
+  <div class="md:col-span-2">
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div class="p-3 text-sm text-gray-600 flex items-center justify-between">
+        <div>
+          {% if rows is defined %}
+            {% if is_exact %}
+              ✅ {{ _('Exact matches') }}
+            {% else %}
+              🔎 {{ _('Closest partial matches') }}
+            {% endif %}
+          {% else %}
+            {{ _('Results will appear here after upload.') }}
+          {% endif %}
+        </div>
+      </div>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-gray-500">
+            <th class="p-2">Destination</th>
+            <th class="p-2">State</th>
+            <th class="p-2">City</th>
+            <th class="p-2">Auction Location</th>
+            <th class="p-2">Shipping Line</th>
+            <th class="p-2">Price / OMR</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if rows is defined and rows %}
+            {% for r in rows %}
+              <tr class="border-t">
+                <td class="p-2">{{ r['Destination'] }}</td>
+                <td class="p-2">{{ r['State'] }}</td>
+                <td class="p-2">{{ r['City'] }}</td>
+                <td class="p-2">{{ r['Auction Location'] }}</td>
+                <td class="p-2">{{ r['Shipping Line'] }}</td>
+                <td class="p-2">{{ r['Price / OMR'] }}</td>
+              </tr>
+            {% endfor %}
+          {% elif rows is defined %}
+            <tr>
+              <td colspan="6" class="p-4 text-gray-500">{{ _('No matching rows found.') }}</td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="6" class="p-4 text-gray-400">{{ _('Upload a document and enter criteria to see results.') }}</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
