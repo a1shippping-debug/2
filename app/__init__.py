@@ -213,8 +213,65 @@ def create_app():
     def services_page():
         return render_template("info/services.html")
 
-    @app.route("/contact")
+    @app.route("/contact", methods=["GET", "POST"])
     def contact_page():
+        # Process contact form submissions
+        if request.method == "POST":
+            name = (request.form.get("name") or "").strip()
+            email = (request.form.get("email") or "").strip()
+            phone = (request.form.get("phone") or "").strip()
+            message = (request.form.get("message") or request.form.get("content") or "").strip()
+
+            if not name or not message:
+                try:
+                    from flask import flash
+                    flash("الرجاء إدخال الاسم والرسالة", "danger")
+                except Exception:
+                    pass
+            else:
+                # Try to send an email if mail is configured; otherwise just acknowledge
+                try:
+                    to_email = os.getenv("CONTACT_EMAIL") or current_app.config.get("MAIL_USERNAME")
+                    if to_email:
+                        from flask_mail import Message
+                        subject = "New contact message"
+                        body_lines = [
+                            f"Name: {name}",
+                            f"Email: {email}",
+                            f"Phone: {phone}",
+                            "",
+                            message,
+                        ]
+                        msg = Message(subject=subject, recipients=[to_email])
+                        msg.body = "\n".join(body_lines)
+                        try:
+                            mail.send(msg)
+                        except Exception:
+                            # Non-fatal: continue without email
+                            pass
+                    try:
+                        from flask import flash
+                        flash("تم إرسال رسالتك بنجاح. سنعاود التواصل قريبًا.", "success")
+                    except Exception:
+                        pass
+                except Exception:
+                    try:
+                        from flask import flash
+                        flash("تعذر إرسال الرسالة حاليًا.", "danger")
+                    except Exception:
+                        pass
+
+            # Redirect back to the appropriate page/section
+            try:
+                from flask import redirect
+                from_page = (request.form.get("from_page") or "").strip().lower()
+                if from_page == "landing":
+                    return redirect(url_for("index") + "#contact")
+                return redirect(url_for("contact_page"))
+            except Exception:
+                return render_template("info/contact.html")
+
+        # GET -> render contact page
         return render_template("info/contact.html")
 
     @app.route("/tracking/<string:vin>")
