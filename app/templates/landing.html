@@ -55,12 +55,15 @@
 
     /* container */
     .container{max-width:1200px;margin:0 auto;padding:0 18px}
+    /* make all images scale within parents */
+    img{max-width:100%;height:auto}
 
     /* NAV */
     header { position:sticky; top:12px; z-index:60; display:flex; justify-content:center; pointer-events:none; }
     nav{ pointer-events:auto; width:100%; max-width:1180px; display:flex; align-items:center; justify-content:space-between;
       background: rgba(255,255,255,0.03); border-radius:18px; padding:10px 18px; box-shadow: 0 8px 30px rgba(2,6,23,0.55);
       border:1px solid rgba(255,255,255,0.04); backdrop-filter: blur(6px);
+      position:relative;
     }
     .brand{display:flex; gap:12px; align-items:center}
     .brand .logo-wrap{width:56px;height:44px;background:linear-gradient(90deg,var(--copart-blue),#0f3e86);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:800}
@@ -70,6 +73,14 @@
     nav .links{display:flex; gap:18px; align-items:center}
     nav a{ color:rgba(255,255,255,0.92); text-decoration:none; font-weight:500; font-size:14px }
     nav a:hover{ color:var(--copart-gold) }
+
+    /* mobile nav */
+    .menu-toggle{display:none; background:transparent; color:var(--text-on-dark); border:1px solid rgba(255,255,255,0.2); border-radius:10px; padding:8px 10px; font-weight:700}
+    .mobile-menu{display:none; position:absolute; top:calc(100% + 10px); left:12px; right:12px; background:#ffffff; color:#0f172a; border-radius:14px; padding:10px; box-shadow:0 16px 40px rgba(2,6,23,0.25); border:1px solid #e5e7eb; z-index:70}
+    .mobile-menu a{display:block; padding:10px 12px; color:#0f172a; border-radius:10px; text-decoration:none}
+    .mobile-menu a:hover{background:#f3f4f6}
+    .mobile-menu .btn-cta{display:block; text-align:center; margin-top:6px}
+    .mobile-menu.open{display:block}
 
     /* CTA button */
     .btn-cta{
@@ -108,6 +119,7 @@
 
     /* cards / grid */
     .grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:20px}
+    .grid-2{display:grid; grid-template-columns:repeat(2,1fr); gap:18px}
     .card{background:var(--page-white); border-radius:16px; padding:20px; box-shadow: 0 10px 30px rgba(2,6,23,0.06); border:1px solid rgba(16,24,40,0.03)}
     .card .emoji{font-size:36px;margin-bottom:10px}
     .card h3{margin:0 0 6px; color:var(--copart-blue)}
@@ -118,7 +130,7 @@
     .stat-card .num{font-size:40px;font-weight:800}
 
     /* cars scroller */
-    .scroller{display:flex; gap:18px; overflow-x:auto; padding-bottom:6px; scroll-snap-type:x mandatory}
+    .scroller{display:flex; gap:18px; overflow-x:auto; padding-bottom:6px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling: touch}
     .car-card{min-width:300px; background:linear-gradient(180deg,#f8fafc,#fff); border-radius:18px; padding:14px; scroll-snap-align:center; box-shadow:0 8px 30px rgba(2,6,23,0.06)}
     .car-card .img{height:160px;background:#e5e7eb;border-radius:12px; display:flex;align-items:center;justify-content:center;color:#6b7280}
 
@@ -133,10 +145,27 @@
 
     /* responsive */
     @media (max-width:900px){
-      .grid-3{grid-template-columns:1fr}
+      .grid-3{grid-template-columns:repeat(2,1fr)}
       .stats-grid{grid-template-columns:repeat(2,1fr)}
       #hero{padding:42px 0}
-      #hero h1{font-size:32px}
+      #hero h1{font-size:30px}
+      .brand .title .main{font-size:14px}
+      .brand .title .sub{display:none}
+      nav .links{display:none}
+      .menu-toggle{display:inline-flex; align-items:center; gap:8px}
+      section{padding:52px 0}
+      .hero-waves{height:110px}
+    }
+
+    @media (max-width:640px){
+      .grid-3{grid-template-columns:1fr}
+      .grid-2{grid-template-columns:1fr}
+      .stats-grid{grid-template-columns:1fr}
+      #hero .left, #hero .right{min-width:100%}
+      #hero h1{font-size:26px}
+      .hero-logo{height:56px}
+      section{padding:44px 0}
+      .hero-waves{height:96px}
     }
 
   </style>
@@ -167,6 +196,17 @@
         <a href="#projects">مشاريع</a>
         <a href="{{ url_for('auth.login') }}" class="btn-cta" style="margin-inline-start:14px">تسجيل الدخول</a>
         <a href="{{ url_for('cust.track') }}" class="btn-cta" style="margin-inline-start:14px">تتبع الشحنة</a>
+      </div>
+
+      <button class="menu-toggle" type="button" aria-label="فتح القائمة" aria-controls="mobile-menu" aria-expanded="false">☰ القائمة</button>
+
+      <div class="mobile-menu" id="mobile-menu">
+        <a href="#hero">الرئيسية</a>
+        <a href="#services">خدماتنا</a>
+        <a href="#cars">مركبات</a>
+        <a href="#projects">مشاريع</a>
+        <a href="{{ url_for('auth.login') }}" class="btn-cta">تسجيل الدخول</a>
+        <a href="{{ url_for('cust.track') }}" class="btn-cta">تتبع الشحنة</a>
       </div>
     </nav>
   </header>
@@ -366,7 +406,7 @@
       <div class="container">
         <h2 style="color:var(--copart-blue)">مشاريعنا</h2>
         <div style="height:12px"></div>
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:18px">
+        <div class="grid-3">
           <div class="card reveal">
             <img src="static/images/project1.jpg" alt="p1" style="width:100%;height:160px;object-fit:cover;border-radius:8px" onerror="this.style.display='none'">
             <h4 style="margin-top:10px;color:#0f172a">شحن  سيارات إلى سلطنة عمان</h4>
@@ -394,7 +434,7 @@
 
         <div style="height:12px"></div>
 
-        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:18px">
+        <div class="grid-2">
           <form class="form reveal" method="post" action="{{ url_for('contact_page') }}">
             <input type="hidden" name="from_page" value="landing">
             <input name="name" placeholder="الاسم" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e6e7eb; margin-bottom:8px" required>
@@ -538,6 +578,27 @@
       });
       card.addEventListener('mouseleave', ()=>{ card.style.transform=''; });
     });
+
+    // 9) Mobile menu toggle
+    const menuBtn = document.querySelector('.menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if(menuBtn && mobileMenu){
+      menuBtn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const willOpen = !mobileMenu.classList.contains('open');
+        mobileMenu.classList.toggle('open', willOpen);
+        menuBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+      });
+      document.addEventListener('click', (e)=>{
+        if(mobileMenu.classList.contains('open')){
+          const target = e.target;
+          if(!mobileMenu.contains(target) && !menuBtn.contains(target)){
+            mobileMenu.classList.remove('open');
+            menuBtn.setAttribute('aria-expanded','false');
+          }
+        }
+      });
+    }
 
   </script>
 </body>
