@@ -318,44 +318,46 @@
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px">
           <div>
             <h2 style="color:var(--copart-blue)">مركبات للبيع</h2>
-            <p style="color:#475569">اختيارات مختارة من المزادات الأمريكية.</p>
+            <p style="color:#475569">تعرض هنا المركبات الموافق عليها للبيع.</p>
           </div>
           <a href="#" style="color:var(--copart-gold); font-weight:700">عرض الكل →</a>
         </div>
 
         <div style="height:18px"></div>
 
+        {% if cars_for_sale and cars_for_sale|length > 0 %}
         <div class="scroller">
+          {% for v in cars_for_sale %}
+          {% set title = ((v.make or '-') ~ ' ' ~ (v.model or '') ~ ' ' ~ (v.year or ''))|trim %}
+          {% set price_sale = v.sale_price_omr|default(None, true) %}
+          {% set has_sale = price_sale is not none and price_sale != '' %}
+          {% set price_value = price_sale if has_sale else v.purchase_price_usd %}
           <div class="car-card reveal">
-            <div class="img">صورة السيارة</div>
-            <h4 style="margin-top:12px; color:#0f172a">Toyota Camry 2018</h4>
-            <div style="color:#475569">Copart #A12345</div>
+            <div class="img" style="position:relative; overflow:hidden">
+              {% if v.primary_image_url %}
+                <img loading="lazy" src="{{ v.primary_image_url }}" alt="{{ title }}" style="width:100%;height:100%;object-fit:cover;border-radius:12px">
+              {% else %}
+                <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6b7280">لا توجد صورة</div>
+              {% endif %}
+            </div>
+            <h4 style="margin-top:12px; color:#0f172a">{{ title }}</h4>
+            <div style="color:#475569">VIN: {{ v.vin or '-' }}</div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
-              <div style="font-weight:700">$5,200</div>
-              <a href="#" style="padding:6px 10px; border-radius:999px; border:1px solid #e6e7eb; font-size:13px">تفاصيل</a>
+              <div style="font-weight:700">
+                {% if has_sale %}
+                  {{ ("OMR %.3f" % price_value) }}
+                {% else %}
+                  {{ ("$%.2f" % price_value) if price_value else '-' }}
+                {% endif %}
+              </div>
+              <a href="{{ url_for('vehicle_detail_page', vin=v.vin) }}" style="padding:6px 10px; border-radius:999px; border:1px solid #e6e7eb; font-size:13px">تفاصيل</a>
             </div>
           </div>
-
-          <div class="car-card reveal">
-            <div class="img">صورة السيارة</div>
-            <h4 style="margin-top:12px; color:#0f172a">Ford F-150 2016</h4>
-            <div style="color:#475569">Copart #B98765</div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
-              <div style="font-weight:700">$3,800</div>
-              <a href="#" style="padding:6px 10px; border-radius:999px; border:1px solid #e6e7eb; font-size:13px">تفاصيل</a>
-            </div>
-          </div>
-
-          <div class="car-card reveal">
-            <div class="img">صورة السيارة</div>
-            <h4 style="margin-top:12px; color:#0f172a">Nissan Altima 2019</h4>
-            <div style="color:#475569">Copart #C24680</div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
-              <div style="font-weight:700">$6,900</div>
-              <a href="#" style="padding:6px 10px; border-radius:999px; border:1px solid #e6e7eb; font-size:13px">تفاصيل</a>
-            </div>
-          </div>
+          {% endfor %}
         </div>
+        {% else %}
+          <div class="card" style="text-align:center">لا توجد مركبات للبيع حاليًا.</div>
+        {% endif %}
       </div>
     </section>
 

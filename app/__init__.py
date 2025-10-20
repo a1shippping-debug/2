@@ -113,12 +113,7 @@ def create_app():
                 except Exception:
                     pass
 
-            # Fallback to previously visible vehicles if there are no approved listings yet
-            if not cars_for_sale:
-                q = db.session.query(Vehicle).filter(Vehicle.owner_customer_id.is_(None))
-                excluded = ["delivered", "arrived", "shipping", "on way", "in transit"]
-                q = q.filter(db.func.lower(Vehicle.status).notin_(excluded))
-                cars_for_sale = q.order_by(Vehicle.created_at.desc()).limit(6).all()
+            # Only show vehicles with approved sale listings on the homepage (no fallback)
         except Exception:
             cars_for_sale = []
 
