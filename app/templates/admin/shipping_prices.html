@@ -14,26 +14,33 @@
       <table class="w-full text-sm">
         <thead>
           <tr class="text-left text-slate-400">
-            <th class="p-2">{{ _('Code') }}</th>
-            <th class="p-2">{{ _('Region') }}</th>
-            <th class="p-2">{{ _('Price (OMR)') }}</th>
-            <th class="p-2">{{ _('Effective') }}</th>
+            <th class="p-2">{{ _('N') }}</th>
+            <th class="p-2">{{ _('DESTINATION') }}</th>
+            <th class="p-2">{{ _('CODE') }}</th>
+            <th class="p-2">{{ _('STATE') }}</th>
+            <th class="p-2">{{ _('CITY') }}</th>
+            <th class="p-2">{{ _('Auction Location') }}</th>
+            <th class="p-2">{{ _('Shipping Line') }}</th>
+            <th class="p-2">{{ _('PRICE / OMR') }}</th>
+            <th class="p-2">{{ _('NOTE') }}</th>
           </tr>
         </thead>
         <tbody>
           {% for r in rows %}
           <tr class="border-t border-slate-800">
-            <td class="p-2">{{ r.region_code }}</td>
+            <td class="p-2">{{ loop.index }}</td>
             <td class="p-2">{{ r.region_name or '-' }}</td>
+            <td class="p-2">{{ r.region_code }}</td>
+            <td class="p-2">-</td>
+            <td class="p-2">-</td>
+            <td class="p-2">-</td>
+            <td class="p-2">-</td>
             <td class="p-2">{{ '%.3f'|format(r.price_omr or 0) }}</td>
-            <td class="p-2 text-xs">
-              {% if r.effective_from %}{{ r.effective_from }}{% endif %}
-              {% if r.effective_to %} → {{ r.effective_to }}{% endif %}
-            </td>
+            <td class="p-2">-</td>
           </tr>
           {% else %}
           <tr>
-            <td colspan="4" class="p-3 text-slate-500">{{ _('No data') }}</td>
+            <td colspan="9" class="p-3 text-slate-500">{{ _('No data') }}</td>
           </tr>
           {% endfor %}
         </tbody>
