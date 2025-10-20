@@ -291,24 +291,35 @@ def shipping_prices_upload():
     try:
         data = f.read()
         rows = parse_shipping_prices_file(data, f.filename)
-        # Upsert by region_code
-        codes_seen = set()
-        for r in rows:
-            codes_seen.add(r.region_code.lower())
-            existing = (
+
+        # Upsert by region_code (case-insensitive) without creating duplicates
+        # within the same import batch. We first load any existing rows for
+        # the codes present in the file, then reuse objects as we iterate.
+        code_to_obj = {}
+        codes_in_file = {r.region_code.lower() for r in rows}
+        if codes_in_file:
+            existing_rows = (
                 db.session.query(ShippingRegionPrice)
-                .filter(db.func.lower(ShippingRegionPrice.region_code) == r.region_code.lower())
-                .first()
+                .filter(db.func.lower(ShippingRegionPrice.region_code).in_(list(codes_in_file)))
+                .all()
             )
-            if not existing:
-                existing = ShippingRegionPrice(region_code=r.region_code)
-                db.session.add(existing)
-            existing.region_name = r.region_name
-            existing.price_omr = r.price_omr
-            existing.effective_from = r.effective_from
-            existing.effective_to = r.effective_to
+            for ex in existing_rows:
+                code_to_obj[ex.region_code.lower()] = ex
+
+        for r in rows:
+            code_key = r.region_code.lower()
+            obj = code_to_obj.get(code_key)
+            if obj is None:
+                obj = ShippingRegionPrice(region_code=r.region_code)
+                db.session.add(obj)
+                code_to_obj[code_key] = obj
+            obj.region_name = r.region_name
+            obj.price_omr = r.price_omr
+            obj.effective_from = r.effective_from
+            obj.effective_to = r.effective_to
+
         db.session.commit()
-        flash(_(f"Imported {len(rows)} rows successfully."), "success")
+        flash(_(f"Imported or updated {len(code_to_obj)} regions successfully."), "success")
     except Exception as e:
         try:
             db.session.rollback()
