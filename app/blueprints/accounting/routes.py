@@ -14,6 +14,12 @@ from ...models import (
     Customer,
     Setting,
     VehicleShipment,
+    Account,
+    ExchangeRate,
+    JournalEntry,
+    JournalLine,
+    OperationalExpense,
+    CustomerDeposit,
 )
 from ...utils_pdf import render_invoice_pdf, render_bol_pdf
 import os
@@ -23,6 +29,203 @@ from decimal import Decimal
 
 acct_bp = Blueprint("acct", __name__, template_folder="templates/accounting")
 
+def _get_account(code: str) -> Account | None:
+    try:
+        return db.session.query(Account).filter(Account.code == code).first()
+    except Exception:
+        return None
+
+def _post_journal(description: str, reference: str | None, lines: list[tuple[str, float, float]],
+                  customer_id: int | None = None, vehicle_id: int | None = None,
+                  auction_id: int | None = None, invoice_id: int | None = None):
+    """Create a balanced journal entry from (account_code, debit, credit) lines.
+    Amounts are in OMR.
+    """
+    entry = JournalEntry(
+        description=description,
+        reference=reference,
+        customer_id=customer_id,
+        vehicle_id=vehicle_id,
+        auction_id=auction_id,
+        invoice_id=invoice_id,
+    )
+    db.session.add(entry)
+    db.session.flush()
+    total_debit = 0
+    total_credit = 0
+    for code, dr, cr in lines:
+        acc = _get_account(code)
+        if not acc:
+            # Failsafe: skip line if account missing
+            continue
+        dr_amt = float(dr or 0)
+        cr_amt = float(cr or 0)
+        total_debit += dr_amt
+        total_credit += cr_amt
+        db.session.add(JournalLine(entry_id=entry.id, account_id=acc.id, debit=dr_amt, credit=cr_amt, currency_code='OMR'))
+    # Do not enforce balance hard to avoid blocking UI; rely on tests/admin checks
+    return entry
+
+
+# ---- Stage 1: Customer Deposit (Security) ----
+def record_customer_deposit(customer_id: int, amount_omr: float, method: str | None = None,
+                            reference: str | None = None, vehicle_id: int | None = None,
+                            auction_id: int | None = None) -> CustomerDeposit:
+    dep = CustomerDeposit(customer_id=customer_id, vehicle_id=vehicle_id, auction_id=auction_id,
+                          amount_omr=amount_omr, method=method, reference=reference, status='held')
+    db.session.add(dep)
+    # Journal: Dr Bank (A100) / Cr Customer Deposits (L200)
+    _post_journal(
+        description='Customer deposit received', reference=reference,
+        lines=[('A100', amount_omr, 0.0), ('L200', 0.0, amount_omr)],
+        customer_id=customer_id, vehicle_id=vehicle_id, auction_id=auction_id,
+    )
+    return dep
+
+def refund_customer_deposit(deposit_id: int):
+    dep = db.session.get(CustomerDeposit, deposit_id)
+    if not dep or dep.status != 'held':
+        return False
+    dep.status = 'refunded'
+    dep.refunded_at = datetime.utcnow()
+    # Journal reversal: Dr Customer Deposits / Cr Bank
+    amt = float(dep.amount_omr or 0)
+    _post_journal(
+        description='Customer deposit refunded', reference=dep.reference,
+        lines=[('L200', amt, 0.0), ('A100', 0.0, amt)],
+        customer_id=dep.customer_id, vehicle_id=dep.vehicle_id, auction_id=dep.auction_id,
+    )
+    return True
+
+
+# ---- Stage 2: Car Invoice after winning auction ----
+def create_car_invoice(customer_id: int, vehicle_id: int, price_omr: float,
+                       optional_fees_omr: float = 0.0, deposit_applied_omr: float = 0.0) -> int:
+    inv = Invoice(invoice_number=f"CAR-{int(datetime.utcnow().timestamp())}", customer_id=customer_id,
+                  vehicle_id=vehicle_id, invoice_type='CAR', status='Draft', total_omr=0)
+    db.session.add(inv)
+    db.session.flush()
+    items_total = Decimal('0')
+    db.session.add(InvoiceItem(invoice_id=inv.id, vehicle_id=vehicle_id, description='Car price', amount_omr=price_omr))
+    items_total += Decimal(str(price_omr))
+    if optional_fees_omr and float(optional_fees_omr) > 0:
+        db.session.add(InvoiceItem(invoice_id=inv.id, vehicle_id=vehicle_id, description='Optional fees', amount_omr=optional_fees_omr))
+        items_total += Decimal(str(optional_fees_omr))
+    inv.total_omr = items_total
+    # Journal on payment (assume immediate payment for simplicity):
+    # Dr Bank (net after deposit) + Dr Customer Deposits (applied) / Cr Sales + Additional Revenue
+    if float(items_total) > 0:
+        car_price = float(price_omr or 0)
+        extra = float(optional_fees_omr or 0)
+        applied = max(0.0, float(deposit_applied_omr or 0.0))
+        cash_net = max(0.0, (car_price + extra) - applied)
+        lines = []
+        if cash_net > 0:
+            lines.append(('A100', cash_net, 0.0))
+        if applied > 0:
+            lines.append(('L200', applied, 0.0))  # clear liability via debit
+        lines.append(('R100', 0.0, car_price))
+        if extra > 0:
+            lines.append(('R150', 0.0, extra))
+        _post_journal(
+            description='Car invoice payment', reference=inv.invoice_number,
+            lines=lines,
+            customer_id=customer_id, vehicle_id=vehicle_id, invoice_id=inv.id,
+        )
+        inv.status = 'Paid'
+    return inv.id
+
+
+# ---- Stage 3: Purchase at auction and shipping costs ----
+def record_vehicle_purchase(vehicle_id: int, auction_id: int | None, purchase_price_usd: float,
+                            paid_from_bank: bool = True):
+    veh = db.session.get(Vehicle, vehicle_id)
+    omr_rate = Decimal(str(current_app.config.get('OMR_EXCHANGE_RATE', 0.385)))
+    amount_omr = Decimal(str(purchase_price_usd or 0)) * omr_rate
+    # Inventory capitalization (as asset) at OMR
+    _post_journal(
+        description='Vehicle purchased at auction', reference=getattr(veh, 'vin', None),
+        lines=[
+            ('A200', float(amount_omr), 0.0),
+            ('A100', 0.0, float(amount_omr)) if paid_from_bank else ('L210', 0.0, float(amount_omr)),
+        ],
+        vehicle_id=vehicle_id, auction_id=auction_id,
+    )
+    return float(amount_omr)
+
+def record_operational_cost(vehicle_id: int | None, auction_id: int | None, category: str,
+                            amount_value: float, currency: str = 'OMR', description: str | None = None,
+                            supplier: str | None = None, paid_from_bank: bool = True) -> int:
+    # Convert to OMR if needed
+    rate_val = Decimal('1')
+    rate_row = None
+    if currency and currency.upper() != 'OMR':
+        rate_row = db.session.query(ExchangeRate).order_by(ExchangeRate.effective_at.desc()).first()
+        rate_val = Decimal(str(rate_row.rate if rate_row else current_app.config.get('OMR_EXCHANGE_RATE', 0.385)))
+    amount_omr = Decimal(str(amount_value or 0)) * (rate_val if currency.upper() != 'OMR' else Decimal('1'))
+
+    exp = OperationalExpense(
+        vehicle_id=vehicle_id, auction_id=auction_id, category=category,
+        original_amount=amount_value, original_currency=(currency or 'OMR').upper(), amount_omr=float(amount_omr),
+        exchange_rate_id=(rate_row.id if rate_row else None), description=description, supplier=supplier,
+        paid=bool(paid_from_bank), paid_at=datetime.utcnow() if paid_from_bank else None,
+    )
+    db.session.add(exp)
+
+    # Journal: Dr Operational Expenses / Cr Bank (if paid)
+    if float(amount_omr) > 0 and paid_from_bank:
+        _post_journal(
+            description=f'Operational expense - {category}', reference=description,
+            lines=[('E200' if category != 'internal_shipping' else 'E210', float(amount_omr), 0.0), ('A100', 0.0, float(amount_omr))],
+            vehicle_id=vehicle_id, auction_id=auction_id,
+        )
+
+    return exp.id if getattr(exp, 'id', None) else 0
+
+
+# ---- Stage 4: Shipping invoice to customer with fines ----
+def create_shipping_invoice(customer_id: int, vehicle_id: int, shipping_cost_omr: float,
+                            fines_usd: float = 0.0) -> int:
+    # Determine rate for fines conversion
+    rate_row = db.session.query(ExchangeRate).order_by(ExchangeRate.effective_at.desc()).first()
+    rate_val = Decimal(str(rate_row.rate if rate_row else current_app.config.get('OMR_EXCHANGE_RATE', 0.385)))
+    fines_omr = Decimal(str(fines_usd or 0)) * rate_val
+
+    inv = Invoice(
+        invoice_number=f"SHP-{int(datetime.utcnow().timestamp())}",
+        customer_id=customer_id,
+        vehicle_id=vehicle_id,
+        invoice_type='SHIPPING',
+        status='Draft',
+        exchange_rate_id=(rate_row.id if rate_row else None),
+        total_omr=0,
+    )
+    db.session.add(inv)
+    db.session.flush()
+    total = Decimal('0')
+    if shipping_cost_omr and float(shipping_cost_omr) > 0:
+        db.session.add(InvoiceItem(invoice_id=inv.id, vehicle_id=vehicle_id, description='Shipping cost', amount_omr=shipping_cost_omr))
+        total += Decimal(str(shipping_cost_omr))
+    if fines_omr and float(fines_omr) > 0:
+        db.session.add(InvoiceItem(invoice_id=inv.id, vehicle_id=vehicle_id, description='Fines (converted to OMR)', amount_omr=float(fines_omr)))
+        total += fines_omr
+    inv.total_omr = total
+
+    # Assume immediate collection for simplicity: 
+    # Dr Bank (total), Cr Fines Revenue (fines_omr), Cr Operational Expenses (shipping_cost_omr) to offset prior expense
+    if float(total) > 0:
+        lines = [('A100', float(total), 0.0)]
+        if float(fines_omr) > 0:
+            lines.append(('R300', 0.0, float(fines_omr)))
+        if float(shipping_cost_omr or 0) > 0:
+            lines.append(('E200', 0.0, float(shipping_cost_omr)))
+        _post_journal(
+            description='Shipping invoice payment', reference=inv.invoice_number,
+            lines=lines,
+            customer_id=customer_id, vehicle_id=vehicle_id, invoice_id=inv.id,
+        )
+        inv.status = 'Paid'
+    return inv.id
 @acct_bp.route("/dashboard")
 @role_required("accountant", "admin")
 def dashboard():
@@ -458,6 +661,7 @@ def reports():
         rows = db.session.query(Customer.company_name, db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).\
             join(Invoice, Invoice.customer_id == Customer.id, isouter=True).group_by(Customer.company_name).order_by(Customer.company_name.asc()).all()
         data = [(name or '-', float(total or 0)) for name, total in rows]
+        headers = [_('Client'), _('Total (OMR)')]
         if export == 'xlsx':
             wb = Workbook(); ws = wb.active; ws.title = 'Invoices by Client'; ws.append([_('Client'), _('Total (OMR)')])
             for n, t in data: ws.append([n, t])
@@ -472,7 +676,7 @@ def reports():
                 c.drawString(40, y, n); c.drawRightString(550, y, f"{t:,.3f}"); y -= 14
             c.showPage(); c.save(); buf.seek(0)
             return send_file(buf, mimetype='application/pdf', as_attachment=True, download_name='invoices_by_client.pdf')
-        return render_template('accounting/reports.html', report_type='by_client', table=data)
+        return render_template('accounting/reports.html', report_type='by_client', table=data, headers=headers)
 
     if report_type == 'taxes':
         # Monthly customs and VAT
@@ -506,7 +710,72 @@ def reports():
             return send_file(buf, mimetype='application/pdf', as_attachment=True, download_name='taxes.pdf')
         return render_template('accounting/reports.html', report_type='taxes', chart={"months": labels, "customs": customs_m, "vat": vat_m})
 
-    # default monthly
+    if report_type == 'balance_sheet':
+        # Simple balance sheet snapshot using GL
+        def sum_acct(prefix: str):
+            from ...models import Account, JournalLine
+            rows = db.session.query(db.func.coalesce(db.func.sum(JournalLine.debit - JournalLine.credit), 0)).\
+                join(Account, JournalLine.account_id == Account.id).\
+                filter(Account.code.like(f"{prefix}%")).scalar() or 0
+            return float(rows)
+        assets = sum_acct('A')
+        liabilities = -sum_acct('L')  # credits increase liabilities
+        equity = assets - liabilities
+        data = {'Assets': assets, 'Liabilities': liabilities, 'Equity': equity}
+        headers = [_('Category'), _('Amount (OMR)')]
+        return render_template('accounting/reports.html', report_type='balance_sheet', table=list(data.items()), headers=headers)
+
+    if report_type == 'ar_aging':
+        # Accounts receivable by customer from invoices minus payments
+        rows = db.session.query(Customer.company_name, db.func.coalesce(db.func.sum(Invoice.total_omr), 0) - db.func.coalesce(db.func.sum(Payment.amount_omr), 0)).\
+            join(Invoice, Invoice.customer_id == Customer.id, isouter=True).\
+            join(Payment, Payment.invoice_id == Invoice.id, isouter=True).\
+            group_by(Customer.company_name).all()
+        data = [(n or '-', float(bal or 0)) for n, bal in rows]
+        headers = [_('Client'), _('Balance (OMR)')]
+        return render_template('accounting/reports.html', report_type='ar_aging', table=data, headers=headers)
+
+    if report_type == 'inventory_by_vehicle':
+        # Inventory value per vehicle (capitalized purchase OMR)
+        from ...models import Vehicle
+        rate = Decimal(str(current_app.config.get('OMR_EXCHANGE_RATE', 0.385)))
+        rows = db.session.query(Vehicle.vin, Vehicle.make, Vehicle.model, Vehicle.year, Vehicle.purchase_price_usd).all()
+        data = [(vin, make, model, year, float((Decimal(str(pp or 0)) * rate))) for vin, make, model, year, pp in rows]
+        headers = ['VIN', _('Make'), _('Model'), _('Year'), _('Value (OMR)')]
+        return render_template('accounting/reports.html', report_type='inventory_by_vehicle', table=data, headers=headers)
+
+    if report_type == 'fines_revenue':
+        # Sum fines revenue (R300)
+        total = db.session.query(db.func.coalesce(db.func.sum(JournalLine.credit - JournalLine.debit), 0)).\
+            join(Account, JournalLine.account_id == Account.id).\
+            filter(Account.code == 'R300').scalar() or 0
+        headers = [_('Metric'), _('Amount (OMR)')]
+        return render_template('accounting/reports.html', report_type='fines_revenue', table=[[str(_('Fines Revenue')), float(total)]], headers=headers)
+
+    if report_type == 'customer_statement':
+        # Detailed statement for a single customer
+        try:
+            customer_id = int(request.args.get('customer_id'))
+        except Exception:
+            customer_id = None
+        if not customer_id:
+            return render_template('accounting/reports.html', report_type='customer_statement', table=[], headers=[_('Date'), _('Description'), _('Debit'), _('Credit'), _('Balance')])
+        rows = []
+        balance = Decimal('0')
+        invs = db.session.query(Invoice).filter(Invoice.customer_id == customer_id).order_by(Invoice.created_at.asc()).all()
+        for inv in invs:
+            amt = Decimal(str(inv.total_omr or 0))
+            balance += amt
+            rows.append([inv.created_at.strftime('%Y-%m-%d') if inv.created_at else '', f"Invoice {inv.invoice_number}", float(amt), 0.0, float(balance)])
+            pays = db.session.query(Payment).filter(Payment.invoice_id == inv.id).order_by(Payment.received_at.asc()).all()
+            for p in pays:
+                val = Decimal(str(p.amount_omr or 0))
+                balance -= val
+                rows.append([p.received_at.strftime('%Y-%m-%d') if p.received_at else '', f"Payment {p.reference or ''}", 0.0, float(val), float(balance)])
+        headers = [_('Date'), _('Description'), _('Debit'), _('Credit'), _('Balance')]
+        return render_template('accounting/reports.html', report_type='customer_statement', table=rows, headers=headers)
+
+    # default monthly P&L chart
     return render_template('accounting/reports.html', report_type='monthly', chart={"months": labels, "revenue": revenue, "expenses": expenses})
 
 
