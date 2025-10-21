@@ -16,14 +16,41 @@
   </div>
 
   <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+    {% if chart %}
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-lg font-semibold text-blue-900">{{ _('Monthly Revenue vs Expenses') }}</h3>
     </div>
-
     <canvas id="lineChart" height="120"></canvas>
+    {% endif %}
+
+    {% if table %}
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          {% if headers %}
+          <thead class="bg-gray-50">
+            <tr>
+              {% for h in headers %}
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ h }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          {% endif %}
+          <tbody class="bg-white divide-y divide-gray-200">
+            {% for row in table %}
+              <tr>
+                {% for col in row %}
+                  <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{{ col }}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
   </div>
 </div>
 
+{% if chart %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 const ctx = document.getElementById('lineChart');
@@ -65,5 +92,6 @@ new Chart(ctx, {
   }
 });
 </script>
+{% endif %}
 
 {% endblock %}

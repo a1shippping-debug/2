@@ -132,13 +132,20 @@ class Invoice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     invoice_number = db.Column(db.String(100), unique=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"))
+    # CAR or SHIPPING
+    invoice_type = db.Column(db.String(20))
+    # Optional primary vehicle reference for per-deal tracking
+    vehicle_id = db.Column(db.Integer, db.ForeignKey("vehicles.id"), nullable=True, index=True)
     total_omr = db.Column(db.Numeric(12,3))
     status = db.Column(db.String(50))
     pdf_path = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     customer = db.relationship("Customer")
+    vehicle = db.relationship("Vehicle")
     items = db.relationship("InvoiceItem", backref="invoice", cascade="all, delete-orphan")
     payments = db.relationship("Payment", backref="invoice", cascade="all, delete-orphan")
+    # Optional exchange rate used for this invoice (e.g., fines converted from USD)
+    exchange_rate_id = db.Column(db.Integer, db.ForeignKey("exchange_rates.id"), nullable=True)
 
     def calculate_total(self) -> Decimal:
         total = Decimal("0")
@@ -310,3 +317,107 @@ class ShippingRegionPrice(db.Model):
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<ShippingRegionPrice {self.region_code} {self.price_omr}>"
+
+
+# --- General Ledger & Accounting ---
+
+class Account(db.Model):
+    __tablename__ = "accounts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(20), unique=True, index=True, nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+    # One of: ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+    type = db.Column(db.String(20), nullable=False)
+    currency_code = db.Column(db.String(3), default="OMR", nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class ExchangeRate(db.Model):
+    __tablename__ = "exchange_rates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    base_currency = db.Column(db.String(3), nullable=False)  # e.g., USD
+    quote_currency = db.Column(db.String(3), nullable=False)  # e.g., OMR
+    rate = db.Column(db.Numeric(12, 6), nullable=False)
+    effective_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class JournalEntry(db.Model):
+    __tablename__ = "journal_entries"
+
+    id = db.Column(db.Integer, primary_key=True)
+    entry_date = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    description = db.Column(db.String(255))
+    reference = db.Column(db.String(100))
+    # Linkage for reporting & traceability
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), index=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey("vehicles.id"), index=True)
+    auction_id = db.Column(db.Integer, db.ForeignKey("auctions.id"), index=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey("invoices.id"), index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    customer = db.relationship("Customer")
+    vehicle = db.relationship("Vehicle")
+    auction = db.relationship("Auction")
+    invoice = db.relationship("Invoice")
+    lines = db.relationship("JournalLine", backref="entry", cascade="all, delete-orphan")
+
+
+class JournalLine(db.Model):
+    __tablename__ = "journal_lines"
+
+    id = db.Column(db.Integer, primary_key=True)
+    entry_id = db.Column(db.Integer, db.ForeignKey("journal_entries.id"), index=True)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), index=True)
+    debit = db.Column(db.Numeric(14, 3), default=0)
+    credit = db.Column(db.Numeric(14, 3), default=0)
+    currency_code = db.Column(db.String(3), default="OMR")
+
+    account = db.relationship("Account")
+
+
+class OperationalExpense(db.Model):
+    __tablename__ = "operational_expenses"
+
+    id = db.Column(db.Integer, primary_key=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey("vehicles.id"), index=True)
+    auction_id = db.Column(db.Integer, db.ForeignKey("auctions.id"), index=True)
+    category = db.Column(db.String(50), nullable=False)  # international_shipping, customs, internal_shipping, misc
+    # Store both original amount/currency and converted OMR for reporting consistency
+    original_amount = db.Column(db.Numeric(12, 3))
+    original_currency = db.Column(db.String(3), default="OMR")
+    amount_omr = db.Column(db.Numeric(12, 3), nullable=False)
+    exchange_rate_id = db.Column(db.Integer, db.ForeignKey("exchange_rates.id"), nullable=True)
+    paid = db.Column(db.Boolean, default=False, nullable=False)
+    paid_at = db.Column(db.DateTime)
+    description = db.Column(db.String(255))
+    supplier = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    vehicle = db.relationship("Vehicle")
+    auction = db.relationship("Auction")
+    exchange_rate = db.relationship("ExchangeRate")
+
+
+class CustomerDeposit(db.Model):
+    __tablename__ = "customer_deposits"
+
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), index=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey("vehicles.id"), index=True)
+    auction_id = db.Column(db.Integer, db.ForeignKey("auctions.id"), index=True)
+    amount_omr = db.Column(db.Numeric(12, 3), nullable=False)
+    method = db.Column(db.String(50))  # Cash / Bank Transfer / Card
+    reference = db.Column(db.String(100))
+    status = db.Column(db.String(20), default="held")  # held / refunded / applied
+    received_at = db.Column(db.DateTime, default=datetime.utcnow)
+    refunded_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    customer = db.relationship("Customer")
+    vehicle = db.relationship("Vehicle")
+    auction = db.relationship("Auction")
+
