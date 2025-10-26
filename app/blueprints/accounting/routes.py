@@ -280,14 +280,21 @@ def dashboard():
     freight_usd_sum = db.session.query(db.func.coalesce(db.func.sum(Shipment.cost_freight_usd), 0)).scalar() or 0
     auction_fees_usd_sum = db.session.query(db.func.coalesce(db.func.sum(InternationalCost.auction_fees_usd), 0)).scalar() or 0
     expenses_omr = (float(freight_usd_sum) + float(auction_fees_usd_sum)) * usd_to_omr
+    # Treat CAR invoices as pass-through costs (expenses), not revenue
+    car_paid_total = float(
+        db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0))
+        .filter(Invoice.status == 'Paid', Invoice.invoice_type == 'CAR')
+        .scalar()
+        or 0
+    )
     totals = {
         "revenue_omr": float(
             db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0))
-            .filter(Invoice.status == 'Paid')
+            .filter(Invoice.status == 'Paid', Invoice.invoice_type != 'CAR')
             .scalar()
             or 0
         ),
-        "expenses_omr": expenses_omr,
+        "expenses_omr": expenses_omr + car_paid_total,
     }
     totals["net_omr"] = totals["revenue_omr"] - totals["expenses_omr"]
 
@@ -307,6 +314,7 @@ def dashboard():
                 Invoice.created_at >= month_start,
                 Invoice.created_at < month_end,
                 Invoice.status == 'Paid',
+                Invoice.invoice_type != 'CAR',
             )
             .scalar()
             or 0
@@ -323,6 +331,12 @@ def dashboard():
         "VAT": float(db.session.query(db.func.coalesce(db.func.sum(InternationalCost.vat_omr), 0)).scalar() or 0),
         "Local Transport": float(db.session.query(db.func.coalesce(db.func.sum(InternationalCost.local_transport_omr), 0)).scalar() or 0),
         "Misc": float(db.session.query(db.func.coalesce(db.func.sum(InternationalCost.misc_omr), 0)).scalar() or 0),
+        "Car Price": float(
+            db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0))
+            .filter(Invoice.status == 'Paid', Invoice.invoice_type == 'CAR')
+            .scalar()
+            or 0
+        ),
     }
 
     return render_template("accounting/dashboard.html", counts=counts, totals=totals, chart={
@@ -674,13 +688,16 @@ def reports():
             start = dt
             end = datetime(dt.year + 1, 1, 1) if dt.month == 12 else datetime(dt.year, dt.month + 1, 1)
             labels.append(dt.strftime('%b %Y'))
-            rev = db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).filter(Invoice.created_at >= start, Invoice.created_at < end, Invoice.status == 'Paid').scalar() or 0
+            rev = db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).\
+                filter(Invoice.created_at >= start, Invoice.created_at < end, Invoice.status == 'Paid', Invoice.invoice_type != 'CAR').scalar() or 0
+            car_cost = db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).\
+                filter(Invoice.created_at >= start, Invoice.created_at < end, Invoice.status == 'Paid', Invoice.invoice_type == 'CAR').scalar() or 0
             freight = db.session.query(db.func.coalesce(db.func.sum(Shipment.cost_freight_usd), 0)).filter(Shipment.created_at >= start, Shipment.created_at < end).scalar() or 0
             customs = db.session.query(db.func.coalesce(db.func.sum(InternationalCost.customs_omr), 0)).filter(InternationalCost.created_at >= start, InternationalCost.created_at < end).scalar() or 0
             vat = db.session.query(db.func.coalesce(db.func.sum(InternationalCost.vat_omr), 0)).filter(InternationalCost.created_at >= start, InternationalCost.created_at < end).scalar() or 0
             local_t = db.session.query(db.func.coalesce(db.func.sum(InternationalCost.local_transport_omr), 0)).filter(InternationalCost.created_at >= start, InternationalCost.created_at < end).scalar() or 0
             misc = db.session.query(db.func.coalesce(db.func.sum(InternationalCost.misc_omr), 0)).filter(InternationalCost.created_at >= start, InternationalCost.created_at < end).scalar() or 0
-            exp = float(freight) * usd_to_omr + float(customs or 0) + float(vat or 0) + float(local_t or 0) + float(misc or 0)
+            exp = float(freight) * usd_to_omr + float(customs or 0) + float(vat or 0) + float(local_t or 0) + float(misc or 0) + float(car_cost or 0)
             revenue.append(float(rev)); expenses.append(float(exp))
             if dt.month == 1: dt = datetime(dt.year - 1, 12, 1)
             else: dt = datetime(dt.year, dt.month - 1, 1)

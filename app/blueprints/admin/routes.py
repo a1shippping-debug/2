@@ -60,9 +60,10 @@ def dashboard():
     from datetime import datetime, timedelta
     now = datetime.utcnow()
     month_start = datetime(now.year, now.month, 1)
+    # Exclude CAR invoices from revenue; treat as expenses elsewhere
     totals = {
         "revenue_omr": db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0))
-            .filter(Invoice.created_at >= month_start, Invoice.status == 'Paid').scalar(),
+            .filter(Invoice.created_at >= month_start, Invoice.status == 'Paid', Invoice.invoice_type != 'CAR').scalar(),
     }
 
     # recent activity lists
@@ -97,7 +98,7 @@ def dashboard():
             else:
                 end = datetime(dt.year, dt.month + 1, 1)
             total = db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0))\
-                .filter(Invoice.created_at >= start, Invoice.created_at < end, Invoice.status == 'Paid').scalar()
+                .filter(Invoice.created_at >= start, Invoice.created_at < end, Invoice.status == 'Paid', Invoice.invoice_type != 'CAR').scalar()
             vals.append(float(total or 0))
             # go back one month
             if dt.month == 1:
@@ -142,12 +143,14 @@ def reports():
         start = dt
         end = datetime(dt.year + 1, 1, 1) if dt.month == 12 else datetime(dt.year, dt.month + 1, 1)
         labels.append(dt.strftime("%b %Y"))
-        rev = db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).filter(Invoice.created_at >= start, Invoice.created_at < end, Invoice.status == 'Paid').scalar() or 0
+        rev = db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).filter(Invoice.created_at >= start, Invoice.created_at < end, Invoice.status == 'Paid', Invoice.invoice_type != 'CAR').scalar() or 0
         # approximate expenses in OMR from USD-based costs (freight + cost items)
         usd_to_omr = 0.385
         freight = db.session.query(db.func.coalesce(db.func.sum(Shipment.cost_freight_usd), 0)).filter(Shipment.created_at >= start, Shipment.created_at < end).scalar() or 0
         costs = db.session.query(db.func.coalesce(db.func.sum(CostItem.amount_usd), 0)).filter(CostItem.id.isnot(None)).scalar() or 0
-        exp = (float(freight) + float(costs)) * usd_to_omr
+        car_cost = db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).\
+            filter(Invoice.created_at >= start, Invoice.created_at < end, Invoice.status == 'Paid', Invoice.invoice_type == 'CAR').scalar() or 0
+        exp = (float(freight) + float(costs)) * usd_to_omr + float(car_cost or 0)
         revenue.append(float(rev))
         expenses.append(float(exp))
         # previous month
