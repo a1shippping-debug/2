@@ -293,10 +293,13 @@ def dashboard():
     }
 
     usd_to_omr = float(current_app.config.get('OMR_EXCHANGE_RATE', 0.385))
+    # Ensure numeric operations are done with consistent types to avoid Decimal*float TypeError
+    freight_usd_sum = db.session.query(db.func.coalesce(db.func.sum(Shipment.cost_freight_usd), 0)).scalar() or 0
+    auction_fees_usd_sum = db.session.query(db.func.coalesce(db.func.sum(InternationalCost.auction_fees_usd), 0)).scalar() or 0
+    expenses_omr = (float(freight_usd_sum) + float(auction_fees_usd_sum)) * usd_to_omr
     totals = {
         "revenue_omr": float(db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).scalar() or 0),
-        "expenses_omr": float(((db.session.query(db.func.coalesce(db.func.sum(Shipment.cost_freight_usd), 0)).scalar() or 0)
-                                + (db.session.query(db.func.coalesce(db.func.sum(InternationalCost.auction_fees_usd), 0)).scalar() or 0)) * usd_to_omr),
+        "expenses_omr": expenses_omr,
     }
     totals["net_omr"] = totals["revenue_omr"] - totals["expenses_omr"]
 
