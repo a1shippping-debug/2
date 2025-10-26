@@ -29,6 +29,63 @@ from decimal import Decimal
 
 acct_bp = Blueprint("acct", __name__, template_folder="templates/accounting")
 
+def _normalize_number_string(value: object) -> str:
+    """Normalize user-entered numeric strings including Arabic-Indic digits and separators.
+
+    Converts Arabic digits to ASCII, removes thousands separators, and ensures a '.' decimal.
+    Returns a safe string that float() can parse.
+    """
+    if value is None:
+        return "0"
+    try:
+        s = str(value)
+    except Exception:
+        return "0"
+    s = s.strip()
+    if not s:
+        return "0"
+    # Map Arabic-Indic and Eastern Arabic-Indic digits; normalize separators
+    translate_map = str.maketrans({
+        "٠": "0", "١": "1", "٢": "2", "٣": "3", "٤": "4",
+        "٥": "5", "٦": "6", "٧": "7", "٨": "8", "٩": "9",
+        "۰": "0", "۱": "1", "۲": "2", "۳": "3", "۴": "4",
+        "۵": "5", "۶": "6", "۷": "7", "۸": "8", "۹": "9",
+        # Decimal and thousands separators (Arabic)
+        "٫": ".",  # U+066B ARABIC DECIMAL SEPARATOR
+        "٬": "",   # U+066C ARABIC THOUSANDS SEPARATOR
+        "،": "",   # U+060C ARABIC COMMA (treat as thousands separator)
+        # Non‑breaking space
+        "\u00A0": "",
+    })
+    s = s.translate(translate_map)
+    # Handle standard commas: treat single comma (and no dot present) as decimal; otherwise remove
+    if "," in s:
+        if "." not in s and s.count(",") == 1:
+            left, right = s.split(",", 1)
+            if 1 <= len(right) <= 3:
+                s = f"{left}.{right}"
+            else:
+                s = s.replace(",", "")
+        else:
+            s = s.replace(",", "")
+    # Remove regular spaces
+    s = s.replace(" ", "")
+    # Keep only digits, one leading '-', and dots
+    cleaned = []
+    for ch in s:
+        if ch.isdigit() or ch in ".-":
+            cleaned.append(ch)
+    s = "".join(cleaned)
+    if s in {"", "-", ".", "-."}:
+        return "0"
+    return s
+
+def _parse_number_input(value: object) -> float:
+    try:
+        return float(_normalize_number_string(value))
+    except Exception:
+        return 0.0
+
 def _get_account(code: str) -> Account | None:
     try:
         return db.session.query(Account).filter(Account.code == code).first()
@@ -292,11 +349,8 @@ def costs_edit(vehicle_id: int):
         return redirect(url_for('acct.costs_list'))
     cost = db.session.query(InternationalCost).filter_by(vehicle_id=vehicle.id).first()
     if request.method == 'POST':
-        def f(name):
-            try:
-                return float(request.form.get(name) or 0)
-            except Exception:
-                return 0
+        def f(name: str) -> float:
+            return _parse_number_input(request.form.get(name))
         if not cost:
             cost = InternationalCost(vehicle_id=vehicle.id)
             db.session.add(cost)
