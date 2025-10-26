@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>A1 SHIPPING — Animated Copart-style Landing</title>
 
   <!-- Fonts -->
@@ -24,6 +24,8 @@
     /* Reset & base */
     *{box-sizing:border-box}
     html,body{height:100%}
+    /* Prevent layout shifts from long words on small screens */
+    :where(h1,h2,h3,h4,p,span,a){overflow-wrap:anywhere}
     body{
       margin:0;
       font-family: "Tajawal","Poppins",system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
@@ -55,6 +57,8 @@
 
     /* container */
     .container{max-width:1200px;margin:0 auto;padding:0 18px}
+    /* Safe area support on iOS notch devices */
+    .safe-px{padding-left:calc(16px + env(safe-area-inset-left));padding-right:calc(16px + env(safe-area-inset-right))}
     /* make all images scale within parents */
     img{max-width:100%;height:auto}
 
@@ -76,7 +80,7 @@
 
     /* mobile nav */
     .menu-toggle{display:none; background:transparent; color:var(--text-on-dark); border:1px solid rgba(255,255,255,0.2); border-radius:10px; padding:8px 10px; font-weight:700}
-    .mobile-menu{display:none; position:absolute; top:calc(100% + 10px); left:12px; right:12px; background:#ffffff; color:#0f172a; border-radius:14px; padding:10px; box-shadow:0 16px 40px rgba(2,6,23,0.25); border:1px solid #e5e7eb; z-index:70}
+    .mobile-menu{display:none; position:absolute; top:calc(100% + 10px); left:12px; right:12px; background:#ffffff; color:#0f172a; border-radius:14px; padding:10px; box-shadow:0 16px 40px rgba(2,6,23,0.25); border:1px solid #e5e7eb; z-index:70; max-height:70vh; overflow:auto; -webkit-overflow-scrolling:touch}
     .mobile-menu a{display:block; padding:10px 12px; color:#0f172a; border-radius:10px; text-decoration:none}
     .mobile-menu a:hover{background:#f3f4f6}
     .mobile-menu .btn-cta{display:block; text-align:center; margin-top:6px}
@@ -131,7 +135,9 @@
 
     /* cars scroller */
     .scroller{display:flex; gap:18px; overflow-x:auto; padding-bottom:6px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling: touch}
-    .car-card{min-width:300px; background:linear-gradient(180deg,#f8fafc,#fff); border-radius:18px; padding:14px; scroll-snap-align:center; box-shadow:0 8px 30px rgba(2,6,23,0.06)}
+    .scroller::-webkit-scrollbar{height:8px}
+    .scroller::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:8px}
+    .car-card{min-width:268px; background:linear-gradient(180deg,#f8fafc,#fff); border-radius:18px; padding:14px; scroll-snap-align:center; box-shadow:0 8px 30px rgba(2,6,23,0.06)}
     .car-card .img{height:160px;background:#e5e7eb;border-radius:12px; display:flex;align-items:center;justify-content:center;color:#6b7280}
 
     /* contact form */
@@ -166,6 +172,13 @@
       .hero-logo{height:56px}
       section{padding:44px 0}
       .hero-waves{height:96px}
+      /* Reduce card min width for narrow phones */
+      .car-card{min-width:240px}
+    }
+
+    /* Respect reduced motion on mobile */
+    @media (prefers-reduced-motion: reduce){
+      *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important}
     }
 
   </style>
@@ -178,7 +191,7 @@
 
   <!-- NAVBAR -->
   <header>
-    <nav class="container" role="navigation">
+    <nav class="container safe-px" role="navigation">
       <div class="brand">
         <div class="logo-wrap">
           A1
@@ -200,13 +213,13 @@
 
       <button class="menu-toggle" type="button" aria-label="فتح القائمة" aria-controls="mobile-menu" aria-expanded="false">☰ القائمة</button>
 
-      <div class="mobile-menu" id="mobile-menu">
-        <a href="#hero">الرئيسية</a>
-        <a href="#services">خدماتنا</a>
-        <a href="#cars">مركبات</a>
-        <a href="#projects">مشاريع</a>
-        <a href="{{ url_for('auth.login') }}" class="btn-cta">تسجيل الدخول</a>
-        <a href="{{ url_for('cust.track') }}" class="btn-cta">تتبع الشحنة</a>
+      <div class="mobile-menu" id="mobile-menu" role="menu" aria-labelledby="mobile-menu">
+        <a href="#hero" role="menuitem" tabindex="-1">الرئيسية</a>
+        <a href="#services" role="menuitem" tabindex="-1">خدماتنا</a>
+        <a href="#cars" role="menuitem" tabindex="-1">مركبات</a>
+        <a href="#projects" role="menuitem" tabindex="-1">مشاريع</a>
+        <a href="{{ url_for('auth.login') }}" class="btn-cta" role="menuitem" tabindex="-1">تسجيل الدخول</a>
+        <a href="{{ url_for('cust.track') }}" class="btn-cta" role="menuitem" tabindex="-1">تتبع الشحنة</a>
       </div>
     </nav>
   </header>
@@ -214,8 +227,8 @@
   <!-- HERO -->
   <main id="main">
     <section id="hero" class="section-dark">
-      <div class="container" style="display:flex; gap:30px; align-items:center; flex-wrap:wrap;">
-        <div class="left" style="flex:1; min-width:320px;">
+      <div class="container safe-px" style="display:flex; gap:30px; align-items:center; flex-wrap:wrap;">
+        <div class="left" style="flex:1; min-width:300px;">
           <!-- logo image placeholder (user to place file at static/images/logo.png) -->
           <img src="static/images/logo.png" alt="A1 SHIPPING" class="hero-logo" onerror="this.style.display='none'">
           <div class="hero-badge">خدمة مميزة</div>
@@ -244,7 +257,7 @@
           </div>
         </div>
 
-        <div class="right" style="flex:1; min-width:320px;">
+        <div class="right" style="flex:1; min-width:300px;">
           <div style="width:100%; max-width:520px; border-radius:18px; overflow:hidden; box-shadow: 0 18px 50px rgba(2,6,23,0.4); background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:18px">
             <img id="ship" src="static/images/ship.png" alt="ship" style="width:100%; height:auto; display:block; object-fit:contain" onerror="this.style.display='none'">
             <div style="text-align:left; margin-top:12px; color:rgba(255,255,255,0.9)">
@@ -272,7 +285,7 @@
 
     <!-- ABOUT (transition to white area) -->
     <section id="about" class="section-white reveal">
-      <div class="container">
+      <div class="container safe-px">
         <h2 style="color:var(--copart-blue); margin-bottom:10px">من نحن</h2>
         <p style="color:#475569; max-width:900px">شركة A1 SHIPPING — نقدم حلول متكاملة للنقل البحري والبري وخدمات المناولة اللوجستية باحترافية عالية. من المزاد إلى باب العميل، نبني تجربة سلسة وآمنة بشفافية كاملة.</p>
 
@@ -300,7 +313,7 @@
 
     <!-- SERVICES -->
     <section id="services" class="section-white reveal">
-      <div class="container">
+      <div class="container safe-px">
         <h2 style="color:var(--copart-blue)">خدماتنا</h2>
         <p style="color:#475569; max-width:900px">من شحن السيارات وحتى إدارة الوثائق والتخليص، نقدم باقة متكاملة لتسهيل أعمالك.</p>
 
@@ -328,7 +341,7 @@
 
     <!-- STATS -->
     <section id="stats" class="section-white reveal">
-      <div class="container">
+      <div class="container safe-px">
         <h2 style="color:var(--copart-blue)">إحصائياتنا</h2>
         <div style="height:12px"></div>
         <div class="stats-grid">
@@ -354,7 +367,7 @@
 
     <!-- CARS -->
     <section id="cars" class="section-white reveal">
-      <div class="container">
+      <div class="container safe-px">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px">
           <div>
             <h2 style="color:var(--copart-blue)">مركبات للبيع</h2>
@@ -403,7 +416,7 @@
 
     <!-- PROJECTS -->
     <section id="projects" class="section-white reveal">
-      <div class="container">
+      <div class="container safe-px">
         <h2 style="color:var(--copart-blue)">مشاريعنا</h2>
         <div style="height:12px"></div>
         <div class="grid-3">
@@ -474,23 +487,24 @@
     // register ScrollTrigger
     gsap.registerPlugin(ScrollTrigger);
 
-    // 1) Animated gradient background: subtle vertical motion loop
+    // 1) Animated gradient background: subtle vertical motion loop (reduced on mobile)
+    const isLowPowerDevice = matchMedia('(prefers-reduced-motion: reduce)').matches || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
     gsap.to("#animated-bg", {
       backgroundPosition: "0% 80%",
-      duration: 16,
+      duration: isLowPowerDevice ? 24 : 16,
       ease: "sine.inOut",
       repeat: -1,
       yoyo: true
     });
 
-    // 2) Waves movement (infinite)
-    gsap.to("#wave1", { x: -160, duration: 8, ease: "sine.inOut", repeat: -1, yoyo: true });
-    gsap.to("#wave2", { x: 120, duration: 10, ease: "sine.inOut", repeat: -1, yoyo: true, delay: 0.5 });
+    // 2) Waves movement (infinite, slower on low-power/mobile)
+    gsap.to("#wave1", { x: -160, duration: isLowPowerDevice ? 12 : 8, ease: "sine.inOut", repeat: -1, yoyo: true });
+    gsap.to("#wave2", { x: 120, duration: isLowPowerDevice ? 14 : 10, ease: "sine.inOut", repeat: -1, yoyo: true, delay: 0.5 });
 
     // 3) Ship bobbing (if image present)
     const ship = document.getElementById('ship');
     if(ship){
-      gsap.to(ship, { y: -12, duration:4.5, ease:'sine.inOut', repeat:-1, yoyo:true });
+      gsap.to(ship, { y: -12, duration:isLowPowerDevice ? 6 : 4.5, ease:'sine.inOut', repeat:-1, yoyo:true });
     }
 
     // 4) Reveal sections on scroll
@@ -583,19 +597,36 @@
     const menuBtn = document.querySelector('.menu-toggle');
     const mobileMenu = document.getElementById('mobile-menu');
     if(menuBtn && mobileMenu){
+      const firstItem = mobileMenu.querySelector('[role="menuitem"]');
+      function toggleMenu(willOpen){
+        mobileMenu.classList.toggle('open', willOpen);
+        menuBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        if(willOpen && firstItem){
+          // Delay focus until menu is visible
+          setTimeout(()=> firstItem.focus(), 50);
+        } else {
+          menuBtn.focus();
+        }
+      }
       menuBtn.addEventListener('click', (e)=>{
         e.stopPropagation();
         const willOpen = !mobileMenu.classList.contains('open');
-        mobileMenu.classList.toggle('open', willOpen);
-        menuBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        toggleMenu(willOpen);
       });
+      // Close on outside click
       document.addEventListener('click', (e)=>{
         if(mobileMenu.classList.contains('open')){
           const target = e.target;
           if(!mobileMenu.contains(target) && !menuBtn.contains(target)){
-            mobileMenu.classList.remove('open');
-            menuBtn.setAttribute('aria-expanded','false');
+            toggleMenu(false);
           }
+        }
+      });
+      // Close on Escape
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape' && mobileMenu.classList.contains('open')){
+          e.preventDefault();
+          toggleMenu(false);
         }
       });
     }
