@@ -1,10 +1,23 @@
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
+
+
+def _default_sqlite_uri() -> str:
+    """Build an absolute SQLite URI pointing to instance/cartrade.db.
+
+    Using an absolute path avoids accidental creation of a new DB in the
+    current working directory when running CLIs or tests from different CWDs.
+    """
+    base_dir = os.path.dirname(os.path.abspath(__file__))  # /path/to/app
+    db_path = os.path.abspath(os.path.join(base_dir, "..", "instance", "cartrade.db"))
+    return f"sqlite:///{db_path}"
+
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "devkey")
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///cartrade.db")
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", _default_sqlite_uri())
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # Use an absolute path for uploads to avoid CWD-related issues across OSes
     UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER") or os.path.join(
