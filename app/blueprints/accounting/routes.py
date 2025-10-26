@@ -169,27 +169,10 @@ def create_car_invoice(customer_id: int, vehicle_id: int, price_omr: float,
         db.session.add(InvoiceItem(invoice_id=inv.id, vehicle_id=vehicle_id, description='Optional fees', amount_omr=optional_fees_omr))
         items_total += Decimal(str(optional_fees_omr))
     inv.total_omr = items_total
-    # Journal on payment (assume immediate payment for simplicity):
-    # Dr Bank (net after deposit) + Dr Customer Deposits (applied) / Cr Sales + Additional Revenue
+    # Defer revenue recognition until actual payment is recorded.
+    # Keep invoice as Unpaid so it doesn't count towards profits.
     if float(items_total) > 0:
-        car_price = float(price_omr or 0)
-        extra = float(optional_fees_omr or 0)
-        applied = max(0.0, float(deposit_applied_omr or 0.0))
-        cash_net = max(0.0, (car_price + extra) - applied)
-        lines = []
-        if cash_net > 0:
-            lines.append(('A100', cash_net, 0.0))
-        if applied > 0:
-            lines.append(('L200', applied, 0.0))  # clear liability via debit
-        lines.append(('R100', 0.0, car_price))
-        if extra > 0:
-            lines.append(('R150', 0.0, extra))
-        _post_journal(
-            description='Car invoice payment', reference=inv.invoice_number,
-            lines=lines,
-            customer_id=customer_id, vehicle_id=vehicle_id, invoice_id=inv.id,
-        )
-        inv.status = 'Paid'
+        inv.status = 'Unpaid'
     return inv.id
 
 
@@ -298,7 +281,12 @@ def dashboard():
     auction_fees_usd_sum = db.session.query(db.func.coalesce(db.func.sum(InternationalCost.auction_fees_usd), 0)).scalar() or 0
     expenses_omr = (float(freight_usd_sum) + float(auction_fees_usd_sum)) * usd_to_omr
     totals = {
-        "revenue_omr": float(db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).scalar() or 0),
+        "revenue_omr": float(
+            db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0))
+            .filter(Invoice.status == 'Paid')
+            .scalar()
+            or 0
+        ),
         "expenses_omr": expenses_omr,
     }
     totals["net_omr"] = totals["revenue_omr"] - totals["expenses_omr"]
@@ -313,8 +301,16 @@ def dashboard():
             month_end = datetime(month_start.year + 1, 1, 1)
         else:
             month_end = datetime(month_start.year, month_start.month + 1, 1)
-        total = db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).\
-            filter(Invoice.created_at >= month_start, Invoice.created_at < month_end).scalar() or 0
+        total = (
+            db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0))
+            .filter(
+                Invoice.created_at >= month_start,
+                Invoice.created_at < month_end,
+                Invoice.status == 'Paid',
+            )
+            .scalar()
+            or 0
+        )
         months.append(month_start.strftime('%b'))
         revenue_series.append(float(total))
     months = list(reversed(months))
@@ -678,7 +674,7 @@ def reports():
             start = dt
             end = datetime(dt.year + 1, 1, 1) if dt.month == 12 else datetime(dt.year, dt.month + 1, 1)
             labels.append(dt.strftime('%b %Y'))
-            rev = db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).filter(Invoice.created_at >= start, Invoice.created_at < end).scalar() or 0
+            rev = db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).filter(Invoice.created_at >= start, Invoice.created_at < end, Invoice.status == 'Paid').scalar() or 0
             freight = db.session.query(db.func.coalesce(db.func.sum(Shipment.cost_freight_usd), 0)).filter(Shipment.created_at >= start, Shipment.created_at < end).scalar() or 0
             customs = db.session.query(db.func.coalesce(db.func.sum(InternationalCost.customs_omr), 0)).filter(InternationalCost.created_at >= start, InternationalCost.created_at < end).scalar() or 0
             vat = db.session.query(db.func.coalesce(db.func.sum(InternationalCost.vat_omr), 0)).filter(InternationalCost.created_at >= start, InternationalCost.created_at < end).scalar() or 0

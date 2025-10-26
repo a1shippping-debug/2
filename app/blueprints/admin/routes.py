@@ -62,7 +62,7 @@ def dashboard():
     month_start = datetime(now.year, now.month, 1)
     totals = {
         "revenue_omr": db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0))
-            .filter(Invoice.created_at >= month_start).scalar(),
+            .filter(Invoice.created_at >= month_start, Invoice.status == 'Paid').scalar(),
     }
 
     # recent activity lists
@@ -97,7 +97,7 @@ def dashboard():
             else:
                 end = datetime(dt.year, dt.month + 1, 1)
             total = db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0))\
-                .filter(Invoice.created_at >= start, Invoice.created_at < end).scalar()
+                .filter(Invoice.created_at >= start, Invoice.created_at < end, Invoice.status == 'Paid').scalar()
             vals.append(float(total or 0))
             # go back one month
             if dt.month == 1:
@@ -142,7 +142,7 @@ def reports():
         start = dt
         end = datetime(dt.year + 1, 1, 1) if dt.month == 12 else datetime(dt.year, dt.month + 1, 1)
         labels.append(dt.strftime("%b %Y"))
-        rev = db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).filter(Invoice.created_at >= start, Invoice.created_at < end).scalar() or 0
+        rev = db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).filter(Invoice.created_at >= start, Invoice.created_at < end, Invoice.status == 'Paid').scalar() or 0
         # approximate expenses in OMR from USD-based costs (freight + cost items)
         usd_to_omr = 0.385
         freight = db.session.query(db.func.coalesce(db.func.sum(Shipment.cost_freight_usd), 0)).filter(Shipment.created_at >= start, Shipment.created_at < end).scalar() or 0
