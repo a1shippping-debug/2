@@ -4,7 +4,7 @@
 
 <nav class="bg-primary text-white fixed top-0 inset-x-0 z-50 shadow-md">
   <div class="max-w-7xl mx-auto px-4">
-    <div class="h-16 flex items-center justify-between {% if is_rtl %}flex-row-reverse{% endif %}" x-data="{ open:false }">
+    <div class="h-16 relative flex items-center justify-between {% if is_rtl %}flex-row-reverse{% endif %}" x-data="{ open:false }" @click.outside="open=false" @keydown.escape.window="open=false">
       <!-- Logo -->
       <a href="/" class="flex items-center gap-2 font-heading font-extrabold text-xl tracking-tight">
         <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo" class="h-8 w-8 rounded"/>
@@ -67,10 +67,10 @@
       </div>
 
       <!-- Mobile -->
-      <button class="md:hidden" @click="open=!open">
+      <button class="md:hidden" @click="open=!open" :aria-expanded="open ? 'true' : 'false'" aria-controls="mobile-menu" aria-label="القائمة">
         <i class="fa-solid fa-bars text-xl"></i>
       </button>
-      <div class="md:hidden absolute {{ 'left-4' if is_rtl else 'right-4' }} mt-2 w-60 bg-white text-neutral rounded-md shadow-lg py-2" x-show="open" @click.outside="open=false">
+      <div id="mobile-menu" class="md:hidden absolute {{ 'left-4' if is_rtl else 'right-4' }} top-full mt-2 w-60 bg-white text-neutral rounded-md shadow-lg py-2" x-show="open" x-cloak x-transition>
         <div class="px-4 py-2 font-semibold text-primary">A1 Shipping</div>
         <div class="px-3 py-2 border-t">
           <form id="vehicle-search-form-mobile" class="flex items-center gap-2">
