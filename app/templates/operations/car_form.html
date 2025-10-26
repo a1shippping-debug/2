@@ -154,7 +154,26 @@
     <div><label>تاريخ الشراء</label><input type="date" name="purchase_date"></div>
     <div><label>سعر الشراء (USD)</label><input name="purchase_price"></div>
     <div><label>رسوم المزاد</label><input name="auction_fees"></div>
-    <div><label>تكلفة النقل المحلي</label><input name="local_transport"></div>
+    <div><label>تكلفة النقل المحلي (OMR)</label><input name="local_transport" id="local_transport" inputmode="decimal"></div>
+
+    <div>
+      <label>المنطقة (المستودع/الوجهة)</label>
+      <input id="region_input" list="regions_datalist" placeholder="اكتب الكود أو اسم المنطقة">
+      <datalist id="regions_datalist">
+        {% for r in (regions or []) %}
+          <option value="{{ r.region_code }}" label="{{ r.region_name or '' }} - {{ '%.3f'|format(r.price_omr or 0) }} OMR"></option>
+          {% if r.region_name %}
+          <option value="{{ r.region_name }}" label="{{ r.region_code }} - {{ '%.3f'|format(r.price_omr or 0) }} OMR"></option>
+          {% endif %}
+        {% endfor %}
+      </datalist>
+      <input type="hidden" name="region" id="region_hidden">
+    </div>
+
+    <div>
+      <label>تكلفة الشحن حسب المنطقة (OMR)</label>
+      <input name="shipping_price_omr" id="shipping_price_omr" readonly>
+    </div>
 
     <div>
       <label>العميل</label>
@@ -221,6 +240,34 @@
     const opt = Array.from(datalist.options || []).find(o => (o.dataset && o.dataset.id) === select.value);
     if (opt) input.value = opt.value;
   });
+})();
+
+// Auto-fill shipping price from selected region
+(function() {
+  const regionInput = document.getElementById('region_input');
+  const regionHidden = document.getElementById('region_hidden');
+  const priceField = document.getElementById('shipping_price_omr');
+  if (!regionInput || !priceField) return;
+
+  async function fetchPrice(q) {
+    if (!q || !q.trim()) return;
+    try {
+      const resp = await fetch(`{{ url_for('ops.shipping_region_price') }}?q=` + encodeURIComponent(q.trim()));
+      if (!resp.ok) { priceField.value = ''; return; }
+      const data = await resp.json();
+      if (data && data.found) {
+        priceField.value = (data.price_omr ?? '').toString();
+        regionHidden.value = data.region_code || q;
+      } else {
+        priceField.value = '';
+      }
+    } catch (_) {
+      priceField.value = '';
+    }
+  }
+
+  regionInput.addEventListener('change', () => fetchPrice(regionInput.value));
+  regionInput.addEventListener('blur', () => fetchPrice(regionInput.value));
 })();
 </script>
 {% endblock %}

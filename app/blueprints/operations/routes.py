@@ -3,10 +3,79 @@ from flask_babel import gettext as _
 from flask_login import login_required
 from ...security import role_required
 from ...extensions import db
-from ...models import Vehicle, Shipment, VehicleShipment, Customer, Notification, Auction, Document, CostItem, User, Role, Invoice, InvoiceItem, VehicleSaleListing
+from ...models import (
+    Vehicle,
+    Shipment,
+    VehicleShipment,
+    Customer,
+    Notification,
+    Auction,
+    Document,
+    CostItem,
+    User,
+    Role,
+    Invoice,
+    InvoiceItem,
+    VehicleSaleListing,
+    ShippingRegionPrice,
+    InternationalCost,
+)
 from datetime import datetime
 
 ops_bp = Blueprint("ops", __name__, template_folder="templates/operations")
+# Region shipping price lookup for Operations UI
+@ops_bp.get('/shipping/region-price')
+@role_required('employee', 'admin')
+def shipping_region_price():
+    """Return OMR price for a given region code or name.
+
+    Query param: q (region code or name, case-insensitive)
+    Response: {found: bool, region_code, region_name, price_omr}
+    """
+    q = (request.args.get('q') or '').strip()
+    if not q:
+        return jsonify({'error': 'missing parameter q'}), 400
+
+    # Try exact match on code or name (case-insensitive)
+    row = (
+        db.session.query(ShippingRegionPrice)
+        .filter(
+            db.or_(
+                db.func.lower(ShippingRegionPrice.region_code) == q.lower(),
+                db.func.lower(ShippingRegionPrice.region_name) == q.lower(),
+            )
+        )
+        .first()
+    )
+    if not row:
+        # Fallback to partial match
+        like = f"%{q.lower()}%"
+        row = (
+            db.session.query(ShippingRegionPrice)
+            .filter(
+                db.or_(
+                    db.func.lower(ShippingRegionPrice.region_code).like(like),
+                    db.func.lower(ShippingRegionPrice.region_name).like(like),
+                )
+            )
+            .order_by(ShippingRegionPrice.region_code.asc())
+            .first()
+        )
+
+    if not row:
+        return jsonify({'found': False}), 404
+
+    try:
+        price_val = float(row.price_omr or 0)
+    except Exception:
+        price_val = 0.0
+    return jsonify({
+        'found': True,
+        'region_code': row.region_code,
+        'region_name': row.region_name,
+        'price_omr': price_val,
+    })
+
 
 
 @ops_bp.route("/dashboard")
@@ -311,6 +380,7 @@ def sale_listings_reject(listing_id: int):
 @role_required('employee', 'admin')
 def cars_new():
     customers = db.session.query(Customer).order_by(Customer.company_name.asc()).all()
+    regions = db.session.query(ShippingRegionPrice).order_by(ShippingRegionPrice.region_code.asc()).all()
     if request.method == 'POST':
         vin = (request.form.get('vin') or '').strip().upper()
         make = (request.form.get('make') or '').strip()
@@ -324,6 +394,9 @@ def cars_new():
         purchase_price = request.form.get('purchase_price')
         auction_fees = request.form.get('auction_fees')
         local_transport = request.form.get('local_transport')
+        # Optional region + precomputed OMR shipping/transport from UI
+        region_val = (request.form.get('region') or '').strip()
+        shipping_price_omr = request.form.get('shipping_price_omr')
         client_id = request.form.get('client_id')
         status_val = request.form.get('status') or 'New car'
 
@@ -387,12 +460,45 @@ def cars_new():
             db.session.flush()
             db.session.add(InvoiceItem(invoice_id=inv.id, vehicle_id=v.id, description=f"Vehicle {v.vin} purchase", amount_omr=amount_omr))
 
-        # optional cost items
+        # Optional costs: auction fees (USD as cost item) and local transport/shipping (OMR in InternationalCost)
         try:
             if auction_fees:
                 db.session.add(CostItem(vehicle_id=v.id, type='Auction Fees', amount_usd=float(auction_fees), description='Auction fees'))
+
+            # Gather values; store OMR amounts in InternationalCost
+            cost_row = None
+            def ensure_cost_row() -> InternationalCost:
+                nonlocal cost_row
+                if cost_row is None:
+                    cost_row = db.session.query(InternationalCost).filter_by(vehicle_id=v.id).first()
+                    if not cost_row:
+                        cost_row = InternationalCost(vehicle_id=v.id)
+                        db.session.add(cost_row)
+                        db.session.flush()
+                return cost_row
+
+            # Local transport (OMR)
             if local_transport:
-                db.session.add(CostItem(vehicle_id=v.id, type='Local Transport', amount_usd=float(local_transport), description='Local transport'))
+                try:
+                    lt_omr = float(local_transport)
+                except Exception:
+                    lt_omr = None
+                if lt_omr is not None:
+                    ensure_cost_row().local_transport_omr = lt_omr
+
+            # Shipping price from region (OMR) — store into misc_omr to include in totals
+            if shipping_price_omr:
+                try:
+                    shp_omr = float(shipping_price_omr)
+                except Exception:
+                    shp_omr = None
+                if shp_omr is not None:
+                    cr = ensure_cost_row()
+                    try:
+                        existing = float(cr.misc_omr or 0)
+                    except Exception:
+                        existing = 0.0
+                    cr.misc_omr = (existing or 0) + shp_omr
         except Exception:
             pass
 
@@ -416,7 +522,7 @@ def cars_new():
             return render_template('operations/cars_success.html', vehicle=v)
         except Exception:
             db.session.rollback()
-    return render_template('operations/car_form.html', customers=customers)
+    return render_template('operations/car_form.html', customers=customers, regions=regions)
 
 
 @ops_bp.route('/cars/<int:vehicle_id>/edit', methods=['GET', 'POST'])
@@ -426,6 +532,7 @@ def cars_edit(vehicle_id: int):
     if not v:
         return ("Not found", 404)
     customers = db.session.query(Customer).order_by(Customer.company_name.asc()).all()
+    regions = db.session.query(ShippingRegionPrice).order_by(ShippingRegionPrice.region_code.asc()).all()
     if request.method == 'POST':
         v.make = (request.form.get('make') or '').strip() or v.make
         v.model = (request.form.get('model') or '').strip() or v.model
@@ -464,7 +571,7 @@ def cars_edit(vehicle_id: int):
             db.session.commit()
         except Exception:
             db.session.rollback()
-    return render_template('operations/car_form.html', vehicle=v, customers=customers)
+    return render_template('operations/car_form.html', vehicle=v, customers=customers, regions=regions)
 
 
 @ops_bp.route('/cars/<int:vehicle_id>/delete', methods=['POST'])
