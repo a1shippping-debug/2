@@ -1,9 +1,10 @@
 Flask==3.0.3
 Flask-SQLAlchemy==3.0.4
-psycopg2-binary==2.9.7
+# Skip psycopg2-binary on Python 3.13+ (no prebuilt wheels)
+psycopg2-binary==2.9.7; python_version < "3.13"
 Flask-Migrate==4.0.4
-Flask-Login==0.6.2
-Flask-Babel==3.0.1
+Flask-Login==0.6.3
+Flask-Babel==4.0.0
 Flask-WTF==1.1.1
 WTForms==3.0.1
 Flask-Mail==0.9.1
