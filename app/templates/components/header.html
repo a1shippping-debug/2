@@ -120,4 +120,47 @@
     bindForm('vehicle-search-form','vehicle-search-input');
     bindForm('vehicle-search-form-mobile','vehicle-search-input-mobile');
   })();
+
+  // Fallback: enable mobile menu toggle if Alpine isn't available/initialized
+  document.addEventListener('DOMContentLoaded', function(){
+    try {
+      var toggleBtn = document.querySelector('button[aria-controls="mobile-menu"]');
+      var mobileMenu = document.getElementById('mobile-menu');
+      if (!toggleBtn || !mobileMenu) return;
+      // If Alpine loaded and initialized, it removes x-cloak; skip fallback then
+      var alpineReady = !!window.Alpine && !mobileMenu.hasAttribute('x-cloak');
+      if (alpineReady) return;
+
+      var isOpen = false;
+      function setOpen(next){
+        isOpen = !!next;
+        toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        if (isOpen) {
+          mobileMenu.style.display = 'block';
+          mobileMenu.removeAttribute('x-cloak');
+        } else {
+          mobileMenu.style.display = 'none';
+        }
+      }
+      setOpen(false);
+
+      toggleBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        setOpen(!isOpen);
+      });
+
+      document.addEventListener('click', function(e){
+        if (!isOpen) return;
+        var t = e.target;
+        if (!mobileMenu.contains(t) && !toggleBtn.contains(t)) {
+          setOpen(false);
+        }
+      });
+
+      document.addEventListener('keydown', function(e){
+        if (e.key === 'Escape' && isOpen) setOpen(false);
+      });
+    } catch (_err) {}
+  });
 </script>
