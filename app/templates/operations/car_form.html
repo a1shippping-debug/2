@@ -163,8 +163,10 @@
 
     <div><label>الموقع الحالي</label><input name="current_location" value="{{ vehicle.current_location if vehicle else '' }}"></div>
     <div><label>تاريخ الشراء</label><input type="date" name="purchase_date"></div>
-    <div><label>سعر الشراء (USD)</label><input name="purchase_price"></div>
-    <div><label>رسوم المزاد</label><input name="auction_fees"></div>
+    <div>
+      <label>سعر المزاد شامل الرسوم (USD)</label>
+      <input name="auction_total_usd" id="auction_total_usd" inputmode="decimal" value="{{ vehicle.purchase_price_usd if vehicle else '' }}">
+    </div>
     <div><label>تكلفة النقل المحلي (OMR)</label><input name="local_transport" id="local_transport" inputmode="decimal"></div>
 
     <div>
