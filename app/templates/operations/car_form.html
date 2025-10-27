@@ -272,10 +272,10 @@
       const div = document.createElement('div');
       div.className = 'item' + (idx === activeIndex ? ' active' : '');
       const left = document.createElement('div');
-      left.textContent = it.region_code;
+      left.textContent = (it.region_name || it.region_code || '').toString();
       const right = document.createElement('div');
       right.className = 'meta';
-      right.textContent = `${it.region_name || ''} · ${Number(it.price_omr || 0).toFixed(3)} OMR`;
+      right.textContent = `${it.region_code || ''} · ${Number(it.price_omr || 0).toFixed(3)} OMR`;
       div.appendChild(left); div.appendChild(right);
       div.addEventListener('mousedown', (e) => {
         // mousedown to select before input loses focus
@@ -316,7 +316,7 @@
   function choose(idx) {
     if (idx < 0 || idx >= items.length) return;
     const it = items[idx];
-    input.value = it.region_code;
+    input.value = (it.region_name || it.region_code || '').toString();
     hidden.value = it.region_code;
     priceField.value = Number(it.price_omr || 0).toString();
     list.hidden = true;
