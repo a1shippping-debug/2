@@ -19,6 +19,7 @@ from ...models import (
     Buyer,
     ShippingRegionPrice,
 )
+from datetime import datetime
 
 admin_bp = Blueprint("admin", __name__, template_folder="templates/admin")
 
@@ -280,6 +281,166 @@ def activity_log():
 def shipping_prices_list():
     rows = db.session.query(ShippingRegionPrice).order_by(ShippingRegionPrice.region_code.asc()).all()
     return render_template("admin/shipping_prices.html", rows=rows)
+
+
+@admin_bp.route("/shipping-prices/new", methods=["GET", "POST"])
+@role_required("admin")
+def shipping_prices_new():
+    if request.method == "POST":
+        region_code = (request.form.get("region_code") or "").strip()
+        region_name = (request.form.get("region_name") or "").strip()
+        price_omr_raw = (request.form.get("price_omr") or "").strip()
+        eff_from_raw = (request.form.get("effective_from") or "").strip()
+        eff_to_raw = (request.form.get("effective_to") or "").strip()
+
+        if not region_code or not price_omr_raw:
+            flash(_("Please fill in all required fields."), "danger")
+            return render_template(
+                "admin/shipping_price_form.html",
+                form=request.form,
+                row=None,
+            )
+
+        # Ensure region_code uniqueness (case-insensitive)
+        dup = (
+            db.session.query(ShippingRegionPrice)
+            .filter(db.func.lower(ShippingRegionPrice.region_code) == region_code.lower())
+            .first()
+        )
+        if dup:
+            flash(_("Region code already exists."), "danger")
+            return render_template(
+                "admin/shipping_price_form.html",
+                form=request.form,
+                row=None,
+            )
+
+        try:
+            price_omr = float(price_omr_raw)
+        except Exception:
+            flash(_("Invalid price value."), "danger")
+            return render_template(
+                "admin/shipping_price_form.html",
+                form=request.form,
+                row=None,
+            )
+
+        def parse_date(s):
+            try:
+                return datetime.strptime(s, "%Y-%m-%d") if s else None
+            except Exception:
+                return None
+
+        obj = ShippingRegionPrice(
+            region_code=region_code,
+            region_name=region_name or None,
+            price_omr=price_omr,
+            effective_from=parse_date(eff_from_raw),
+            effective_to=parse_date(eff_to_raw),
+        )
+        db.session.add(obj)
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            flash(_("Failed to create shipping price."), "danger")
+            return render_template(
+                "admin/shipping_price_form.html",
+                form=request.form,
+                row=None,
+            )
+
+        flash(_("Shipping price created."), "success")
+        log_action("create", "ShippingRegionPrice", obj.id, {"region_code": obj.region_code})
+        return redirect(url_for("admin.shipping_prices_list"))
+
+    return render_template("admin/shipping_price_form.html", form=request.form, row=None)
+
+
+@admin_bp.route("/shipping-prices/<int:row_id>/edit", methods=["GET", "POST"]) 
+@role_required("admin")
+def shipping_prices_edit(row_id: int):
+    row = db.session.get(ShippingRegionPrice, row_id)
+    if not row:
+        abort(404)
+
+    if request.method == "POST":
+        region_code = (request.form.get("region_code") or "").strip()
+        region_name = (request.form.get("region_name") or "").strip()
+        price_omr_raw = (request.form.get("price_omr") or "").strip()
+        eff_from_raw = (request.form.get("effective_from") or "").strip()
+        eff_to_raw = (request.form.get("effective_to") or "").strip()
+
+        if not region_code or not price_omr_raw:
+            flash(_("Please fill in all required fields."), "danger")
+            return render_template("admin/shipping_price_form.html", form=request.form, row=row)
+
+        # Check duplicate code if changed
+        if region_code.lower() != (row.region_code or "").lower():
+            dup = (
+                db.session.query(ShippingRegionPrice)
+                .filter(db.func.lower(ShippingRegionPrice.region_code) == region_code.lower())
+                .first()
+            )
+            if dup:
+                flash(_("Region code already exists."), "danger")
+                return render_template("admin/shipping_price_form.html", form=request.form, row=row)
+
+        try:
+            price_omr = float(price_omr_raw)
+        except Exception:
+            flash(_("Invalid price value."), "danger")
+            return render_template("admin/shipping_price_form.html", form=request.form, row=row)
+
+        def parse_date(s):
+            try:
+                return datetime.strptime(s, "%Y-%m-%d") if s else None
+            except Exception:
+                return None
+
+        row.region_code = region_code
+        row.region_name = region_name or None
+        row.price_omr = price_omr
+        row.effective_from = parse_date(eff_from_raw)
+        row.effective_to = parse_date(eff_to_raw)
+
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            flash(_("Failed to update shipping price."), "danger")
+            return render_template("admin/shipping_price_form.html", form=request.form, row=row)
+
+        flash(_("Shipping price updated."), "success")
+        log_action("update", "ShippingRegionPrice", row.id, {"region_code": row.region_code})
+        return redirect(url_for("admin.shipping_prices_list"))
+
+    form_defaults = {
+        "region_code": row.region_code,
+        "region_name": row.region_name or "",
+        "price_omr": f"{float(row.price_omr or 0):.3f}",
+        "effective_from": row.effective_from.strftime("%Y-%m-%d") if row.effective_from else "",
+        "effective_to": row.effective_to.strftime("%Y-%m-%d") if row.effective_to else "",
+    }
+    return render_template("admin/shipping_price_form.html", form=form_defaults, row=row)
+
+
+@admin_bp.route("/shipping-prices/<int:row_id>/delete", methods=["POST"]) 
+@role_required("admin")
+def shipping_prices_delete(row_id: int):
+    row = db.session.get(ShippingRegionPrice, row_id)
+    if not row:
+        abort(404)
+    db.session.delete(row)
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        flash(_("Failed to delete shipping price."), "danger")
+        return redirect(url_for("admin.shipping_prices_list"))
+    flash(_("Shipping price deleted."), "success")
+    log_action("delete", "ShippingRegionPrice", row_id, {"region_code": getattr(row, "region_code", None)})
+    return redirect(url_for("admin.shipping_prices_list"))
 
 
 @admin_bp.route("/shipping-prices/upload", methods=["POST"])
