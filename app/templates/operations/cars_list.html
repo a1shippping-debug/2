@@ -168,6 +168,7 @@
         <th>{{ _('Lot') }}</th>
         <th>{{ _('Location') }}</th>
         <th>{{ _('Client') }}</th>
+        <th>{{ _('Buyer #') }}</th>
         <th>{{ _('Status') }}</th>
         <th>{{ _('Auction') }}</th>
         <th>{{ _('Tracking') }}</th>
@@ -183,6 +184,7 @@
         <td>{{ v.auction.lot_number if v.auction else '-' }}</td>
         <td>{{ v.current_location or (v.auction.location if v.auction else '-') }}</td>
         <td>{{ v.owner.company_name if v.owner else '-' }}</td>
+        <td>{% if v.auction and v.auction.buyer %}{{ v.auction.buyer.buyer_number or '-' }}{% else %}-{% endif %}</td>
         <td>{{ v.status }}</td>
         <td>
           {% if v.auction and v.auction.auction_url %}

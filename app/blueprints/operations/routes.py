@@ -19,6 +19,7 @@ from ...models import (
     VehicleSaleListing,
     ShippingRegionPrice,
     InternationalCost,
+    Buyer,
 )
 from datetime import datetime
 
@@ -422,6 +423,11 @@ def sale_listings_reject(listing_id: int):
 @role_required('employee', 'admin')
 def cars_new():
     customers = db.session.query(Customer).order_by(Customer.company_name.asc()).all()
+    buyers = (
+        db.session.query(Buyer)
+        .order_by(db.func.coalesce(Buyer.buyer_number, ''), Buyer.name.asc())
+        .all()
+    )
     regions = db.session.query(ShippingRegionPrice).order_by(ShippingRegionPrice.region_code.asc()).all()
     if request.method == 'POST':
         vin = (request.form.get('vin') or '').strip().upper()
@@ -443,11 +449,13 @@ def cars_new():
         region_val = (request.form.get('region') or '').strip()
         shipping_price_omr = request.form.get('shipping_price_omr')
         client_id = request.form.get('client_id')
+        buyer_id = request.form.get('buyer_id')
         status_val = request.form.get('status') or 'New car'
 
         # ensure auction record
         auc = None
-        if auction_type or lot_number or auction_url:
+        # Ensure auction row exists if any auction field OR a buyer is provided
+        if auction_type or lot_number or auction_url or buyer_id:
             auc = db.session.query(Auction).filter(
                 db.func.lower(Auction.provider) == auction_type.lower(),
                 Auction.lot_number == lot_number
@@ -459,6 +467,15 @@ def cars_new():
             else:
                 if auction_url:
                     auc.auction_url = auction_url
+            # Link selected buyer (and its customer) to the auction
+            try:
+                b = db.session.get(Buyer, int(buyer_id)) if buyer_id else None
+            except Exception:
+                b = None
+            if b:
+                auc.buyer_id = b.id
+                if not getattr(auc, 'customer_id', None) and getattr(b, 'customer_id', None):
+                    auc.customer_id = b.customer_id
 
         v = Vehicle(
             vin=vin or None,
@@ -493,7 +510,7 @@ def cars_new():
         db.session.add(v)
         db.session.flush()
 
-        # If no client selected but auction linked to a customer, inherit it
+        # If no client selected but auction (via buyer) linked to a customer, inherit it
         if not client_id and auc and getattr(auc, 'customer_id', None):
             v.owner_customer_id = auc.customer_id
 
@@ -574,7 +591,7 @@ def cars_new():
             return render_template('operations/cars_success.html', vehicle=v)
         except Exception:
             db.session.rollback()
-    return render_template('operations/car_form.html', customers=customers, regions=regions)
+    return render_template('operations/car_form.html', customers=customers, regions=regions, buyers=buyers)
 
 
 @ops_bp.route('/cars/<int:vehicle_id>/edit', methods=['GET', 'POST'])
@@ -584,6 +601,11 @@ def cars_edit(vehicle_id: int):
     if not v:
         return ("Not found", 404)
     customers = db.session.query(Customer).order_by(Customer.company_name.asc()).all()
+    buyers = (
+        db.session.query(Buyer)
+        .order_by(db.func.coalesce(Buyer.buyer_number, ''), Buyer.name.asc())
+        .all()
+    )
     regions = db.session.query(ShippingRegionPrice).order_by(ShippingRegionPrice.region_code.asc()).all()
     if request.method == 'POST':
         v.make = (request.form.get('make') or '').strip() or v.make
@@ -600,12 +622,13 @@ def cars_edit(vehicle_id: int):
             v.status = status_val
             notify(f"Vehicle {v.vin} status updated to {v.status}", 'Vehicle', v.id)
         client_id = request.form.get('client_id')
+        buyer_id = request.form.get('buyer_id')
         v.owner_customer_id = int(client_id) if client_id else None
         # update auction fields if vehicle has auction
         auc_type = (request.form.get('auction_type') or '').strip()
         lot_number = (request.form.get('lot_number') or '').strip()
         auction_url = (request.form.get('auction_url') or '').strip()
-        if auc_type or lot_number or auction_url:
+        if auc_type or lot_number or auction_url or buyer_id:
             auc = v.auction
             if not auc:
                 auc = Auction(provider=auc_type or None, lot_number=lot_number or None, auction_url=auction_url or None)
@@ -619,11 +642,23 @@ def cars_edit(vehicle_id: int):
                     auc.lot_number = lot_number
                 if auction_url:
                     auc.auction_url = auction_url
+            # Link selected buyer (and its customer) to the auction
+            try:
+                b = db.session.get(Buyer, int(buyer_id)) if buyer_id else None
+            except Exception:
+                b = None
+            if b:
+                auc.buyer_id = b.id
+                if not getattr(auc, 'customer_id', None) and getattr(b, 'customer_id', None):
+                    auc.customer_id = b.customer_id
+                # If client not explicitly selected, align vehicle owner with buyer's customer
+                if not client_id and getattr(b, 'customer_id', None):
+                    v.owner_customer_id = b.customer_id
         try:
             db.session.commit()
         except Exception:
             db.session.rollback()
-    return render_template('operations/car_form.html', vehicle=v, customers=customers, regions=regions)
+    return render_template('operations/car_form.html', vehicle=v, customers=customers, regions=regions, buyers=buyers)
 
 
 @ops_bp.route('/cars/<int:vehicle_id>/delete', methods=['POST'])
