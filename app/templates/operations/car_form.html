@@ -200,6 +200,19 @@
     </div>
 
     <div>
+      <label>الباير</label>
+      <select name="buyer_id" id="buyer_select">
+        <option value="">اختر الباير</option>
+        {% for b in buyers or [] %}
+          <option value="{{ b.id }}" {% if vehicle and vehicle.auction and vehicle.auction.buyer_id==b.id %}selected{% endif %}>
+            {{ b.name }}{% if b.buyer_number %} — {{ b.buyer_number }}{% endif %}
+          </option>
+        {% endfor %}
+      </select>
+      <small class="text-slate-500">يربط رقم الباير بهذا العميل في المزاد.</small>
+    </div>
+
+    <div>
       <label>الحالة</label>
       <select name="status">
         {% for s in ['New car','Cashier Payment','Auction Payment','Posted','Towing','Warehouse','Loading','Shipping','Port','On way','Arrived','Delivered'] %}
