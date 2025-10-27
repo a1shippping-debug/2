@@ -101,6 +101,17 @@
     </div>
 
     <div>
+      <label>{{ _('فئة الأسعار') }}</label>
+      <select name="price_category">
+        {% set pc = (customer.price_category if customer else 'normal') %}
+        {% for v in ['normal','container','vip','vvip'] %}
+        <option value="{{ v }}" {% if pc==v %}selected{% endif %}>{{ v }}</option>
+        {% endfor %}
+      </select>
+      <small class="text-gray-500">{{ _('تحدد الفئة أسعار الشحن الافتراضية لهذا العميل') }}</small>
+    </div>
+
+    <div>
       <label>{{ _('رقم البطاقة') }}</label>
       <input name="account_number" value="{{ customer.account_number if customer else '' }}" placeholder="{{ _('رقم البطاقة') }}" {% if not customer %}required{% endif %}>
     </div>

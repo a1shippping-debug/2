@@ -48,6 +48,9 @@ class Customer(db.Model):
     phone = db.Column(db.String(50))
     address = db.Column(db.Text)
     country = db.Column(db.String(100))
+    # Customer-specific pricing category used to filter shipping region prices
+    # One of: normal, container, vip, vvip
+    price_category = db.Column(db.String(20), nullable=False, default="normal")
     user = db.relationship("User", backref="customer_profile")
 
 class Buyer(db.Model):

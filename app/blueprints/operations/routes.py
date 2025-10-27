@@ -933,6 +933,9 @@ def customers_new():
         account_number = (request.form.get('account_number') or '').strip()
         password = (request.form.get('password') or '').strip()
         password_confirm = (request.form.get('password_confirm') or '').strip()
+        price_category = (request.form.get('price_category') or 'normal').strip().lower()
+        if price_category not in {"normal","container","vip","vvip"}:
+            price_category = 'normal'
 
         # Build a transient customer to repopulate the form on validation errors
         c = Customer(
@@ -943,6 +946,7 @@ def customers_new():
             country=country or None,
             address=address or None,
             account_number=account_number or None,
+            price_category=price_category,
         )
 
         # Required fields on create: name (company or full), phone, country, card number, email, password
@@ -1046,6 +1050,13 @@ def customers_edit(customer_id: int):
             val = request.form.get(fld)
             if val is not None:
                 setattr(c, fld, val)
+
+        # Update price category if provided
+        pc = request.form.get('price_category')
+        if pc is not None:
+            pc_norm = (pc or '').strip().lower()
+            if pc_norm in {"normal","container","vip","vvip"}:
+                c.price_category = pc_norm or c.price_category
 
         # Optional password change for linked user
         new_password = (request.form.get('password') or '').strip()
