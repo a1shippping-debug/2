@@ -52,6 +52,10 @@ def shipping_regions_suggest():
                 db.func.lower(ShippingRegionPrice.region_name).like(like),
             )
         )
+    # Optional category filter
+    category = (request.args.get('category') or '').strip().lower()
+    if category in {"normal", "container", "vip", "vvip"}:
+        query = query.filter(ShippingRegionPrice.category == category)
     rows = query.order_by(ShippingRegionPrice.region_code.asc()).limit(limit).all()
 
     out = []
@@ -79,23 +83,32 @@ def shipping_region_price():
     if not q:
         return jsonify({'error': 'missing parameter q'}), 400
 
+    # Optional category filter
+    category = (request.args.get('category') or '').strip().lower()
+    cat_filter = None
+    if category in {"normal", "container", "vip", "vvip"}:
+        cat_filter = (ShippingRegionPrice.category == category)
+
     # Try exact match on code or name (case-insensitive)
+    base = db.session.query(ShippingRegionPrice)
+    if cat_filter is not None:
+        base = base.filter(cat_filter)
     row = (
-        db.session.query(ShippingRegionPrice)
-        .filter(
+        base.filter(
             db.or_(
                 db.func.lower(ShippingRegionPrice.region_code) == q.lower(),
                 db.func.lower(ShippingRegionPrice.region_name) == q.lower(),
             )
-        )
-        .first()
+        ).first()
     )
     if not row:
         # Fallback to partial match
         like = f"%{q.lower()}%"
+        base = db.session.query(ShippingRegionPrice)
+        if cat_filter is not None:
+            base = base.filter(cat_filter)
         row = (
-            db.session.query(ShippingRegionPrice)
-            .filter(
+            base.filter(
                 db.or_(
                     db.func.lower(ShippingRegionPrice.region_code).like(like),
                     db.func.lower(ShippingRegionPrice.region_name).like(like),

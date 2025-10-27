@@ -306,7 +306,10 @@ class ShippingRegionPrice(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     # Short code or identifier for the region (e.g., MCT, SLL, IBRA)
-    region_code = db.Column(db.String(50), unique=True, index=True, nullable=False)
+    # Note: uniqueness is enforced together with category via a composite constraint
+    region_code = db.Column(db.String(50), index=True, nullable=False)
+    # Pricing category: normal, container, vip, vvip
+    category = db.Column(db.String(20), nullable=False, default="normal")
     # Human-friendly name in any language (Arabic recommended for admin UI)
     region_name = db.Column(db.String(200))
     # Price stored in OMR with 3 fractional digits
@@ -315,8 +318,12 @@ class ShippingRegionPrice(db.Model):
     effective_to = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    __table_args__ = (
+        db.UniqueConstraint("region_code", "category", name="uq_shipping_region_code_category"),
+    )
+
     def __repr__(self) -> str:  # pragma: no cover
-        return f"<ShippingRegionPrice {self.region_code} {self.price_omr}>"
+        return f"<ShippingRegionPrice {self.region_code} [{self.category}] {self.price_omr}>"
 
 
 # --- General Ledger & Accounting ---

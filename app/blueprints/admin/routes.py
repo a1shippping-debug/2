@@ -279,8 +279,13 @@ def activity_log():
 @admin_bp.route("/shipping-prices")
 @role_required("admin")
 def shipping_prices_list():
-    rows = db.session.query(ShippingRegionPrice).order_by(ShippingRegionPrice.region_code.asc()).all()
-    return render_template("admin/shipping_prices.html", rows=rows)
+    # Optional filter by category
+    category = (request.args.get("category") or "").strip().lower()
+    q = db.session.query(ShippingRegionPrice)
+    if category in {"normal", "container", "vip", "vvip"}:
+        q = q.filter(ShippingRegionPrice.category == category)
+    rows = q.order_by(ShippingRegionPrice.region_code.asc(), ShippingRegionPrice.category.asc()).all()
+    return render_template("admin/shipping_prices.html", rows=rows, category=category)
 
 
 @admin_bp.route("/shipping-prices/new", methods=["GET", "POST"])
@@ -292,6 +297,9 @@ def shipping_prices_new():
         price_omr_raw = (request.form.get("price_omr") or "").strip()
         eff_from_raw = (request.form.get("effective_from") or "").strip()
         eff_to_raw = (request.form.get("effective_to") or "").strip()
+        category = (request.form.get("category") or "normal").strip().lower()
+        if category not in {"normal", "container", "vip", "vvip"}:
+            category = "normal"
 
         if not region_code or not price_omr_raw:
             flash(_("Please fill in all required fields."), "danger")
@@ -301,14 +309,17 @@ def shipping_prices_new():
                 row=None,
             )
 
-        # Ensure region_code uniqueness (case-insensitive)
+        # Ensure (region_code, category) uniqueness (case-insensitive on code)
         dup = (
             db.session.query(ShippingRegionPrice)
-            .filter(db.func.lower(ShippingRegionPrice.region_code) == region_code.lower())
+            .filter(
+                db.func.lower(ShippingRegionPrice.region_code) == region_code.lower(),
+                ShippingRegionPrice.category == category,
+            )
             .first()
         )
         if dup:
-            flash(_("Region code already exists."), "danger")
+            flash(_("Region code with selected category already exists."), "danger")
             return render_template(
                 "admin/shipping_price_form.html",
                 form=request.form,
@@ -333,6 +344,7 @@ def shipping_prices_new():
 
         obj = ShippingRegionPrice(
             region_code=region_code,
+            category=category,
             region_name=region_name or None,
             price_omr=price_omr,
             effective_from=parse_date(eff_from_raw),
@@ -354,7 +366,11 @@ def shipping_prices_new():
         log_action("create", "ShippingRegionPrice", obj.id, {"region_code": obj.region_code})
         return redirect(url_for("admin.shipping_prices_list"))
 
-    return render_template("admin/shipping_price_form.html", form=request.form, row=None)
+    # GET -> prefill category from query param if provided
+    default_category = (request.args.get("category") or "normal").strip().lower()
+    if default_category not in {"normal", "container", "vip", "vvip"}:
+        default_category = "normal"
+    return render_template("admin/shipping_price_form.html", form={"category": default_category}, row=None)
 
 
 @admin_bp.route("/shipping-prices/<int:row_id>/edit", methods=["GET", "POST"]) 
@@ -370,20 +386,27 @@ def shipping_prices_edit(row_id: int):
         price_omr_raw = (request.form.get("price_omr") or "").strip()
         eff_from_raw = (request.form.get("effective_from") or "").strip()
         eff_to_raw = (request.form.get("effective_to") or "").strip()
+        category = (request.form.get("category") or "normal").strip().lower()
+        if category not in {"normal", "container", "vip", "vvip"}:
+            category = "normal"
 
         if not region_code or not price_omr_raw:
             flash(_("Please fill in all required fields."), "danger")
             return render_template("admin/shipping_price_form.html", form=request.form, row=row)
 
-        # Check duplicate code if changed
-        if region_code.lower() != (row.region_code or "").lower():
+        # Check duplicate (region_code, category) if either changed
+        if region_code.lower() != (row.region_code or "").lower() or category != (row.category or "normal"):
             dup = (
                 db.session.query(ShippingRegionPrice)
-                .filter(db.func.lower(ShippingRegionPrice.region_code) == region_code.lower())
+                .filter(
+                    db.func.lower(ShippingRegionPrice.region_code) == region_code.lower(),
+                    ShippingRegionPrice.category == category,
+                    ShippingRegionPrice.id != row.id,
+                )
                 .first()
             )
             if dup:
-                flash(_("Region code already exists."), "danger")
+                flash(_("Region code with selected category already exists."), "danger")
                 return render_template("admin/shipping_price_form.html", form=request.form, row=row)
 
         try:
@@ -399,6 +422,7 @@ def shipping_prices_edit(row_id: int):
                 return None
 
         row.region_code = region_code
+        row.category = category
         row.region_name = region_name or None
         row.price_omr = price_omr
         row.effective_from = parse_date(eff_from_raw)
@@ -417,6 +441,7 @@ def shipping_prices_edit(row_id: int):
 
     form_defaults = {
         "region_code": row.region_code,
+        "category": getattr(row, "category", "normal") or "normal",
         "region_name": row.region_name or "",
         "price_omr": f"{float(row.price_omr or 0):.3f}",
         "effective_from": row.effective_from.strftime("%Y-%m-%d") if row.effective_from else "",
@@ -456,34 +481,35 @@ def shipping_prices_upload():
         data = f.read()
         rows = parse_shipping_prices_file(data, f.filename)
 
-        # Upsert by region_code (case-insensitive) without creating duplicates
+        # Upsert by (region_code, category) without creating duplicates
         # within the same import batch. We first load any existing rows for
-        # the codes present in the file, then reuse objects as we iterate.
-        code_to_obj = {}
-        codes_in_file = {r.region_code.lower() for r in rows}
-        if codes_in_file:
+        # the (code, category) pairs present in the file, then reuse objects as we iterate.
+        key_to_obj: dict[tuple[str, str], ShippingRegionPrice] = {}
+        keys_in_file = {(r.region_code.lower(), getattr(r, 'category', 'normal')) for r in rows}
+        if keys_in_file:
+            codes = {k[0] for k in keys_in_file}
             existing_rows = (
                 db.session.query(ShippingRegionPrice)
-                .filter(db.func.lower(ShippingRegionPrice.region_code).in_(list(codes_in_file)))
+                .filter(db.func.lower(ShippingRegionPrice.region_code).in_(list(codes)))
                 .all()
             )
             for ex in existing_rows:
-                code_to_obj[ex.region_code.lower()] = ex
+                key_to_obj[(ex.region_code.lower(), getattr(ex, 'category', 'normal'))] = ex
 
         for r in rows:
-            code_key = r.region_code.lower()
-            obj = code_to_obj.get(code_key)
+            code_key = (r.region_code.lower(), getattr(r, 'category', 'normal'))
+            obj = key_to_obj.get(code_key)
             if obj is None:
-                obj = ShippingRegionPrice(region_code=r.region_code)
+                obj = ShippingRegionPrice(region_code=r.region_code, category=getattr(r, 'category', 'normal'))
                 db.session.add(obj)
-                code_to_obj[code_key] = obj
+                key_to_obj[code_key] = obj
             obj.region_name = r.region_name
             obj.price_omr = r.price_omr
             obj.effective_from = r.effective_from
             obj.effective_to = r.effective_to
 
         db.session.commit()
-        flash(_(f"Imported or updated {len(code_to_obj)} regions successfully."), "success")
+        flash(_(f"Imported or updated {len(key_to_obj)} region entries successfully."), "success")
     except Exception as e:
         try:
             db.session.rollback()
