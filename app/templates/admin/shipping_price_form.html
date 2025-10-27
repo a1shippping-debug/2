@@ -9,6 +9,16 @@
       <input name="region_code" value="{{ form.region_code or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" required>
     </div>
     <div>
+      <label class="block text-sm text-slate-300">{{ _('Category') }}</label>
+      <select name="category" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
+        {% set cat = (form.category or 'normal') %}
+        <option value="normal" {{ 'normal'==cat and 'selected' or '' }}>{{ _('Normal') }}</option>
+        <option value="container" {{ 'container'==cat and 'selected' or '' }}>{{ _('Container') }}</option>
+        <option value="vip" {{ 'vip'==cat and 'selected' or '' }}>VIP</option>
+        <option value="vvip" {{ 'vvip'==cat and 'selected' or '' }}>VVIP</option>
+      </select>
+    </div>
+    <div>
       <label class="block text-sm text-slate-300">{{ _('Region Name') }}</label>
       <input name="region_name" value="{{ form.region_name or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
     </div>

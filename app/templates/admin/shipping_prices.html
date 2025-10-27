@@ -6,9 +6,22 @@
   <div class="md:col-span-2">
     <div class="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden">
       <div class="p-3 text-left text-slate-300 flex items-center justify-between">
-        <div class="text-sm">{{ _('Current Prices') }}</div>
+        <div class="text-sm flex items-center gap-2">
+          <span>{{ _('Current Prices') }}</span>
+          <form method="get" action="{{ url_for('admin.shipping_prices_list') }}" class="inline-flex items-center gap-2">
+            <label class="text-xs">{{ _('Category') }}</label>
+            <select name="category" class="bg-slate-900 border border-slate-700 rounded p-1 text-xs" onchange="this.form.submit()">
+              {% set cat = (category or '') %}
+              <option value="" {{ ''==cat and 'selected' or '' }}>{{ _('All') }}</option>
+              <option value="normal" {{ 'normal'==cat and 'selected' or '' }}>{{ _('Normal') }}</option>
+              <option value="container" {{ 'container'==cat and 'selected' or '' }}>{{ _('Container') }}</option>
+              <option value="vip" {{ 'vip'==cat and 'selected' or '' }}>VIP</option>
+              <option value="vvip" {{ 'vvip'==cat and 'selected' or '' }}>VVIP</option>
+            </select>
+          </form>
+        </div>
         <div class="flex items-center gap-2">
-          <a href="{{ url_for('admin.shipping_prices_new') }}" class="text-xs px-3 py-1 rounded bg-emerald-700 hover:bg-emerald-600 text-white">{{ _('New') }}</a>
+          <a href="{{ url_for('admin.shipping_prices_new', category=(category or None)) }}" class="text-xs px-3 py-1 rounded bg-emerald-700 hover:bg-emerald-600 text-white">{{ _('New') }}</a>
           <form method="post" action="{{ url_for('admin.shipping_prices_clear') }}" onsubmit="return confirm('{{ _('Clear all prices?') }}');">
             <button class="text-xs px-3 py-1 rounded bg-rose-700 hover:bg-rose-600 text-white">{{ _('Clear All') }}</button>
           </form>
@@ -18,6 +31,7 @@
         <thead>
           <tr class="text-left text-slate-400">
             <th class="p-2">{{ _('CODE') }}</th>
+            <th class="p-2">{{ _('CATEGORY') }}</th>
             <th class="p-2">{{ _('REGION') }}</th>
             <th class="p-2">{{ _('PRICE / OMR') }}</th>
             <th class="p-2">{{ _('Effective From') }}</th>
@@ -30,6 +44,7 @@
           {% for r in rows %}
           <tr class="border-t border-slate-800">
             <td class="p-2">{{ r.region_code }}</td>
+            <td class="p-2">{{ (r.category or 'normal')|upper }}</td>
             <td class="p-2">{{ r.region_name or '-' }}</td>
             <td class="p-2">{{ '%.3f'|format(r.price_omr or 0) }}</td>
             <td class="p-2">{{ r.effective_from.strftime('%Y-%m-%d') if r.effective_from else '-' }}</td>
@@ -59,7 +74,7 @@
       <form method="post" action="{{ url_for('admin.shipping_prices_upload') }}" enctype="multipart/form-data" class="space-y-3">
         <input type="file" name="file" accept=".csv,.xlsx" class="block w-full text-sm" required />
         <div class="text-xs text-slate-400">
-          {{ _('Columns: region_code | region_name | price_omr | effective_from | effective_to') }}
+          {{ _('Columns: region_code | region_name | price_omr | effective_from | effective_to | category (normal/container/vip/vvip)') }}
         </div>
         <button class="px-4 py-2 rounded bg-primary text-white">{{ _('Import') }}</button>
       </form>

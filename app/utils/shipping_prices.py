@@ -16,6 +16,8 @@ class ShippingRegionRow:
     price_omr: Decimal
     effective_from: Optional[datetime]
     effective_to: Optional[datetime]
+    # Pricing category for this row. Defaults to 'normal'.
+    category: str = "normal"
 
 
 def _coerce_decimal(value) -> Decimal:
@@ -63,6 +65,47 @@ def _simplify_key(value: object) -> str:
     """
     k = _norm_key(value)
     return "".join(ch for ch in k if ch.isalnum())
+
+
+def _norm_category(value: object, default: str = "normal") -> str:
+    """Normalize category to one of: normal, container, vip, vvip.
+
+    Accepts English/Arabic variants and case-insensitive values.
+    """
+    try:
+        txt = str(value or "").strip().lower()
+    except Exception:
+        txt = ""
+    if not txt:
+        return default
+    # Arabic and English synonyms
+    mapping = {
+        "normal": "normal",
+        "عادي": "normal",
+        "عاديه": "normal",
+        "عادى": "normal",
+        "container": "container",
+        "بالحاوية": "container",
+        "حاوية": "container",
+        "حاويه": "container",
+        "vip": "vip",
+        "فيب": "vip",
+        "vvip": "vvip",
+        "فف أي بي": "vvip",
+        "ففايبي": "vvip",
+    }
+    # basic cleanup for separators/spaces
+    cleaned = txt.replace("-", " ").replace("_", " ").replace("/", " ").strip()
+    if cleaned in mapping:
+        return mapping[cleaned]
+    # tolerate uppercase
+    if cleaned.upper() in {"VIP", "VVIP"}:
+        return cleaned.lower()
+    # numeric mapping if users send codes
+    if cleaned in {"0", "1", "2", "3"}:
+        return ["normal", "container", "vip", "vvip"][int(cleaned)]
+    # default fallback
+    return default
 
 
 def _maybe_promote_first_row_to_header(df: pd.DataFrame) -> pd.DataFrame:
@@ -232,6 +275,18 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
             "موقع المزاد",
         }
         shipping_line_keys = {"shipping line", "line", "carrier", "شركة الشحن", "الخط الملاحي"}
+        # category aliases
+        category_keys = {
+            "category",
+            "الفئة",
+            "التصنيف",
+            "نوع",
+            "نوع الشحن",
+            "كاتيجوري",
+            # simplified
+            "categoryname",
+            "cat",
+        }
         # effective dates aliases
         eff_from_keys = {
             "effective_from",
@@ -277,6 +332,8 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
             rename_map[col] = "auction_location"
         elif key in shipping_line_keys or simple in shipping_line_keys:
             rename_map[col] = "shipping_line"
+        elif key in category_keys or simple in category_keys:
+            rename_map[col] = "category"
 
     if rename_map:
         df = df.rename(columns=rename_map)
@@ -342,6 +399,9 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
         if not (code or "").strip():
             continue
 
+        # category normalization with default 'normal' if not provided
+        category_val = _norm_category(r.get("category"), default="normal")
+
         rows.append(
             ShippingRegionRow(
                 region_code=code,
@@ -349,6 +409,7 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
                 price_omr=price,
                 effective_from=eff_from,
                 effective_to=eff_to,
+                category=category_val,
             )
         )
     return rows

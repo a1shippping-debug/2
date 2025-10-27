@@ -23,7 +23,13 @@
   <div class="mt-6 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-3 text-left">
     <div class="flex items-center justify-between">
       <div class="font-semibold">{{ _('Shipping Prices by Region') }}</div>
-      <a href="{{ url_for('admin.shipping_prices_list') }}" class="text-sm text-primary hover:underline">{{ _('Open Page') }}</a>
+      <div class="space-x-2 rtl:space-x-reverse">
+        <a href="{{ url_for('admin.shipping_prices_list') }}" class="text-sm text-primary hover:underline">{{ _('All') }}</a>
+        <a href="{{ url_for('admin.shipping_prices_list', category='normal') }}" class="text-sm text-primary hover:underline">{{ _('Normal') }}</a>
+        <a href="{{ url_for('admin.shipping_prices_list', category='container') }}" class="text-sm text-primary hover:underline">{{ _('Container') }}</a>
+        <a href="{{ url_for('admin.shipping_prices_list', category='vip') }}" class="text-sm text-primary hover:underline">VIP</a>
+        <a href="{{ url_for('admin.shipping_prices_list', category='vvip') }}" class="text-sm text-primary hover:underline">VVIP</a>
+      </div>
     </div>
     <form method="post" action="{{ url_for('admin.shipping_prices_upload') }}" enctype="multipart/form-data" class="space-y-3">
       <input type="file" name="file" accept=".csv,.xlsx" class="block w-full text-sm" required />
