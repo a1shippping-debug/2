@@ -23,6 +23,48 @@ from ...models import (
 from datetime import datetime
 
 ops_bp = Blueprint("ops", __name__, template_folder="templates/operations")
+# Regions suggest endpoint for searchable dropdown (Operations UI)
+@ops_bp.get('/shipping/regions.json')
+@role_required('employee', 'admin')
+def shipping_regions_suggest():
+    """Return list of regions filtered by query for autocomplete.
+
+    Query params:
+      - q: free text (matches code or name, case-insensitive)
+      - limit: max results (default 10, max 20)
+
+    Response: [{region_code, region_name, price_omr}]
+    """
+    q = (request.args.get('q') or '').strip().lower()
+    try:
+        limit = int(request.args.get('limit') or 10)
+    except Exception:
+        limit = 10
+    limit = max(1, min(20, limit))
+
+    query = db.session.query(ShippingRegionPrice)
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                db.func.lower(ShippingRegionPrice.region_code).like(like),
+                db.func.lower(ShippingRegionPrice.region_name).like(like),
+            )
+        )
+    rows = query.order_by(ShippingRegionPrice.region_code.asc()).limit(limit).all()
+
+    out = []
+    for r in rows:
+        try:
+            price_val = float(r.price_omr or 0)
+        except Exception:
+            price_val = 0.0
+        out.append({
+            'region_code': r.region_code,
+            'region_name': r.region_name,
+            'price_omr': price_val,
+        })
+    return jsonify(out)
 # Region shipping price lookup for Operations UI
 @ops_bp.get('/shipping/region-price')
 @role_required('employee', 'admin')
