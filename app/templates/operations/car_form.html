@@ -83,6 +83,17 @@
     background-color: #2734c2;
   }
 
+  /* Searchable dropdown styles for region selector */
+  .searchable-dropdown { position: relative; }
+  .searchable-dropdown .results {
+    position: absolute; inset-inline-start: 0; inset-inline-end: 0;
+    z-index: 40; background: #fff; border: 1px solid #e2e8f0; border-radius: 0.6rem;
+    margin-top: 0.25rem; max-height: 260px; overflow-y: auto; box-shadow: 0 8px 24px rgba(2,6,23,0.08);
+  }
+  .searchable-dropdown .item { padding: 0.55rem 0.75rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+  .searchable-dropdown .item:hover, .searchable-dropdown .item.active { background: #eef2ff; }
+  .searchable-dropdown .item .meta { color: #64748b; font-size: 0.85rem; margin-inline-start: 0.5rem; }
+
   .upload-section {
     grid-column: 1 / -1;
     background-color: #f8fafc;
@@ -158,16 +169,11 @@
 
     <div>
       <label>المنطقة (المستودع/الوجهة)</label>
-      <input id="region_input" list="regions_datalist" placeholder="اكتب الكود أو اسم المنطقة">
-      <datalist id="regions_datalist">
-        {% for r in (regions or []) %}
-          <option value="{{ r.region_code }}" label="{{ r.region_name or '' }} - {{ '%.3f'|format(r.price_omr or 0) }} OMR"></option>
-          {% if r.region_name %}
-          <option value="{{ r.region_name }}" label="{{ r.region_code }} - {{ '%.3f'|format(r.price_omr or 0) }} OMR"></option>
-          {% endif %}
-        {% endfor %}
-      </datalist>
-      <input type="hidden" name="region" id="region_hidden">
+      <div class="searchable-dropdown" id="region_selector">
+        <input id="region_input" placeholder="اكتب الكود أو اسم المنطقة" autocomplete="off">
+        <div class="results" id="region_results" hidden></div>
+        <input type="hidden" name="region" id="region_hidden">
+      </div>
     </div>
 
     <div>
@@ -242,22 +248,63 @@
   });
 })();
 
-// Auto-fill shipping price from selected region
+// Searchable dropdown + auto-fill shipping price
 (function() {
-  const regionInput = document.getElementById('region_input');
-  const regionHidden = document.getElementById('region_hidden');
+  const root = document.getElementById('region_selector');
+  const input = document.getElementById('region_input');
+  const list = document.getElementById('region_results');
+  const hidden = document.getElementById('region_hidden');
   const priceField = document.getElementById('shipping_price_omr');
-  if (!regionInput || !priceField) return;
+  if (!root || !input || !list || !priceField) return;
 
-  async function fetchPrice(q) {
-    if (!q || !q.trim()) return;
+  let items = [];
+  let activeIndex = -1;
+  let lastQuery = '';
+  let fetchTimeout = null;
+
+  function render() {
+    list.innerHTML = '';
+    if (!items.length) {
+      list.hidden = true;
+      return;
+    }
+    items.forEach((it, idx) => {
+      const div = document.createElement('div');
+      div.className = 'item' + (idx === activeIndex ? ' active' : '');
+      const left = document.createElement('div');
+      left.textContent = it.region_code;
+      const right = document.createElement('div');
+      right.className = 'meta';
+      right.textContent = `${it.region_name || ''} · ${Number(it.price_omr || 0).toFixed(3)} OMR`;
+      div.appendChild(left); div.appendChild(right);
+      div.addEventListener('mousedown', (e) => {
+        // mousedown to select before input loses focus
+        e.preventDefault();
+        choose(idx);
+      });
+      list.appendChild(div);
+    });
+    list.hidden = false;
+  }
+
+  async function fetchSuggestions(q) {
+    const url = `{{ url_for('ops.shipping_regions_suggest') }}?q=` + encodeURIComponent(q) + '&limit=12';
+    const resp = await fetch(url);
+    if (!resp.ok) { items = []; render(); return; }
+    items = await resp.json();
+    activeIndex = items.length ? 0 : -1;
+    render();
+  }
+
+  async function fetchPriceBy(anyText) {
+    if (!anyText || !anyText.trim()) return;
     try {
-      const resp = await fetch(`{{ url_for('ops.shipping_region_price') }}?q=` + encodeURIComponent(q.trim()));
+      const resp = await fetch(`{{ url_for('ops.shipping_region_price') }}?q=` + encodeURIComponent(anyText.trim()));
       if (!resp.ok) { priceField.value = ''; return; }
       const data = await resp.json();
       if (data && data.found) {
         priceField.value = (data.price_omr ?? '').toString();
-        regionHidden.value = data.region_code || q;
+        hidden.value = data.region_code || anyText;
       } else {
         priceField.value = '';
       }
@@ -266,8 +313,41 @@
     }
   }
 
-  regionInput.addEventListener('change', () => fetchPrice(regionInput.value));
-  regionInput.addEventListener('blur', () => fetchPrice(regionInput.value));
+  function choose(idx) {
+    if (idx < 0 || idx >= items.length) return;
+    const it = items[idx];
+    input.value = it.region_code;
+    hidden.value = it.region_code;
+    priceField.value = Number(it.price_omr || 0).toString();
+    list.hidden = true;
+  }
+
+  function onInput() {
+    const q = input.value.trim();
+    if (q === lastQuery) return;
+    lastQuery = q;
+    if (fetchTimeout) window.clearTimeout(fetchTimeout);
+    if (!q) { items = []; render(); return; }
+    fetchTimeout = window.setTimeout(() => fetchSuggestions(q), 150);
+  }
+
+  function onKeydown(e) {
+    if (list.hidden) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); activeIndex = Math.min(items.length - 1, activeIndex + 1); render(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); activeIndex = Math.max(0, activeIndex - 1); render(); }
+    else if (e.key === 'Enter') { if (activeIndex >= 0) { e.preventDefault(); choose(activeIndex); } }
+    else if (e.key === 'Escape') { list.hidden = true; }
+  }
+
+  function onBlur() {
+    // Slight delay to allow mousedown selection
+    setTimeout(() => { list.hidden = true; fetchPriceBy(input.value); }, 100);
+  }
+
+  input.addEventListener('input', onInput);
+  input.addEventListener('keydown', onKeydown);
+  input.addEventListener('blur', onBlur);
+  input.addEventListener('focus', () => { if (items.length) list.hidden = false; });
 })();
 </script>
 {% endblock %}
