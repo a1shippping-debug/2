@@ -5,7 +5,7 @@
 <form method="post" class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 max-w-2xl">
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
-      <label class="block text-sm text-slate-300">{{ _('Region Code') }}</label>
+      <label class="block text-sm text-slate-300">{{ _('STATE') }}</label>
       <input name="region_code" value="{{ form.region_code or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" required>
     </div>
     <div>
@@ -25,14 +25,6 @@
     <div>
       <label class="block text-sm text-slate-300">{{ _('Price (OMR)') }}</label>
       <input name="price_omr" type="number" step="0.001" value="{{ form.price_omr or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" required>
-    </div>
-    <div>
-      <label class="block text-sm text-slate-300">{{ _('Effective From') }}</label>
-      <input name="effective_from" type="date" value="{{ form.effective_from or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
-    </div>
-    <div>
-      <label class="block text-sm text-slate-300">{{ _('Effective To') }}</label>
-      <input name="effective_to" type="date" value="{{ form.effective_to or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
     </div>
   </div>
 

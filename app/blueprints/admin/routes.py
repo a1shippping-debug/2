@@ -295,8 +295,6 @@ def shipping_prices_new():
         region_code = (request.form.get("region_code") or "").strip()
         region_name = (request.form.get("region_name") or "").strip()
         price_omr_raw = (request.form.get("price_omr") or "").strip()
-        eff_from_raw = (request.form.get("effective_from") or "").strip()
-        eff_to_raw = (request.form.get("effective_to") or "").strip()
         category = (request.form.get("category") or "normal").strip().lower()
         if category not in {"normal", "container", "vip", "vvip"}:
             category = "normal"
@@ -336,19 +334,11 @@ def shipping_prices_new():
                 row=None,
             )
 
-        def parse_date(s):
-            try:
-                return datetime.strptime(s, "%Y-%m-%d") if s else None
-            except Exception:
-                return None
-
         obj = ShippingRegionPrice(
             region_code=region_code,
             category=category,
             region_name=region_name or None,
             price_omr=price_omr,
-            effective_from=parse_date(eff_from_raw),
-            effective_to=parse_date(eff_to_raw),
         )
         db.session.add(obj)
         try:
@@ -384,8 +374,6 @@ def shipping_prices_edit(row_id: int):
         region_code = (request.form.get("region_code") or "").strip()
         region_name = (request.form.get("region_name") or "").strip()
         price_omr_raw = (request.form.get("price_omr") or "").strip()
-        eff_from_raw = (request.form.get("effective_from") or "").strip()
-        eff_to_raw = (request.form.get("effective_to") or "").strip()
         category = (request.form.get("category") or "normal").strip().lower()
         if category not in {"normal", "container", "vip", "vvip"}:
             category = "normal"
@@ -415,18 +403,11 @@ def shipping_prices_edit(row_id: int):
             flash(_("Invalid price value."), "danger")
             return render_template("admin/shipping_price_form.html", form=request.form, row=row)
 
-        def parse_date(s):
-            try:
-                return datetime.strptime(s, "%Y-%m-%d") if s else None
-            except Exception:
-                return None
 
         row.region_code = region_code
         row.category = category
         row.region_name = region_name or None
         row.price_omr = price_omr
-        row.effective_from = parse_date(eff_from_raw)
-        row.effective_to = parse_date(eff_to_raw)
 
         try:
             db.session.commit()
@@ -444,8 +425,6 @@ def shipping_prices_edit(row_id: int):
         "category": getattr(row, "category", "normal") or "normal",
         "region_name": row.region_name or "",
         "price_omr": f"{float(row.price_omr or 0):.3f}",
-        "effective_from": row.effective_from.strftime("%Y-%m-%d") if row.effective_from else "",
-        "effective_to": row.effective_to.strftime("%Y-%m-%d") if row.effective_to else "",
     }
     return render_template("admin/shipping_price_form.html", form=form_defaults, row=row)
 
@@ -505,8 +484,7 @@ def shipping_prices_upload():
                 key_to_obj[code_key] = obj
             obj.region_name = r.region_name
             obj.price_omr = r.price_omr
-            obj.effective_from = r.effective_from
-            obj.effective_to = r.effective_to
+            # Effective date fields are deprecated and no longer used
 
         db.session.commit()
         flash(_(f"Imported or updated {len(key_to_obj)} region entries successfully."), "success")
