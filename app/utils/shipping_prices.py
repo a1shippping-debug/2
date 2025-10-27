@@ -14,8 +14,6 @@ class ShippingRegionRow:
     region_code: str
     region_name: Optional[str]
     price_omr: Decimal
-    effective_from: Optional[datetime]
-    effective_to: Optional[datetime]
     # Pricing category for this row. Defaults to 'normal'.
     category: str = "normal"
 
@@ -35,18 +33,8 @@ def _coerce_decimal(value) -> Decimal:
 
 
 def _coerce_datetime(value) -> Optional[datetime]:
-    try:
-        if value in (None, "", float("nan")):
-            return None
-    except Exception:
-        pass
-    try:
-        if isinstance(value, datetime):
-            return value
-        # Let pandas parse common formats
-        return pd.to_datetime(value, errors="coerce").to_pydatetime() if value else None
-    except Exception:
-        return None
+    # Deprecated: effective date fields removed
+    return None
 
 
 def _norm_key(value: object) -> str:
@@ -197,8 +185,6 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
     - region_code | code | رمز | الرمز
     - region_name | name | المنطقة | اسم المنطقة
     - price | price_omr | السعر | سعر الشحن
-    - effective_from | from | بداية السريان (اختياري)
-    - effective_to | to | نهاية السريان (اختياري)
     """
     name_lower = (filename or "").lower()
     if name_lower.endswith(".csv"):
@@ -287,32 +273,7 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
             "categoryname",
             "cat",
         }
-        # effective dates aliases
-        eff_from_keys = {
-            "effective_from",
-            "from",
-            "start",
-            "start date",
-            "effective date",
-            "valid from",
-            "بداية السريان",
-            "تاريخ البداية",
-            "effectivefrom",
-            "startdate",
-            "validfrom",
-        }
-        eff_to_keys = {
-            "effective_to",
-            "to",
-            "end",
-            "end date",
-            "valid to",
-            "نهاية السريان",
-            "تاريخ النهاية",
-            "effectiveto",
-            "enddate",
-            "validto",
-        }
+        # effective dates removed (ignored)
 
         if key in region_code_keys or simple in region_code_keys:
             rename_map[col] = "region_code"
@@ -320,10 +281,7 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
             rename_map[col] = "region_name"
         elif key in price_keys or simple in price_keys:
             rename_map[col] = "price_omr"
-        elif key in eff_from_keys or simple in eff_from_keys:
-            rename_map[col] = "effective_from"
-        elif key in eff_to_keys or simple in eff_to_keys:
-            rename_map[col] = "effective_to"
+        # ignore effective date columns if present
         elif key in state_keys or simple in state_keys:
             rename_map[col] = "state"
         elif key in city_keys or simple in city_keys:
@@ -392,8 +350,7 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
         except Exception:
             friendly = None
 
-        eff_from = _coerce_datetime(r.get("effective_from"))
-        eff_to = _coerce_datetime(r.get("effective_to"))
+        # effective dates dropped
 
         # Skip rows that still don't have a code after attempts
         if not (code or "").strip():
@@ -407,8 +364,6 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
                 region_code=code,
                 region_name=(friendly or (str(reg_name).strip() if reg_name is not None and str(reg_name).strip() else None)),
                 price_omr=price,
-                effective_from=eff_from,
-                effective_to=eff_to,
                 category=category_val,
             )
         )
