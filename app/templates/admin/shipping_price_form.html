@@ -1,0 +1,34 @@
+{% extends "base_admin.html" %}
+{% block title %}{{ _('Edit Shipping Price') if row else _('New Shipping Price') }}{% endblock %}
+{% block header %}{{ _('Edit Shipping Price') if row else _('New Shipping Price') }}{% endblock %}
+{% block content %}
+<form method="post" class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 max-w-2xl">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm text-slate-300">{{ _('Region Code') }}</label>
+      <input name="region_code" value="{{ form.region_code or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" required>
+    </div>
+    <div>
+      <label class="block text-sm text-slate-300">{{ _('Region Name') }}</label>
+      <input name="region_name" value="{{ form.region_name or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
+    </div>
+    <div>
+      <label class="block text-sm text-slate-300">{{ _('Price (OMR)') }}</label>
+      <input name="price_omr" type="number" step="0.001" value="{{ form.price_omr or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" required>
+    </div>
+    <div>
+      <label class="block text-sm text-slate-300">{{ _('Effective From') }}</label>
+      <input name="effective_from" type="date" value="{{ form.effective_from or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
+    </div>
+    <div>
+      <label class="block text-sm text-slate-300">{{ _('Effective To') }}</label>
+      <input name="effective_to" type="date" value="{{ form.effective_to or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
+    </div>
+  </div>
+
+  <div class="mt-6 flex items-center gap-3">
+    <button class="px-4 py-2 bg-primary text-white rounded" type="submit">{{ _('Save') if row else _('Create') }}</button>
+    <a href="{{ url_for('admin.shipping_prices_list') }}" class="text-slate-300">{{ _('Cancel') }}</a>
+  </div>
+</form>
+{% endblock %}
