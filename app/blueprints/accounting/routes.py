@@ -569,6 +569,22 @@ def payments_new():
         amt = Decimal('0')
     p = Payment(invoice_id=inv.id, amount_omr=amt, method=method, reference=reference)
     db.session.add(p)
+    # If this invoice looks like a car purchase (items linked to a vehicle) and has no explicit type,
+    # classify it as a CAR invoice so dashboards and reports treat it correctly.
+    try:
+        if not (inv.invoice_type and str(inv.invoice_type).strip()):
+            it = (
+                db.session.query(InvoiceItem)
+                .filter(InvoiceItem.invoice_id == inv.id, InvoiceItem.vehicle_id.isnot(None))
+                .first()
+            )
+            if it:
+                inv.invoice_type = 'CAR'
+                if not getattr(inv, 'vehicle_id', None):
+                    inv.vehicle_id = it.vehicle_id
+    except Exception:
+        # Non-blocking classification
+        pass
     # update status
     paid = inv.paid_total() + amt
     if paid >= (inv.total_omr or 0):
