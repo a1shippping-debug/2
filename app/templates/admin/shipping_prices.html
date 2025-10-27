@@ -14,33 +14,27 @@
       <table class="w-full text-sm">
         <thead>
           <tr class="text-left text-slate-400">
-            <th class="p-2">{{ _('NOTE') }}</th>
-            <th class="p-2">{{ _('PRICE / OMR') }}</th>
-            <th class="p-2">{{ _('Shipping Line') }}</th>
-            <th class="p-2">{{ _('Auction Location') }}</th>
-            <th class="p-2">{{ _('CITY') }}</th>
-            <th class="p-2">{{ _('STATE') }}</th>
             <th class="p-2">{{ _('CODE') }}</th>
-            <th class="p-2">{{ _('DESTINATION') }}</th>
+            <th class="p-2">{{ _('REGION') }}</th>
+            <th class="p-2">{{ _('PRICE / OMR') }}</th>
+            <th class="p-2">{{ _('Effective From') }}</th>
+            <th class="p-2">{{ _('Effective To') }}</th>
             <th class="p-2">{{ _('N') }}</th>
           </tr>
         </thead>
         <tbody>
           {% for r in rows %}
           <tr class="border-t border-slate-800">
-            <td class="p-2">-</td>
-            <td class="p-2">{{ '%.3f'|format(r.price_omr or 0) }}</td>
-            <td class="p-2">-</td>
-            <td class="p-2">-</td>
-            <td class="p-2">-</td>
-            <td class="p-2">-</td>
             <td class="p-2">{{ r.region_code }}</td>
             <td class="p-2">{{ r.region_name or '-' }}</td>
+            <td class="p-2">{{ '%.3f'|format(r.price_omr or 0) }}</td>
+            <td class="p-2">{{ r.effective_from.strftime('%Y-%m-%d') if r.effective_from else '-' }}</td>
+            <td class="p-2">{{ r.effective_to.strftime('%Y-%m-%d') if r.effective_to else '-' }}</td>
             <td class="p-2">{{ loop.index }}</td>
           </tr>
           {% else %}
           <tr>
-            <td colspan="9" class="p-3 text-slate-500">{{ _('No data') }}</td>
+            <td colspan="6" class="p-3 text-slate-500">{{ _('No data') }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -53,7 +47,7 @@
       <form method="post" action="{{ url_for('admin.shipping_prices_upload') }}" enctype="multipart/form-data" class="space-y-3">
         <input type="file" name="file" accept=".csv,.xlsx" class="block w-full text-sm" required />
         <div class="text-xs text-slate-400">
-          {{ _('Columns: NOTE | PRICE / OMR | Shipping Line | Auction Location | CITY | STATE | CODE | DESTINATION | N') }}
+          {{ _('Columns: region_code | region_name | price_omr | effective_from | effective_to') }}
         </div>
         <button class="px-4 py-2 rounded bg-primary text-white">{{ _('Import') }}</button>
       </form>
