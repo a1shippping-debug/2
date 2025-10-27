@@ -433,6 +433,9 @@ def cars_new():
         auction_url = (request.form.get('auction_url') or '').strip()
         current_location = (request.form.get('current_location') or '').strip()
         purchase_date = request.form.get('purchase_date')
+        # Combined auction price including fees (new single field)
+        auction_total_usd = request.form.get('auction_total_usd')
+        # Fallback support for older clients posting separate fields
         purchase_price = request.form.get('purchase_price')
         auction_fees = request.form.get('auction_fees')
         local_transport = request.form.get('local_transport')
@@ -467,11 +470,21 @@ def cars_new():
             status=status_val,
             current_location=current_location or None,
         )
-        if purchase_price:
-            try:
-                v.purchase_price_usd = float(purchase_price)
-            except Exception:
-                v.purchase_price_usd = None
+        # Set purchase price (USD) from combined total if provided; otherwise sum legacy fields
+        total_usd_val = None
+        try:
+            if auction_total_usd and str(auction_total_usd).strip():
+                total_usd_val = float(auction_total_usd)
+            else:
+                # Backward-compat: combine price + fees if both provided
+                pp = float(purchase_price) if purchase_price else 0.0
+                af = float(auction_fees) if auction_fees else 0.0
+                total = pp + af
+                if total > 0:
+                    total_usd_val = total
+        except Exception:
+            total_usd_val = None
+        v.purchase_price_usd = total_usd_val
         if purchase_date:
             try:
                 v.purchase_date = datetime.fromisoformat(purchase_date)
@@ -502,11 +515,8 @@ def cars_new():
             db.session.flush()
             db.session.add(InvoiceItem(invoice_id=inv.id, vehicle_id=v.id, description=f"Vehicle {v.vin} purchase", amount_omr=amount_omr))
 
-        # Optional costs: auction fees (USD as cost item) and local transport/shipping (OMR in InternationalCost)
+        # Optional costs: local transport/shipping (OMR in InternationalCost)
         try:
-            if auction_fees:
-                db.session.add(CostItem(vehicle_id=v.id, type='Auction Fees', amount_usd=float(auction_fees), description='Auction fees'))
-
             # Gather values; store OMR amounts in InternationalCost
             cost_row = None
             def ensure_cost_row() -> InternationalCost:
