@@ -65,6 +65,87 @@ def _simplify_key(value: object) -> str:
     return "".join(ch for ch in k if ch.isalnum())
 
 
+def _maybe_promote_first_row_to_header(df: pd.DataFrame) -> pd.DataFrame:
+    """If columns look like generic/unnamed and first row contains header labels,
+    use the first row as the new header and drop it from data.
+
+    This is common when Excel exports have headers in the first data row, leaving
+    pandas to assign "Unnamed: x" column names.
+    """
+    try:
+        cols = [str(c) for c in df.columns]
+        looks_unnamed = all(c.lower().startswith("unnamed:") for c in cols)
+        if not looks_unnamed or df.empty:
+            return df
+
+        first = df.iloc[0].fillna("")
+        header_candidates = { _norm_key(v) for v in first.tolist() }
+        # Any of these signals likely indicates a header row
+        signals = {
+            "region_name", "region_code", "price_omr", "price / omr",
+            "state", "city", "auction location", "shipping line",
+            "destination", "code", "رمز", "الرمز", "السعر",
+        }
+        if header_candidates & signals:
+            # promote
+            new_cols = []
+            for v in first.tolist():
+                key = str(v).strip()
+                new_cols.append(key if key else "")
+            df2 = df.iloc[1:].copy()
+            # Ensure unique column names if duplicates exist
+            seen = {}
+            uniq_cols: list[str] = []
+            for c in new_cols:
+                base = c or ""
+                if base not in seen:
+                    seen[base] = 1
+                    uniq_cols.append(base)
+                else:
+                    seen[base] += 1
+                    uniq_cols.append(f"{base}_{seen[base]}")
+            df2.columns = uniq_cols
+            return df2
+    except Exception:
+        pass
+    return df
+
+
+def _abbr_auction_location(text: str) -> str:
+    t = _norm_key(text)
+    if not t:
+        return ""
+    if "crashedtoys" in t:
+        return "CT"
+    if "copart" in t:
+        return "CP"
+    if " iaa" in f" {t}" or t.startswith("iaa"):
+        return "IAA"
+    if "manheim" in t:
+        return "MH"
+    if "ace" in t:
+        return "ACE"
+    # default: take first letters of up to 3 words
+    parts = [p for p in text.strip().split() if p]
+    if not parts:
+        return ""
+    return "".join(p[0] for p in parts[:3]).upper()
+
+
+def _make_region_code(state_code: str | None, city: str | None, auction_location: str | None, max_len: int = 50) -> str:
+    sc = (state_code or "").strip().upper()
+    city_part = (city or "").strip().replace(" ", "").upper()
+    if len(city_part) > 12:
+        city_part = city_part[:12]
+    auc_abbr = _abbr_auction_location(auction_location or "")
+    parts = [p for p in [sc, city_part, auc_abbr] if p]
+    code = "-".join(parts) if parts else (city_part or auc_abbr or sc or "REG")
+    # hard trim to max_len
+    if len(code) > max_len:
+        code = code[:max_len]
+    return code
+
+
 def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegionRow]:
     """
     Parse CSV/XLSX content and return rows.
@@ -81,6 +162,9 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
         df = pd.read_csv(io.BytesIO(data))
     else:
         df = pd.read_excel(io.BytesIO(data))
+
+    # Handle files where the first data row actually contains headers
+    df = _maybe_promote_first_row_to_header(df)
 
     # Normalize column names with robust matching and expanded aliases
     rename_map = {}
@@ -137,6 +221,17 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
             # simplified
             "priceomr",
         }
+        # optional detailed geo columns (used to synthesize region_code)
+        state_keys = {"state", "الولاية", "المنطقة", "ولاية"}
+        city_keys = {"city", "المدينة", "مدينة"}
+        auction_location_keys = {
+            "auction location",
+            "auction",
+            "location",
+            "مزاد",
+            "موقع المزاد",
+        }
+        shipping_line_keys = {"shipping line", "line", "carrier", "شركة الشحن", "الخط الملاحي"}
         # effective dates aliases
         eff_from_keys = {
             "effective_from",
@@ -174,28 +269,83 @@ def parse_shipping_prices_file(data: bytes, filename: str) -> List[ShippingRegio
             rename_map[col] = "effective_from"
         elif key in eff_to_keys or simple in eff_to_keys:
             rename_map[col] = "effective_to"
+        elif key in state_keys or simple in state_keys:
+            rename_map[col] = "state"
+        elif key in city_keys or simple in city_keys:
+            rename_map[col] = "city"
+        elif key in auction_location_keys or simple in auction_location_keys:
+            rename_map[col] = "auction_location"
+        elif key in shipping_line_keys or simple in shipping_line_keys:
+            rename_map[col] = "shipping_line"
 
     if rename_map:
         df = df.rename(columns=rename_map)
 
-    # Required
-    for required in ["region_code", "price_omr"]:
-        if required not in df.columns:
-            raise ValueError(f"Missing required column: {required}")
+    # If "region_code" is missing but we have detailed columns, we will synthesize it later.
+    has_region_code = "region_code" in df.columns
+    has_price = "price_omr" in df.columns
+    if not has_price:
+        raise ValueError("Missing required column: price_omr")
 
     rows: List[ShippingRegionRow] = []
-    for _, row in df.iterrows():
-        code = str(row.get("region_code", "")).strip()
-        if not code:
+    # Track codes to deduplicate within a single import
+    seen_codes: set[str] = set()
+    for _, r in df.iterrows():
+        rc_raw = str(r.get("region_code", "") or "").strip()
+        price = _coerce_decimal(r.get("price_omr"))
+        if price is None:
+            price = Decimal("0")
+        # synthesize code when missing or clearly non-unique (e.g., state code only)
+        state_val = (str(r.get("state", "")) or "").strip()
+        city_val = (str(r.get("city", "")) or "").strip()
+        auction_val = (str(r.get("auction_location", "")) or "").strip()
+
+        code: str
+        if not rc_raw or (len(rc_raw) <= 3 and (city_val or auction_val)):
+            code = _make_region_code(rc_raw or state_val, city_val, auction_val)
+        else:
+            code = rc_raw
+
+        # Ensure uniqueness within this file by appending numeric suffix if needed
+        base = code
+        suffix = 1
+        while code in seen_codes:
+            suffix += 1
+            trial = f"{base}-{suffix}"
+            code = trial[:50]
+        seen_codes.add(code)
+
+        # Build a friendly name
+        reg_name = r.get("region_name")
+        friendly: Optional[str] = None
+        try:
+            parts: list[str] = []
+            if reg_name and str(reg_name).strip():
+                parts.append(str(reg_name).strip())
+            loc_bits = []
+            if city_val:
+                loc_bits.append(city_val)
+            if state_val:
+                loc_bits.append(state_val)
+            if loc_bits:
+                parts.append(", ".join(loc_bits))
+            if auction_val:
+                parts.append(auction_val)
+            friendly = " - ".join(parts) if parts else None
+        except Exception:
+            friendly = None
+
+        eff_from = _coerce_datetime(r.get("effective_from"))
+        eff_to = _coerce_datetime(r.get("effective_to"))
+
+        # Skip rows that still don't have a code after attempts
+        if not (code or "").strip():
             continue
-        name = row.get("region_name")
-        price = _coerce_decimal(row.get("price_omr"))
-        eff_from = _coerce_datetime(row.get("effective_from"))
-        eff_to = _coerce_datetime(row.get("effective_to"))
+
         rows.append(
             ShippingRegionRow(
                 region_code=code,
-                region_name=(str(name).strip() if name is not None and str(name).strip() else None),
+                region_name=(friendly or (str(reg_name).strip() if reg_name is not None and str(reg_name).strip() else None)),
                 price_omr=price,
                 effective_from=eff_from,
                 effective_to=eff_to,
