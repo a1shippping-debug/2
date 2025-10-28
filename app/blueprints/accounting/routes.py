@@ -916,6 +916,95 @@ def payments_list():
     return render_template('accounting/payments_list.html', payments=payments, invoices=invoices)
 
 
+@acct_bp.get('/api/invoices/by_vin')
+@role_required('accountant', 'admin')
+def api_invoice_by_vin():
+    """Return the most relevant invoice for a given VIN (chassis).
+
+    Preference order:
+      1) The invoice with the largest outstanding balance (> 0)
+      2) Otherwise, the latest invoice for that vehicle
+    """
+    vin = (request.args.get('vin') or '').strip()
+    if not vin:
+        return jsonify({'error': 'vin_required'}), 400
+    try:
+        veh = (
+            db.session.query(Vehicle)
+            .filter(db.func.upper(Vehicle.vin) == db.func.upper(vin))
+            .first()
+        )
+    except Exception:
+        veh = None
+    if not veh:
+        return jsonify({'error': 'vehicle_not_found'}), 404
+
+    invs = (
+        db.session.query(Invoice)
+        .filter(Invoice.vehicle_id == veh.id)
+        .order_by(Invoice.created_at.desc(), Invoice.id.desc())
+        .all()
+    )
+    if not invs:
+        return jsonify({'error': 'no_invoices_for_vehicle'}), 404
+
+    chosen = None
+    chosen_balance = -1.0
+    for inv in invs:
+        try:
+            total = float(inv.total_omr or 0)
+        except Exception:
+            total = 0.0
+        try:
+            paid = float(inv.paid_total() or 0)
+        except Exception:
+            paid = 0.0
+        balance = max(0.0, total - paid)
+        if balance > chosen_balance:
+            chosen = inv
+            chosen_balance = balance
+    inv = chosen or invs[0]
+
+    try:
+        total = float(inv.total_omr or 0)
+    except Exception:
+        total = 0.0
+    try:
+        paid = float(inv.paid_total() or 0)
+    except Exception:
+        paid = 0.0
+    balance = max(0.0, total - paid)
+
+    items = [
+        {
+            'description': (it.description or '-'),
+            'amount_omr': float(it.amount_omr or 0),
+        }
+        for it in (inv.items or [])
+    ]
+
+    out = {
+        'invoice_id': inv.id,
+        'invoice_number': inv.invoice_number,
+        'invoice_type': inv.invoice_type,
+        'status': inv.status,
+        'total_omr': total,
+        'paid_omr': paid,
+        'balance_omr': balance,
+        'vehicle': {
+            'id': veh.id,
+            'vin': veh.vin,
+            'status': veh.status,
+        },
+        'customer': {
+            'id': inv.customer_id,
+            'name': (inv.customer.display_name if inv.customer else '-'),
+        },
+        'items': items,
+    }
+    return jsonify(out)
+
+
 @acct_bp.route('/payments/new', methods=['POST'])
 @role_required('accountant', 'admin')
 def payments_new():
@@ -924,7 +1013,31 @@ def payments_new():
     method = request.form.get('method')
     reference = request.form.get('reference')
     vin_input = (request.form.get('vin') or '').strip().upper()
+
+    # Enforce VIN-only flow: VIN must be provided
+    if not vin_input:
+        flash(_('VIN is required'), 'danger')
+        return redirect(url_for('acct.payments_list'))
+
+    # If invoice_id is missing, try resolving from VIN
     inv = db.session.get(Invoice, int(invoice_id)) if invoice_id else None
+    if not inv:
+        try:
+            veh = (
+                db.session.query(Vehicle)
+                .filter(db.func.upper(Vehicle.vin) == vin_input)
+                .first()
+            )
+        except Exception:
+            veh = None
+        if veh:
+            cand = (
+                db.session.query(Invoice)
+                .filter(Invoice.vehicle_id == veh.id)
+                .order_by(Invoice.created_at.desc(), Invoice.id.desc())
+                .first()
+            )
+            inv = cand
     if not inv:
         flash(_('Invalid invoice'), 'danger')
         return redirect(url_for('acct.payments_list'))
@@ -932,17 +1045,16 @@ def payments_new():
         amt = Decimal(str(amount or 0))
     except Exception:
         amt = Decimal('0')
-    # Try to link vehicle and customer using VIN if provided; otherwise fall back to invoice linkage
+    # Try to link vehicle and customer using VIN; otherwise fall back to invoice linkage
     vehicle_id = None
     customer_id = inv.customer_id
     try:
-        if vin_input:
-            veh = db.session.query(Vehicle).filter(db.func.upper(Vehicle.vin) == vin_input).first()
-            if veh:
-                vehicle_id = veh.id
-                # Prefer explicit owner as the customer; fallback to invoice customer
-                if getattr(veh, 'owner_customer_id', None):
-                    customer_id = veh.owner_customer_id
+        veh = db.session.query(Vehicle).filter(db.func.upper(Vehicle.vin) == vin_input).first()
+        if veh:
+            vehicle_id = veh.id
+            # Prefer explicit owner as the customer; fallback to invoice customer
+            if getattr(veh, 'owner_customer_id', None):
+                customer_id = veh.owner_customer_id
     except Exception:
         pass
     p = Payment(invoice_id=inv.id, amount_omr=amt, method=method, reference=reference,
