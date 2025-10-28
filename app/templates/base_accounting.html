@@ -29,6 +29,11 @@
                   {% if request.endpoint and request.endpoint.startswith('acct.accounts') %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
           📒 {{ _('Chart of Accounts') }}
         </a>
+        <a href="{{ url_for('acct.vehicles_list') }}" 
+           class="block px-3 py-2 rounded-lg transition 
+                  {% if request.endpoint and request.endpoint.startswith('acct.vehicles') %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
+          🚗 {{ _('Vehicle Accounting') }}
+        </a>
         <a href="{{ url_for('acct.payments_list') }}" 
            class="block px-3 py-2 rounded-lg transition 
                   {% if request.endpoint and request.endpoint.startswith('acct.payments') %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">

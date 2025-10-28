@@ -6,8 +6,8 @@ os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 from app import create_app
 from app.extensions import db
-from app.models import Account, JournalEntry, JournalLine
-from app.blueprints.accounting.routes import _post_journal
+from app.models import Account, JournalEntry, JournalLine, Vehicle, Customer
+from app.blueprints.accounting.routes import _post_journal, create_vehicle_chart, _get_vehicle_account_code
 
 
 class IFRSAccountingTests(unittest.TestCase):
@@ -96,6 +96,18 @@ class IFRSAccountingTests(unittest.TestCase):
         self.assertAlmostEqual(self._sum_revenue(), 0.0, places=3)
         # Liability should now be 300
         self.assertAlmostEqual(self._client_deposits_balance(), 300.0, places=3)
+
+    def test_vehicle_subledger_codes(self):
+        # Seed minimal vehicle and client
+        v = Vehicle(vin="TESTVIN123")
+        c = Customer(company_name="Test Client")
+        db.session.add_all([v, c])
+        db.session.commit()
+        # Create per-vehicle chart
+        create_vehicle_chart(v.id, None)
+        # Vehicle deposit code should be generated and retrievable
+        code = _get_vehicle_account_code(v.id, 'deposit', 'L200')
+        self.assertTrue(code.startswith('L200-V'))
 
 
 if __name__ == "__main__":

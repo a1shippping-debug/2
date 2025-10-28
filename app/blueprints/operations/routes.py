@@ -528,6 +528,16 @@ def cars_new():
         if not client_id and auc and getattr(auc, 'customer_id', None):
             v.owner_customer_id = auc.customer_id
 
+        # Ensure per-vehicle sub-ledger exists
+        try:
+            from ..accounting.routes import _ensure_vehicle_accounts, create_vehicle_chart
+            _ensure_vehicle_accounts(v)
+            if v.owner_customer_id:
+                create_vehicle_chart(v.id, v.owner_customer_id)
+        except Exception:
+            # Non-blocking
+            pass
+
         # If purchase price/date provided and customer is known, create draft invoice
         try:
             should_invoice = bool(v.owner_customer_id and v.purchase_price_usd)

@@ -70,6 +70,26 @@ class ClientAccountStructure(db.Model):
 
     customer = db.relationship("Customer")
 
+
+class VehicleAccountStructure(db.Model):
+    __tablename__ = "vehicle_account_structures"
+
+    id = db.Column(db.Integer, primary_key=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey("vehicles.id"), unique=True, nullable=False, index=True)
+    client_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=True, index=True)
+    # Per-vehicle sub-ledger accounts (codes must exist in accounts table)
+    deposit_account_code = db.Column(db.String(20), nullable=False)      # L200-V{vehicle_id}
+    auction_account_code = db.Column(db.String(20), nullable=False)      # A150-V{vehicle_id}
+    freight_account_code = db.Column(db.String(20), nullable=False)      # E200-V{vehicle_id}
+    customs_account_code = db.Column(db.String(20), nullable=False)      # E220-V{vehicle_id}
+    commission_account_code = db.Column(db.String(20), nullable=False)   # R300-V{vehicle_id}
+    storage_account_code = db.Column(db.String(20), nullable=False)      # E230-V{vehicle_id}
+    currency_code = db.Column(db.String(3), default="OMR", nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    vehicle = db.relationship("Vehicle")
+    client = db.relationship("Customer")
+
 class Buyer(db.Model):
     __tablename__ = "buyers"
     id = db.Column(db.Integer, primary_key=True)
@@ -365,6 +385,8 @@ class Account(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     # Optional linkage for client-specific sub-accounts
     client_id = db.Column(db.Integer, db.ForeignKey("customers.id"), index=True)
+    # Optional linkage for vehicle-specific sub-accounts
+    vehicle_id = db.Column(db.Integer, db.ForeignKey("vehicles.id"), index=True)
 
 
 class ExchangeRate(db.Model):

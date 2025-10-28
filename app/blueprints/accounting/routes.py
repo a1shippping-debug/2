@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, abort, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, abort, current_app, jsonify
 from flask_babel import gettext as _
 from flask_login import login_required
 from ...security import role_required
@@ -21,9 +21,10 @@ from ...models import (
     OperationalExpense,
     CustomerDeposit,
     ClientAccountStructure,
+    VehicleAccountStructure,
     Auction,
 )
-from ...utils_pdf import render_invoice_pdf, render_bol_pdf
+from ...utils_pdf import render_invoice_pdf, render_bol_pdf, render_vehicle_statement_pdf
 import os
 from flask_mail import Message
 from datetime import datetime
@@ -146,6 +147,106 @@ def _ensure_client_accounts(customer: Customer) -> ClientAccountStructure:
     db.session.flush()
     return cas
 
+
+def _ensure_vehicle_accounts(vehicle: Vehicle) -> VehicleAccountStructure:
+    """Create per-vehicle sub-accounts if missing and return mapping row.
+
+    Accounts are created under conventional parent groupings and tagged with vehicle_id:
+      - Deposit (L200-V{vehicle_id})
+      - Auction Clearing (A150-V{vehicle_id})
+      - Freight Expense (E200-V{vehicle_id})
+      - Customs Expense (E220-V{vehicle_id})
+      - Commission Revenue (R300-V{vehicle_id})
+      - Storage Expense (E230-V{vehicle_id})
+    """
+    vas = db.session.query(VehicleAccountStructure).filter_by(vehicle_id=vehicle.id).first()
+    if vas:
+        return vas
+    vid = int(vehicle.id)
+    vin = (vehicle.vin or f"V{vid:06d}").strip()
+    owner_id = getattr(vehicle, 'owner_customer_id', None)
+    # Derived codes
+    dep_code = f"L200-V{vid:06d}"
+    auc_code = f"A150-V{vid:06d}"
+    frt_code = f"E200-V{vid:06d}"
+    cst_code = f"E220-V{vid:06d}"
+    com_code = f"R300-V{vid:06d}"
+    str_code = f"E230-V{vid:06d}"
+
+    def ensure_account(code: str, name: str, typ: str):
+        acc = db.session.query(Account).filter(Account.code == code).first()
+        if not acc:
+            acc = Account(code=code, name=name, type=typ, client_id=owner_id, vehicle_id=vid)
+            db.session.add(acc)
+            db.session.flush()
+        return acc
+
+    label = vin
+    ensure_account(dep_code, f"{label} Deposit", "LIABILITY")
+    ensure_account(auc_code, f"{label} Auction", "ASSET")
+    ensure_account(frt_code, f"{label} Freight", "EXPENSE")
+    ensure_account(cst_code, f"{label} Customs", "EXPENSE")
+    ensure_account(com_code, f"{label} Commission", "REVENUE")
+    ensure_account(str_code, f"{label} Storage", "EXPENSE")
+
+    vas = VehicleAccountStructure(
+        vehicle_id=vid,
+        client_id=owner_id,
+        deposit_account_code=dep_code,
+        auction_account_code=auc_code,
+        freight_account_code=frt_code,
+        customs_account_code=cst_code,
+        commission_account_code=com_code,
+        storage_account_code=str_code,
+        currency_code='OMR',
+    )
+    db.session.add(vas)
+    db.session.flush()
+    return vas
+
+
+def _get_vehicle_account_code(vehicle_id: int | None, kind: str, default_code: str) -> str:
+    """Return the per-vehicle account code for kind if mapping exists; fallback to default_code.
+
+    kind: 'deposit' | 'auction' | 'freight' | 'customs' | 'commission' | 'storage'
+    """
+    if not vehicle_id:
+        return default_code
+    vas = db.session.query(VehicleAccountStructure).filter_by(vehicle_id=vehicle_id).first()
+    if not vas:
+        v = db.session.get(Vehicle, vehicle_id)
+        if not v:
+            return default_code
+        vas = _ensure_vehicle_accounts(v)
+    return {
+        'deposit': vas.deposit_account_code,
+        'auction': vas.auction_account_code,
+        'freight': vas.freight_account_code,
+        'customs': vas.customs_account_code,
+        'commission': vas.commission_account_code,
+        'storage': vas.storage_account_code,
+    }.get(kind, default_code)
+
+
+def create_vehicle_chart(vehicle_id: int, client_id: int | None = None) -> VehicleAccountStructure | None:
+    """Public API to ensure a vehicle's sub-ledger accounts exist.
+
+    Returns the created or existing VehicleAccountStructure.
+    """
+    if not vehicle_id:
+        return None
+    v = db.session.get(Vehicle, vehicle_id)
+    if not v:
+        return None
+    # Optionally set or update client linkage on the structure
+    vas = _ensure_vehicle_accounts(v)
+    if client_id and getattr(vas, 'client_id', None) != client_id:
+        try:
+            vas.client_id = client_id
+            db.session.flush()
+        except Exception:
+            pass
+    return vas
 
 def _get_client_account_code(customer_id: int | None, kind: str, default_code: str) -> str:
     """Return the per-client account code for kind if customer has mapping; fallback to default_code.
@@ -304,9 +405,10 @@ def record_customer_deposit(customer_id: int, amount_omr: float, method: str | N
                           amount_omr=amount_omr, method=method, reference=reference, status='held')
     db.session.add(dep)
     # Journal: Dr Bank (A100) / Cr Customer Deposits (client sub-account under L200)
+    dep_code = _get_vehicle_account_code(vehicle_id, 'deposit', _get_client_account_code(customer_id, 'deposit', 'L200'))
     _post_journal(
         description='Customer deposit received', reference=reference,
-        lines=[('A100', amount_omr, 0.0), (_get_client_account_code(customer_id, 'deposit', 'L200'), 0.0, amount_omr)],
+        lines=[('A100', amount_omr, 0.0), (dep_code, 0.0, amount_omr)],
         customer_id=customer_id, vehicle_id=vehicle_id, auction_id=auction_id,
         is_client_fund=True,
     )
@@ -320,9 +422,10 @@ def refund_customer_deposit(deposit_id: int):
     dep.refunded_at = datetime.utcnow()
     # Journal reversal: Dr Customer Deposits / Cr Bank
     amt = float(dep.amount_omr or 0)
+    dep_code = _get_vehicle_account_code(dep.vehicle_id, 'deposit', _get_client_account_code(dep.customer_id, 'deposit', 'L200'))
     _post_journal(
         description='Customer deposit refunded', reference=dep.reference,
-        lines=[(_get_client_account_code(dep.customer_id, 'deposit', 'L200'), amt, 0.0), ('A100', 0.0, amt)],
+        lines=[(dep_code, amt, 0.0), ('A100', 0.0, amt)],
         customer_id=dep.customer_id, vehicle_id=dep.vehicle_id, auction_id=dep.auction_id,
         is_client_fund=True,
     )
@@ -338,9 +441,10 @@ def pay_auction_from_client_fund(customer_id: int, amount_omr: float, reference:
     """
     if float(amount_omr or 0) <= 0:
         return None
+    dep_code = _get_vehicle_account_code(vehicle_id, 'deposit', _get_client_account_code(customer_id, 'deposit', 'L200'))
     return _post_journal(
         description='Auction payment from client funds', reference=reference,
-        lines=[(_get_client_account_code(customer_id, 'deposit', 'L200'), float(amount_omr), 0.0), ('A100', 0.0, float(amount_omr))],
+        lines=[(dep_code, float(amount_omr), 0.0), ('A100', 0.0, float(amount_omr))],
         customer_id=customer_id, vehicle_id=vehicle_id, auction_id=auction_id,
         is_client_fund=True,
     )
@@ -351,9 +455,11 @@ def record_commission_from_deposit(customer_id: int, amount_omr: float, referenc
     """Recognize commission by deducting from client deposit: Dr Client Deposits / Cr Revenue (R300)."""
     if float(amount_omr or 0) <= 0:
         return None
+    dep_code = _get_vehicle_account_code(vehicle_id, 'deposit', _get_client_account_code(customer_id, 'deposit', 'L200'))
+    rev_code = _get_vehicle_account_code(vehicle_id, 'commission', _get_client_account_code(customer_id, 'service', 'R300'))
     return _post_journal(
         description='Commission deducted from client deposit', reference=reference,
-        lines=[(_get_client_account_code(customer_id, 'deposit', 'L200'), float(amount_omr), 0.0), (_get_client_account_code(customer_id, 'service', 'R300'), 0.0, float(amount_omr))],
+        lines=[(dep_code, float(amount_omr), 0.0), (rev_code, 0.0, float(amount_omr))],
         customer_id=customer_id, vehicle_id=vehicle_id, invoice_id=invoice_id,
         is_client_fund=True,
     )
@@ -432,8 +538,17 @@ def record_operational_cost(vehicle_id: int | None, auction_id: int | None, cate
                 customer_id = getattr(a, 'customer_id', None)
             except Exception:
                 customer_id = customer_id
-        exp_code_default = 'E200' if category != 'internal_shipping' else 'E210'
-        exp_code = _get_client_account_code(customer_id, 'logistics', exp_code_default)
+        # Map category to per-vehicle account when possible
+        kind = 'freight'
+        cat_norm = (category or '').lower()
+        if 'custom' in cat_norm:
+            kind = 'customs'
+        elif 'storage' in cat_norm or 'warehouse' in cat_norm:
+            kind = 'storage'
+        else:
+            kind = 'freight'
+        exp_code_default = 'E200'
+        exp_code = _get_vehicle_account_code(vehicle_id, kind, _get_client_account_code(customer_id, 'logistics', exp_code_default))
         _post_journal(
             description=f'Operational expense - {category}', reference=description,
             lines=[(exp_code, float(amount_omr), 0.0), ('A100', 0.0, float(amount_omr))],
@@ -476,9 +591,9 @@ def create_shipping_invoice(customer_id: int, vehicle_id: int, shipping_cost_omr
     if float(total) > 0:
         lines = [('A100', float(total), 0.0)]
         if float(fines_omr) > 0:
-            lines.append((_get_client_account_code(customer_id, 'service', 'R300'), 0.0, float(fines_omr)))
+            lines.append((_get_vehicle_account_code(vehicle_id, 'commission', _get_client_account_code(customer_id, 'service', 'R300')), 0.0, float(fines_omr)))
         if float(shipping_cost_omr or 0) > 0:
-            lines.append((_get_client_account_code(customer_id, 'logistics', 'E200'), 0.0, float(shipping_cost_omr)))
+            lines.append((_get_vehicle_account_code(vehicle_id, 'freight', _get_client_account_code(customer_id, 'logistics', 'E200')), 0.0, float(shipping_cost_omr)))
         _post_journal(
             description='Shipping invoice payment', reference=inv.invoice_number,
             lines=lines,
@@ -1280,6 +1395,240 @@ def settings():
 def accounts_list():
     rows = db.session.query(Account).order_by(Account.code.asc()).all()
     return render_template('accounting/accounts_list.html', accounts=rows)
+
+
+# ---- Vehicle Statement of Account (SOA) ----
+@acct_bp.route('/vehicles')
+@role_required('accountant', 'admin')
+def vehicles_list():
+    q = db.session.query(Vehicle).order_by(Vehicle.created_at.desc()).limit(200)
+    client_id = request.args.get('client_id')
+    if client_id:
+        try:
+            q = q.filter(Vehicle.owner_customer_id == int(client_id))
+        except Exception:
+            pass
+    vehicles = q.all()
+    # Precompute running balances from journal per vehicle
+    balances = {}
+    for v in vehicles:
+        total = db.session.query(db.func.coalesce(db.func.sum(JournalLine.debit - JournalLine.credit), 0)).\
+            join(Account, JournalLine.account_id == Account.id).\
+            join(JournalEntry, JournalLine.entry_id == JournalEntry.id).\
+            filter(JournalEntry.vehicle_id == v.id).scalar() or 0
+        balances[v.id] = float(total)
+    return render_template('accounting/vehicles_list.html', vehicles=vehicles, balances=balances)
+
+
+@acct_bp.route('/vehicles/<int:vehicle_id>/statement')
+@role_required('accountant', 'admin')
+def vehicle_statement(vehicle_id: int):
+    v = db.session.get(Vehicle, vehicle_id)
+    if not v:
+        abort(404)
+    # Fetch journal lines for this vehicle
+    rows = (
+        db.session.query(JournalEntry.entry_date, JournalEntry.description, Account.code, Account.name, JournalLine.debit, JournalLine.credit)
+        .join(JournalLine, JournalLine.entry_id == JournalEntry.id)
+        .join(Account, JournalLine.account_id == Account.id)
+        .filter(JournalEntry.vehicle_id == vehicle_id)
+        .order_by(JournalEntry.entry_date.asc(), JournalEntry.id.asc(), JournalLine.id.asc())
+        .all()
+    )
+    # Build running balance
+    statement = []
+    running = 0.0
+    for dt, desc, code, name, dr, cr in rows:
+        dr_f = float(dr or 0)
+        cr_f = float(cr or 0)
+        running += dr_f - cr_f
+        statement.append({
+            'date': dt.strftime('%Y-%m-%d') if dt else '',
+            'description': desc,
+            'account_code': code,
+            'account_name': name,
+            'debit': dr_f,
+            'credit': cr_f,
+            'balance': running,
+        })
+    # Totals breakdown by vehicle-level semantic kinds
+    def sum_kind(kind: str, default_prefix: str) -> float:
+        codes = []
+        vas = db.session.query(VehicleAccountStructure).filter_by(vehicle_id=vehicle_id).first()
+        if vas:
+            code_val = {
+                'auction': vas.auction_account_code,
+                'freight': vas.freight_account_code,
+                'customs': vas.customs_account_code,
+                'commission': vas.commission_account_code,
+                'storage': vas.storage_account_code,
+                'deposit': vas.deposit_account_code,
+            }.get(kind)
+            if code_val:
+                codes.append(code_val)
+        q = db.session.query(db.func.coalesce(db.func.sum(JournalLine.debit - JournalLine.credit), 0)).\
+            join(Account, JournalLine.account_id == Account.id).\
+            join(JournalEntry, JournalLine.entry_id == JournalEntry.id).\
+            filter(JournalEntry.vehicle_id == vehicle_id)
+        if codes:
+            q = q.filter(Account.code.in_(codes))
+        else:
+            q = q.filter(Account.code.like(f"{default_prefix}%"))
+        return float(q.scalar() or 0)
+
+    totals = {
+        'auction_cost_omr': sum_kind('auction', 'A150'),
+        'freight_omr': sum_kind('freight', 'E200'),
+        'customs_omr': sum_kind('customs', 'E220'),
+        'service_fee_omr': -sum_kind('commission', 'R300'),  # credit balances as positive
+        'deposit_net_omr': sum_kind('deposit', 'L200'),
+    }
+    totals['outstanding_balance_omr'] = statement[-1]['balance'] if statement else 0.0
+
+    return render_template('accounting/vehicle_statement.html', vehicle=v, statement=statement, totals=totals)
+
+
+@acct_bp.route('/vehicles/<int:vehicle_id>/statement.pdf')
+@role_required('accountant', 'admin')
+def vehicle_statement_pdf(vehicle_id: int):
+    v = db.session.get(Vehicle, vehicle_id)
+    if not v:
+        abort(404)
+    # Recompute same data as HTML view
+    rows = (
+        db.session.query(JournalEntry.entry_date, JournalEntry.description, Account.code, Account.name, JournalLine.debit, JournalLine.credit)
+        .join(JournalLine, JournalLine.entry_id == JournalEntry.id)
+        .join(Account, JournalLine.account_id == Account.id)
+        .filter(JournalEntry.vehicle_id == vehicle_id)
+        .order_by(JournalEntry.entry_date.asc(), JournalEntry.id.asc(), JournalLine.id.asc())
+        .all()
+    )
+    statement = []
+    running = 0.0
+    for dt, desc, code, name, dr, cr in rows:
+        dr_f = float(dr or 0)
+        cr_f = float(cr or 0)
+        running += dr_f - cr_f
+        statement.append({
+            'date': dt.strftime('%Y-%m-%d') if dt else '',
+            'description': desc,
+            'account_code': code,
+            'account_name': name,
+            'debit': dr_f,
+            'credit': cr_f,
+            'balance': running,
+        })
+    def sum_kind(kind: str, default_prefix: str) -> float:
+        codes = []
+        vas = db.session.query(VehicleAccountStructure).filter_by(vehicle_id=vehicle_id).first()
+        if vas:
+            code_val = {
+                'auction': vas.auction_account_code,
+                'freight': vas.freight_account_code,
+                'customs': vas.customs_account_code,
+                'commission': vas.commission_account_code,
+                'storage': vas.storage_account_code,
+                'deposit': vas.deposit_account_code,
+            }.get(kind)
+            if code_val:
+                codes.append(code_val)
+        q = db.session.query(db.func.coalesce(db.func.sum(JournalLine.debit - JournalLine.credit), 0)).\
+            join(Account, JournalLine.account_id == Account.id).\
+            join(JournalEntry, JournalLine.entry_id == JournalEntry.id).\
+            filter(JournalEntry.vehicle_id == vehicle_id)
+        if codes:
+            q = q.filter(Account.code.in_(codes))
+        else:
+            q = q.filter(Account.code.like(f"{default_prefix}%"))
+        return float(q.scalar() or 0)
+    totals = {
+        'auction_cost_omr': sum_kind('auction', 'A150'),
+        'freight_omr': sum_kind('freight', 'E200'),
+        'customs_omr': sum_kind('customs', 'E220'),
+        'service_fee_omr': -sum_kind('commission', 'R300'),
+        'deposit_net_omr': sum_kind('deposit', 'L200'),
+    }
+    totals['outstanding_balance_omr'] = statement[-1]['balance'] if statement else 0.0
+    path = render_vehicle_statement_pdf(v, statement, totals)
+    return send_file(path, as_attachment=True, download_name=f"vehicle_statement_{v.vin or v.id}.pdf")
+
+
+# ---- API Endpoints ----
+@acct_bp.get('/api/vehicles/<int:vehicle_id>/statement')
+@login_required
+def api_vehicle_statement(vehicle_id: int):
+    # limit to staff or vehicle owner
+    v = db.session.get(Vehicle, vehicle_id)
+    if not v:
+        return jsonify({'error': 'not found'}), 404
+    try:
+        from flask_login import current_user
+        is_staff = bool(getattr(current_user, 'role', None) and getattr(current_user.role, 'name', '').lower() in {'admin','employee','accountant'})
+        is_owner = False
+        if getattr(current_user, 'id', None):
+            cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
+            is_owner = bool(cust and v.owner_customer_id == cust.id)
+        if not (is_staff or is_owner):
+            return jsonify({'error': 'forbidden'}), 403
+    except Exception:
+        return jsonify({'error': 'forbidden'}), 403
+
+    rows = (
+        db.session.query(JournalEntry.entry_date, JournalEntry.description, Account.code, Account.name, JournalLine.debit, JournalLine.credit)
+        .join(JournalLine, JournalLine.entry_id == JournalEntry.id)
+        .join(Account, JournalLine.account_id == Account.id)
+        .filter(JournalEntry.vehicle_id == vehicle_id)
+        .order_by(JournalEntry.entry_date.asc(), JournalEntry.id.asc(), JournalLine.id.asc())
+        .all()
+    )
+    data = []
+    running = 0.0
+    for dt, desc, code, name, dr, cr in rows:
+        dr_f = float(dr or 0)
+        cr_f = float(cr or 0)
+        running += dr_f - cr_f
+        data.append({
+            'date': dt.strftime('%Y-%m-%d') if dt else '',
+            'description': desc,
+            'account_code': code,
+            'account_name': name,
+            'debit': dr_f,
+            'credit': cr_f,
+            'balance': running,
+        })
+    return jsonify({'vehicle_id': vehicle_id, 'vin': v.vin, 'client_id': v.owner_customer_id, 'entries': data})
+
+
+@acct_bp.get('/api/clients/<int:client_id>/vehicles/summary')
+@login_required
+def api_client_vehicles_summary(client_id: int):
+    # staff or the client itself
+    try:
+        from flask_login import current_user
+        is_staff = bool(getattr(current_user, 'role', None) and getattr(current_user.role, 'name', '').lower() in {'admin','employee','accountant'})
+        is_self = False
+        if getattr(current_user, 'id', None):
+            cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
+            is_self = bool(cust and cust.id == client_id)
+        if not (is_staff or is_self):
+            return jsonify({'error': 'forbidden'}), 403
+    except Exception:
+        return jsonify({'error': 'forbidden'}), 403
+
+    vehicles = db.session.query(Vehicle).filter(Vehicle.owner_customer_id == client_id).all()
+    out = []
+    for v in vehicles:
+        total = db.session.query(db.func.coalesce(db.func.sum(JournalLine.debit - JournalLine.credit), 0)).\
+            join(Account, JournalLine.account_id == Account.id).\
+            join(JournalEntry, JournalLine.entry_id == JournalEntry.id).\
+            filter(JournalEntry.vehicle_id == v.id).scalar() or 0
+        out.append({
+            'vehicle_id': v.id,
+            'vin': v.vin,
+            'status': v.status,
+            'balance_omr': float(total),
+        })
+    return jsonify({'client_id': client_id, 'vehicles': out})
 
 
 @acct_bp.route('/accounts/new', methods=['GET','POST'])

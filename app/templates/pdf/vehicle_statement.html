@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vehicle Statement - {{ vehicle.vin }}</title>
+  <style>
+    body { font-family: sans-serif; font-size: 12px; }
+    h1 { font-size: 18px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 4px; text-align: left; }
+    th { background: #f5f5f5; }
+    .right { text-align: right; }
+  </style>
+</head>
+<body>
+  <h1>Vehicle Statement of Account</h1>
+  <div>
+    <strong>VIN:</strong> {{ vehicle.vin }} &nbsp; | &nbsp;
+    <strong>Client:</strong> {{ vehicle.owner.company_name if vehicle.owner else '-' }} &nbsp; | &nbsp;
+    <strong>Auction Lot:</strong> {{ vehicle.auction.lot_number if vehicle.auction else '-' }}
+  </div>
+  <br />
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Description</th>
+        <th>Account</th>
+        <th class="right">Debit</th>
+        <th class="right">Credit</th>
+        <th class="right">Balance</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in statement %}
+      <tr>
+        <td>{{ r.date }}</td>
+        <td>{{ r.description }}</td>
+        <td>{{ r.account_code }} — {{ r.account_name }}</td>
+        <td class="right">{{ '%.3f'|format(r.debit) }}</td>
+        <td class="right">{{ '%.3f'|format(r.credit) }}</td>
+        <td class="right">{{ '%.3f'|format(r.balance) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <br />
+  <table>
+    <tbody>
+      <tr><th>Auction Cost</th><td class="right">{{ '%.3f'|format(totals.auction_cost_omr) }}</td></tr>
+      <tr><th>Freight</th><td class="right">{{ '%.3f'|format(totals.freight_omr) }}</td></tr>
+      <tr><th>Customs</th><td class="right">{{ '%.3f'|format(totals.customs_omr) }}</td></tr>
+      <tr><th>Service Fee</th><td class="right">{{ '%.3f'|format(totals.service_fee_omr) }}</td></tr>
+      <tr><th>Deposit Net</th><td class="right">{{ '%.3f'|format(totals.deposit_net_omr) }}</td></tr>
+      <tr><th>Outstanding Balance</th><td class="right">{{ '%.3f'|format(totals.outstanding_balance_omr) }}</td></tr>
+    </tbody>
+  </table>
+</body>
+</html>

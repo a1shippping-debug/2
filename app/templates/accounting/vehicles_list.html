@@ -1,0 +1,37 @@
+{% extends "base_accounting.html" %}
+{% block acct_content %}
+<h2 class="text-2xl font-bold text-blue-900 mb-4">{{ _('Vehicle Accounting') }}</h2>
+<form method="get" class="mb-4 flex gap-2 items-end">
+  <div>
+    <label class="block text-sm text-gray-600 mb-1">{{ _('Client') }}</label>
+    <input name="client_id" class="border rounded px-2 py-1" placeholder="Client ID" value="{{ request.args.get('client_id','') }}" />
+  </div>
+  <button class="px-3 py-1.5 bg-blue-600 text-white rounded">{{ _('Filter') }}</button>
+</form>
+<table class="w-full table-auto text-sm">
+  <thead>
+    <tr class="text-left text-slate-500">
+      <th class="py-2">VIN</th>
+      <th>{{ _('Client') }}</th>
+      <th>{{ _('Status') }}</th>
+      <th class="text-right">{{ _('Balance (OMR)') }}</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for v in vehicles %}
+    <tr class="border-t">
+      <td class="py-2 font-mono">{{ v.vin }}</td>
+      <td>{{ v.owner.company_name if v.owner else '-' }}</td>
+      <td>{{ v.status or '-' }}</td>
+      <td class="text-right">{{ '%.3f'|format(balances.get(v.id,0.0)) }}</td>
+      <td class="text-right">
+        <a class="link-blue" href="{{ url_for('acct.vehicle_statement', vehicle_id=v.id) }}">{{ _('View Statement') }}</a>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="py-4 text-center text-slate-400">{{ _('No vehicles found') }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
