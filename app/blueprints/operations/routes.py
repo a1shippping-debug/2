@@ -20,6 +20,7 @@ from ...models import (
     ShippingRegionPrice,
     InternationalCost,
     Buyer,
+    ClientAccountStructure,
 )
 from datetime import datetime
 
@@ -1015,6 +1016,15 @@ def customers_new():
         # Link customer to the created user
         c.user_id = user.id
         db.session.add(c)
+        # Ensure per-client sub-ledger exists
+        try:
+            # Lazy import to avoid circulars
+            from ..accounting.routes import _ensure_client_accounts
+            _ensure_client_accounts(c)
+        except Exception:
+            # Non-blocking
+            pass
+
         try:
             db.session.commit()
             notify(f"Customer {c.company_name or c.full_name} added", 'Customer', c.id)
@@ -1094,6 +1104,12 @@ def customers_edit(customer_id: int):
                 db.session.flush()
                 c.user_id = user.id
             user.set_password(new_password)
+        # Ensure per-client sub-ledger exists after edits if missing
+        try:
+            from ..accounting.routes import _ensure_client_accounts
+            _ensure_client_accounts(c)
+        except Exception:
+            pass
         try:
             db.session.commit(); notify(f"Customer {c.company_name or c.full_name} updated", 'Customer', c.id)
             flash(_('Customer updated'), 'success')

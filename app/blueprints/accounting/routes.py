@@ -20,6 +20,8 @@ from ...models import (
     JournalLine,
     OperationalExpense,
     CustomerDeposit,
+    ClientAccountStructure,
+    Auction,
 )
 from ...utils_pdf import render_invoice_pdf, render_bol_pdf
 import os
@@ -91,6 +93,93 @@ def _get_account(code: str) -> Account | None:
         return db.session.query(Account).filter(Account.code == code).first()
     except Exception:
         return None
+
+
+def _ensure_client_accounts(customer: Customer) -> ClientAccountStructure:
+    """Create per-client sub-accounts if missing and return mapping row.
+
+    Accounts created under these base parents by convention:
+      - Bank remains global A100
+      - Client Deposits parent L200 (we create L200-C{ID})
+      - Auction Payments clearing under A150 (optional A150-C{ID})
+      - Service Revenue under R300 (R300-C{ID})
+      - Logistics Expense under E200 (E200-C{ID})
+      - Accounts Receivable under A300 (A300-C{ID})
+    """
+    cas = db.session.query(ClientAccountStructure).filter_by(customer_id=customer.id).first()
+    if cas:
+        return cas
+    cid = int(customer.id)
+    code_suffix = f"C{cid:05d}"
+    # Prepare derived codes
+    dep_code = f"L200-{code_suffix}"
+    auc_code = f"A150-{code_suffix}"
+    srv_code = f"R300-{code_suffix}"
+    log_code = f"E200-{code_suffix}"
+    ar_code = f"A300-{code_suffix}"
+
+    def ensure_account(code: str, name: str, typ: str) -> Account:
+        acc = db.session.query(Account).filter(Account.code == code).first()
+        if not acc:
+            acc = Account(code=code, name=name, type=typ, client_id=customer.id)
+            db.session.add(acc)
+            db.session.flush()
+        return acc
+
+    display_name = (customer.company_name or customer.full_name or f"Client {customer.id}").strip()
+    ensure_account(dep_code, f"{display_name} Deposit", "LIABILITY")
+    ensure_account(auc_code, f"{display_name} Auction Clearing", "ASSET")
+    ensure_account(srv_code, f"{display_name} Service Revenue", "REVENUE")
+    ensure_account(log_code, f"{display_name} Logistics Expense", "EXPENSE")
+    ensure_account(ar_code, f"{display_name} Receivable", "ASSET")
+
+    cas = ClientAccountStructure(
+        customer_id=customer.id,
+        deposit_account_code=dep_code,
+        auction_account_code=auc_code,
+        service_revenue_account_code=srv_code,
+        logistics_expense_account_code=log_code,
+        receivable_account_code=ar_code,
+        currency_code="OMR",
+    )
+    db.session.add(cas)
+    db.session.flush()
+    return cas
+
+
+def _get_client_account_code(customer_id: int | None, kind: str, default_code: str) -> str:
+    """Return the per-client account code for kind if customer has mapping; fallback to default_code.
+
+    kind: 'deposit' | 'auction' | 'service' | 'logistics' | 'receivable'
+    """
+    if not customer_id:
+        return default_code
+    cas = db.session.query(ClientAccountStructure).filter_by(customer_id=customer_id).first()
+    if not cas:
+        cust = db.session.get(Customer, customer_id)
+        if not cust:
+            return default_code
+        cas = _ensure_client_accounts(cust)
+    return {
+        'deposit': cas.deposit_account_code,
+        'auction': cas.auction_account_code or default_code,
+        'service': cas.service_revenue_account_code,
+        'logistics': cas.logistics_expense_account_code,
+        'receivable': cas.receivable_account_code,
+    }.get(kind, default_code)
+
+
+def create_client_chart(client_id: int) -> ClientAccountStructure | None:
+    """Public API to ensure a client's sub-ledger accounts exist.
+
+    Returns the created or existing ClientAccountStructure.
+    """
+    if not client_id:
+        return None
+    cust = db.session.get(Customer, client_id)
+    if not cust:
+        return None
+    return _ensure_client_accounts(cust)
 
 def _post_journal(description: str, reference: str | None, lines: list[tuple[str, float, float]],
                   customer_id: int | None = None, vehicle_id: int | None = None,
@@ -214,10 +303,10 @@ def record_customer_deposit(customer_id: int, amount_omr: float, method: str | N
     dep = CustomerDeposit(customer_id=customer_id, vehicle_id=vehicle_id, auction_id=auction_id,
                           amount_omr=amount_omr, method=method, reference=reference, status='held')
     db.session.add(dep)
-    # Journal: Dr Bank (A100) / Cr Customer Deposits (L200)
+    # Journal: Dr Bank (A100) / Cr Customer Deposits (client sub-account under L200)
     _post_journal(
         description='Customer deposit received', reference=reference,
-        lines=[('A100', amount_omr, 0.0), ('L200', 0.0, amount_omr)],
+        lines=[('A100', amount_omr, 0.0), (_get_client_account_code(customer_id, 'deposit', 'L200'), 0.0, amount_omr)],
         customer_id=customer_id, vehicle_id=vehicle_id, auction_id=auction_id,
         is_client_fund=True,
     )
@@ -233,7 +322,7 @@ def refund_customer_deposit(deposit_id: int):
     amt = float(dep.amount_omr or 0)
     _post_journal(
         description='Customer deposit refunded', reference=dep.reference,
-        lines=[('L200', amt, 0.0), ('A100', 0.0, amt)],
+        lines=[(_get_client_account_code(dep.customer_id, 'deposit', 'L200'), amt, 0.0), ('A100', 0.0, amt)],
         customer_id=dep.customer_id, vehicle_id=dep.vehicle_id, auction_id=dep.auction_id,
         is_client_fund=True,
     )
@@ -251,7 +340,7 @@ def pay_auction_from_client_fund(customer_id: int, amount_omr: float, reference:
         return None
     return _post_journal(
         description='Auction payment from client funds', reference=reference,
-        lines=[('L200', float(amount_omr), 0.0), ('A100', 0.0, float(amount_omr))],
+        lines=[(_get_client_account_code(customer_id, 'deposit', 'L200'), float(amount_omr), 0.0), ('A100', 0.0, float(amount_omr))],
         customer_id=customer_id, vehicle_id=vehicle_id, auction_id=auction_id,
         is_client_fund=True,
     )
@@ -264,7 +353,7 @@ def record_commission_from_deposit(customer_id: int, amount_omr: float, referenc
         return None
     return _post_journal(
         description='Commission deducted from client deposit', reference=reference,
-        lines=[('L200', float(amount_omr), 0.0), ('R300', 0.0, float(amount_omr))],
+        lines=[(_get_client_account_code(customer_id, 'deposit', 'L200'), float(amount_omr), 0.0), (_get_client_account_code(customer_id, 'service', 'R300'), 0.0, float(amount_omr))],
         customer_id=customer_id, vehicle_id=vehicle_id, invoice_id=invoice_id,
         is_client_fund=True,
     )
@@ -329,10 +418,26 @@ def record_operational_cost(vehicle_id: int | None, auction_id: int | None, cate
 
     # Journal: Dr Operational Expenses / Cr Bank (if paid)
     if float(amount_omr) > 0 and paid_from_bank:
+        # Try to attribute the expense to a client via vehicle owner or auction customer
+        customer_id = None
+        try:
+            if vehicle_id:
+                v = db.session.get(Vehicle, int(vehicle_id))
+                customer_id = getattr(v, 'owner_customer_id', None)
+        except Exception:
+            customer_id = customer_id
+        if not customer_id and auction_id:
+            try:
+                a = db.session.get(Auction, int(auction_id))
+                customer_id = getattr(a, 'customer_id', None)
+            except Exception:
+                customer_id = customer_id
+        exp_code_default = 'E200' if category != 'internal_shipping' else 'E210'
+        exp_code = _get_client_account_code(customer_id, 'logistics', exp_code_default)
         _post_journal(
             description=f'Operational expense - {category}', reference=description,
-            lines=[('E200' if category != 'internal_shipping' else 'E210', float(amount_omr), 0.0), ('A100', 0.0, float(amount_omr))],
-            vehicle_id=vehicle_id, auction_id=auction_id,
+            lines=[(exp_code, float(amount_omr), 0.0), ('A100', 0.0, float(amount_omr))],
+            customer_id=customer_id, vehicle_id=vehicle_id, auction_id=auction_id,
         )
 
     return exp.id if getattr(exp, 'id', None) else 0
@@ -371,9 +476,9 @@ def create_shipping_invoice(customer_id: int, vehicle_id: int, shipping_cost_omr
     if float(total) > 0:
         lines = [('A100', float(total), 0.0)]
         if float(fines_omr) > 0:
-            lines.append(('R300', 0.0, float(fines_omr)))
+            lines.append((_get_client_account_code(customer_id, 'service', 'R300'), 0.0, float(fines_omr)))
         if float(shipping_cost_omr or 0) > 0:
-            lines.append(('E200', 0.0, float(shipping_cost_omr)))
+            lines.append((_get_client_account_code(customer_id, 'logistics', 'E200'), 0.0, float(shipping_cost_omr)))
         _post_journal(
             description='Shipping invoice payment', reference=inv.invoice_number,
             lines=lines,
@@ -573,6 +678,25 @@ def invoices_edit(invoice_id: int):
                 db.session.add(InvoiceItem(invoice_id=invoice.id, description=d.strip(), amount_omr=val))
                 total += val
         invoice.total_omr = total
+        # If invoice is for services (not CAR) and marked Unpaid, recognize AR and Revenue once
+        if invoice.invoice_type != 'CAR' and str(status).strip().lower() == 'unpaid':
+            # Has revenue already been recognized for this invoice?
+            exists = (
+                db.session.query(JournalEntry)
+                .join(JournalLine, JournalLine.entry_id == JournalEntry.id)
+                .join(Account, JournalLine.account_id == Account.id)
+                .filter(JournalEntry.invoice_id == invoice.id, Account.code.like('R%'))
+                .first()
+            )
+            if not exists and float(invoice.total_omr or 0) > 0:
+                # Dr AR (client) / Cr Revenue (client)
+                ar_code = _get_client_account_code(invoice.customer_id, 'receivable', 'A300')
+                rev_code = _get_client_account_code(invoice.customer_id, 'service', 'R300')
+                _post_journal(
+                    description='Service invoice issued', reference=invoice.invoice_number,
+                    lines=[(ar_code, float(invoice.total_omr), 0.0), (rev_code, 0.0, float(invoice.total_omr))],
+                    customer_id=invoice.customer_id, invoice_id=invoice.id, is_client_fund=False,
+                )
         try:
             db.session.commit()
             flash(_('Invoice updated'), 'success')
@@ -716,14 +840,30 @@ def payments_new():
         inv.status = 'Paid'
     else:
         inv.status = 'Partial'
-    # If this is a service invoice (not CAR), treat as commission revenue: Dr Bank / Cr Revenue
+    # If this is a service invoice (not CAR), prefer AR settlement if revenue already recognized
     if inv.invoice_type and inv.invoice_type != 'CAR' and float(amt) > 0:
         try:
-            _post_journal(
-                description='Commission/service payment', reference=inv.invoice_number,
-                lines=[('A100', float(amt), 0.0), ('R300', 0.0, float(amt))],
-                customer_id=inv.customer_id, invoice_id=inv.id, is_client_fund=False,
+            # Has revenue been recognized for this invoice? If yes: Dr Bank / Cr AR. Else: Dr Bank / Cr Revenue.
+            recognized = (
+                db.session.query(JournalEntry)
+                .join(JournalLine, JournalLine.entry_id == JournalEntry.id)
+                .join(Account, JournalLine.account_id == Account.id)
+                .filter(JournalEntry.invoice_id == inv.id, Account.code.like('R%'))
+                .first()
             )
+            if recognized:
+                ar_code = _get_client_account_code(inv.customer_id, 'receivable', 'A300')
+                _post_journal(
+                    description='Service invoice payment', reference=inv.invoice_number,
+                    lines=[('A100', float(amt), 0.0), (ar_code, 0.0, float(amt))],
+                    customer_id=inv.customer_id, invoice_id=inv.id, is_client_fund=False,
+                )
+            else:
+                _post_journal(
+                    description='Commission/service payment', reference=inv.invoice_number,
+                    lines=[('A100', float(amt), 0.0), (_get_client_account_code(inv.customer_id, 'service', 'R300'), 0.0, float(amt))],
+                    customer_id=inv.customer_id, invoice_id=inv.id, is_client_fund=False,
+                )
         except Exception:
             # Non-blocking
             pass
@@ -1162,3 +1302,159 @@ def accounts_new():
         except Exception:
             db.session.rollback(); flash(_('Failed to create account'), 'danger')
     return render_template('accounting/accounts_form.html')
+
+
+# ---- Client Accounting View ----
+@acct_bp.route('/clients/view')
+@role_required('accountant', 'admin')
+def client_view():
+    try:
+        customer_id = int(request.args.get('customer_id')) if request.args.get('customer_id') else None
+    except Exception:
+        customer_id = None
+    customers = db.session.query(Customer).order_by(Customer.company_name.asc()).all()
+    customer = db.session.get(Customer, customer_id) if customer_id else None
+    ledger = []
+    deposits = []
+    auction_ledger = []
+    service_rows = []
+    balances = {"deposits": 0.0, "ar": 0.0, "paid": 0.0, "revenue": 0.0}
+    pl = {"revenue": 0.0, "logistics": 0.0}
+    if customer:
+        # Ensure sub-accounts exist for this client
+        try:
+            _ensure_client_accounts(customer)
+        except Exception:
+            pass
+        cas = db.session.query(ClientAccountStructure).filter_by(customer_id=customer.id).first()
+        dep_code = cas.deposit_account_code if cas else 'L200'
+        srv_code = cas.service_revenue_account_code if cas else 'R300'
+        log_code = cas.logistics_expense_account_code if cas else 'E200'
+
+        # Ledger: all entries for this client
+        rows = (
+            db.session.query(JournalEntry.entry_date, JournalEntry.description, JournalLine.debit, JournalLine.credit)
+            .join(JournalLine, JournalLine.entry_id == JournalEntry.id)
+            .filter(JournalEntry.customer_id == customer.id)
+            .order_by(JournalEntry.entry_date.asc(), JournalEntry.id.asc())
+            .limit(1000)
+            .all()
+        )
+        ledger = [{
+            'date': (dt.strftime('%Y-%m-%d') if dt else ''),
+            'desc': (desc or '-'),
+            'debit': float(dr or 0),
+            'credit': float(cr or 0),
+        } for dt, desc, dr, cr in rows]
+
+        # Deposits and refunds
+        dep_rows = db.session.query(CustomerDeposit).filter(CustomerDeposit.customer_id == customer.id).order_by(CustomerDeposit.created_at.asc()).all()
+        for d in dep_rows:
+            deposits.append({
+                'date': d.received_at.strftime('%Y-%m-%d') if d.received_at else '',
+                'reference': d.reference or '',
+                'amount': float(d.amount_omr or 0),
+                'type': d.status,
+            })
+
+        # Auction payments from client funds (client-fund journals with credit to Bank)
+        auc_rows = (
+            db.session.query(JournalEntry.entry_date, JournalEntry.description, JournalLine.debit, JournalLine.credit)
+            .join(JournalLine, JournalLine.entry_id == JournalEntry.id)
+            .join(Account, JournalLine.account_id == Account.id)
+            .filter(JournalEntry.customer_id == customer.id, JournalEntry.is_client_fund.is_(True), Account.code.like('A100%'))
+            .order_by(JournalEntry.entry_date.asc())
+            .all()
+        )
+        auction_ledger = [{
+            'date': (dt.strftime('%Y-%m-%d') if dt else ''),
+            'desc': desc or '-',
+            'amount': float(cr or 0),
+        } for dt, desc, dr, cr in auc_rows]
+
+        # Service revenue rows for this client (non client-fund revenue)
+        srv_rows = (
+            db.session.query(JournalEntry.entry_date, JournalEntry.description, JournalLine.debit, JournalLine.credit)
+            .join(JournalLine, JournalLine.entry_id == JournalEntry.id)
+            .join(Account, JournalLine.account_id == Account.id)
+            .filter(JournalEntry.customer_id == customer.id, JournalEntry.is_client_fund.is_(False), Account.code.like('R%'))
+            .order_by(JournalEntry.entry_date.asc())
+            .all()
+        )
+        service_rows = [{
+            'date': (dt.strftime('%Y-%m-%d') if dt else ''),
+            'desc': desc or '-',
+            'amount': float(cr or 0) - float(dr or 0),
+        } for dt, desc, dr, cr in srv_rows]
+
+        # Balances
+        balances['deposits'] = float(
+            db.session.query(db.func.coalesce(db.func.sum(JournalLine.credit - JournalLine.debit), 0))
+            .join(Account, JournalLine.account_id == Account.id)
+            .join(JournalEntry, JournalLine.entry_id == JournalEntry.id)
+            .filter(JournalEntry.customer_id == customer.id, Account.code == dep_code)
+            .scalar() or 0
+        )
+        # Receivables: sum of AR account for this client
+        ar_code = cas.receivable_account_code if cas else 'A300'
+        balances['ar'] = float(
+            db.session.query(db.func.coalesce(db.func.sum(JournalLine.debit - JournalLine.credit), 0))
+            .join(Account, JournalLine.account_id == Account.id)
+            .join(JournalEntry, JournalLine.entry_id == JournalEntry.id)
+            .filter(JournalEntry.customer_id == customer.id, Account.code == ar_code)
+            .scalar() or 0
+        )
+        # Paid total: net cash movements for this client (A100) excluding client fund
+        balances['paid'] = float(
+            db.session.query(db.func.coalesce(db.func.sum(JournalLine.debit - JournalLine.credit), 0))
+            .join(Account, JournalLine.account_id == Account.id)
+            .join(JournalEntry, JournalLine.entry_id == JournalEntry.id)
+            .filter(JournalEntry.customer_id == customer.id, Account.code.like('A100%'), JournalEntry.is_client_fund.is_(False))
+            .scalar() or 0
+        )
+        # Commission earned: revenue for this client excluding client fund
+        balances['revenue'] = float(
+            db.session.query(db.func.coalesce(db.func.sum(JournalLine.credit - JournalLine.debit), 0))
+            .join(Account, JournalLine.account_id == Account.id)
+            .join(JournalEntry, JournalLine.entry_id == JournalEntry.id)
+            .filter(JournalEntry.customer_id == customer.id, Account.code.like('R%'), JournalEntry.is_client_fund.is_(False))
+            .scalar() or 0
+        )
+        # Mini P&L
+        pl['revenue'] = balances['revenue']
+        # Logistics expense: sum of client's E200-Cxxxxx and E210-Cxxxxx if used
+        log_total = db.session.query(db.func.coalesce(db.func.sum(JournalLine.debit - JournalLine.credit), 0)).\
+            join(Account, JournalLine.account_id == Account.id).\
+            join(JournalEntry, JournalLine.entry_id == JournalEntry.id).\
+            filter(JournalEntry.customer_id == customer.id, db.or_(Account.code == log_code, Account.code == (log_code.replace('E200', 'E210'))), JournalEntry.is_client_fund.is_(False)).\
+            scalar() or 0
+        pl['logistics'] = float(log_total)
+
+    export = (request.args.get('export') or '').strip().lower()
+    if export in {'pdf','xlsx'} and customer:
+        # Reuse existing reports export styles (customer_statement) if needed; for brevity, export the ledger
+        if export == 'xlsx':
+            from openpyxl import Workbook
+            from io import BytesIO
+            wb = Workbook(); ws = wb.active; ws.title = 'Client Statement'
+            ws.append(['Date','Description','Debit','Credit'])
+            for row in ledger:
+                ws.append([row['date'], row['desc'], row['debit'], row['credit']])
+            buf = BytesIO(); wb.save(buf); buf.seek(0)
+            return send_file(buf, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name='client_statement.xlsx')
+        if export == 'pdf':
+            from io import BytesIO
+            from reportlab.lib.pagesizes import A4
+            from reportlab.pdfgen import canvas
+            buf = BytesIO(); c = canvas.Canvas(buf, pagesize=A4)
+            width, height = A4; y = height - 40
+            c.setFont('Helvetica-Bold', 16); c.drawString(40, y, f"Client Statement - {(customer.company_name or customer.full_name or '')}"); y -= 20
+            c.setFont('Helvetica', 10)
+            for row in ledger:
+                if y < 40:
+                    c.showPage(); y = height - 40; c.setFont('Helvetica', 10)
+                c.drawString(40, y, row['date']); c.drawString(120, y, row['desc'][:60]); c.drawRightString(450, y, f"{row['debit']:.3f}"); c.drawRightString(550, y, f"{row['credit']:.3f}"); y -= 12
+            c.showPage(); c.save(); buf.seek(0)
+            return send_file(buf, mimetype='application/pdf', as_attachment=True, download_name='client_statement.pdf')
+
+    return render_template('accounting/client_view.html', customers=customers, customer=customer, customer_id=(customer.id if customer else None), ledger=ledger, deposits=deposits, auction_ledger=auction_ledger, service_rows=service_rows, balances=balances, pl=pl)

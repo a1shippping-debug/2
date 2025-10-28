@@ -44,6 +44,11 @@
                   {% if request.endpoint and request.endpoint.startswith('acct.reports') %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
           📈 {{ _('Reports') }}
         </a>
+        <a href="{{ url_for('acct.client_view') }}" 
+           class="block px-3 py-2 rounded-lg transition 
+                  {% if request.endpoint=='acct.client_view' %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
+          👤 {{ _('Client Accounting') }}
+        </a>
         <a href="{{ url_for('acct.journals_list') }}" 
            class="block px-3 py-2 rounded-lg transition 
                   {% if request.endpoint and request.endpoint.startswith('acct.journals') %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">

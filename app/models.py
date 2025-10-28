@@ -53,6 +53,23 @@ class Customer(db.Model):
     price_category = db.Column(db.String(20), nullable=False, default="normal")
     user = db.relationship("User", backref="customer_profile")
 
+
+class ClientAccountStructure(db.Model):
+    __tablename__ = "client_account_structures"
+
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), unique=True, nullable=False, index=True)
+    # Per-client sub-ledger accounts (codes must exist in accounts table)
+    deposit_account_code = db.Column(db.String(20), nullable=False)  # L200C{customer_id}
+    auction_account_code = db.Column(db.String(20))  # A150C{customer_id}
+    service_revenue_account_code = db.Column(db.String(20), nullable=False)  # R300C{customer_id}
+    logistics_expense_account_code = db.Column(db.String(20), nullable=False)  # E200C{customer_id}
+    receivable_account_code = db.Column(db.String(20), nullable=False)  # A300C{customer_id}
+    currency_code = db.Column(db.String(3), default="OMR", nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    customer = db.relationship("Customer")
+
 class Buyer(db.Model):
     __tablename__ = "buyers"
     id = db.Column(db.Integer, primary_key=True)
@@ -346,6 +363,8 @@ class Account(db.Model):
     currency_code = db.Column(db.String(3), default="OMR", nullable=False)
     active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Optional linkage for client-specific sub-accounts
+    client_id = db.Column(db.Integer, db.ForeignKey("customers.id"), index=True)
 
 
 class ExchangeRate(db.Model):

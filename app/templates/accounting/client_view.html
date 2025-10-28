@@ -1,0 +1,106 @@
+{% extends 'base_accounting.html' %}
+{% block content %}
+<div class="container mt-3">
+  <h3>Client Accounting View</h3>
+  <form class="row g-2 mb-3" method="get">
+    <div class="col-auto">
+      <select name="customer_id" class="form-select" onchange="this.form.submit()">
+        <option value="">-- Select Client --</option>
+        {% for c in customers %}
+          <option value="{{ c.id }}" {% if request.args.get('customer_id') and c.id == customer_id %}selected{% endif %}>
+            {{ c.company_name or c.full_name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <a href="?customer_id={{ customer_id }}&export=pdf" class="btn btn-outline-secondary">Export Statement PDF</a>
+      <a href="?customer_id={{ customer_id }}&export=xlsx" class="btn btn-outline-secondary">Export Statement Excel</a>
+    </div>
+  </form>
+
+  {% if customer %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">{{ customer.company_name or customer.full_name }}</h5>
+      <div class="row">
+        <div class="col-md-3"><strong>Deposits</strong><div>{{ balances.deposits|float|round(3) }}</div></div>
+        <div class="col-md-3"><strong>Receivables</strong><div>{{ balances.ar|float|round(3) }}</div></div>
+        <div class="col-md-3"><strong>Total Paid</strong><div>{{ balances.paid|float|round(3) }}</div></div>
+        <div class="col-md-3"><strong>Commission Earned</strong><div>{{ balances.revenue|float|round(3) }}</div></div>
+      </div>
+    </div>
+  </div>
+
+  <ul class="nav nav-tabs" id="clientTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="ledger-tab" data-bs-toggle="tab" data-bs-target="#ledger" type="button" role="tab">Ledger</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="pl-tab" data-bs-toggle="tab" data-bs-target="#pl" type="button" role="tab">Mini P&L</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="deposit-tab" data-bs-toggle="tab" data-bs-target="#deposit" type="button" role="tab">Deposits & Refunds</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="auction-tab" data-bs-toggle="tab" data-bs-target="#auction" type="button" role="tab">Auction Payments</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="service-tab" data-bs-toggle="tab" data-bs-target="#service" type="button" role="tab">Service Revenue</button>
+    </li>
+  </ul>
+  <div class="tab-content p-3 border border-top-0" id="clientTabsContent">
+    <div class="tab-pane fade show active" id="ledger" role="tabpanel">
+      <table class="table table-sm">
+        <thead><tr><th>Date</th><th>Description</th><th>Debit</th><th>Credit</th></tr></thead>
+        <tbody>
+          {% for row in ledger %}
+            <tr><td>{{ row.date }}</td><td>{{ row.desc }}</td><td>{{ row.debit }}</td><td>{{ row.credit }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="tab-pane fade" id="pl" role="tabpanel">
+      <table class="table table-sm">
+        <thead><tr><th>Category</th><th>Amount (OMR)</th></tr></thead>
+        <tbody>
+          <tr><td>Revenue</td><td>{{ pl.revenue|float|round(3) }}</td></tr>
+          <tr><td>Logistics Expense</td><td>{{ pl.logistics|float|round(3) }}</td></tr>
+          <tr><td><strong>Net</strong></td><td><strong>{{ (pl.revenue - pl.logistics)|float|round(3) }}</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tab-pane fade" id="deposit" role="tabpanel">
+      <table class="table table-sm">
+        <thead><tr><th>Date</th><th>Reference</th><th>Amount (OMR)</th><th>Type</th></tr></thead>
+        <tbody>
+          {% for d in deposits %}
+            <tr><td>{{ d.date }}</td><td>{{ d.reference }}</td><td>{{ d.amount }}</td><td>{{ d.type }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="tab-pane fade" id="auction" role="tabpanel">
+      <table class="table table-sm">
+        <thead><tr><th>Date</th><th>Description</th><th>Amount (OMR)</th></tr></thead>
+        <tbody>
+          {% for a in auction_ledger %}
+            <tr><td>{{ a.date }}</td><td>{{ a.desc }}</td><td>{{ a.amount }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="tab-pane fade" id="service" role="tabpanel">
+      <table class="table table-sm">
+        <thead><tr><th>Date</th><th>Description</th><th>Amount (OMR)</th></tr></thead>
+        <tbody>
+          {% for s in service_rows %}
+            <tr><td>{{ s.date }}</td><td>{{ s.desc }}</td><td>{{ s.amount }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
