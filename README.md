@@ -38,6 +38,25 @@ python -c "from app import create_app; app=create_app(); from app.extensions imp
 flask run
 ```
 
+## Accounting & Finance
+
+This project includes an IFRS/GAAP‑aligned accountant portal and general ledger.
+
+Key points:
+- Client Deposits are treated as liabilities (not revenue). Journals tagged as client funds are excluded from P&L.
+- Service commissions are recognized only when earned/paid into Bank (Revenue R* accounts).
+- Balance Sheet presents Client Deposits under Current Liabilities.
+- Reports available: Profit & Loss, Balance Sheet, Trial Balance, General Ledger, Cash Flow, Taxes.
+
+Workflows:
+- Client sends funds: Dr Bank (A100) / Cr Client Deposits (L200) [client fund].
+- Company pays auction (on client behalf): Dr Client Deposits / Cr Bank [client fund].
+- Company earns commission: Dr Bank (or Client) / Cr Revenue (R300) [not client fund].
+- Commission deducted from deposit: Dr Client Deposits / Cr Revenue (R300) [client fund].
+
+Manual Journals:
+- Accounting → Journals lets accountants post, approve, and flag entries as client funds.
+
 ## Notes
 - WeasyPrint requires system packages (libpango, libcairo). If you can't install them, remove WeasyPrint and use ReportLab or plain HTML downloads.
 - To use PostgreSQL, update DATABASE_URL in `.env`.

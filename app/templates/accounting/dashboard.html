@@ -15,6 +15,10 @@
     <div class="text-2xl font-semibold text-blue-900 mt-1">{{ '%.3f'|format(totals.net_omr or 0) }}</div>
   </div>
   <div class="p-4 rounded-2xl bg-white border border-gray-200 shadow-sm">
+    <div class="text-sm text-gray-500">{{ _('Client Deposits (Liability)') }}</div>
+    <div class="text-2xl font-semibold text-blue-900 mt-1">{{ '%.3f'|format(totals.client_deposits_omr or 0) }}</div>
+  </div>
+  <div class="p-4 rounded-2xl bg-white border border-gray-200 shadow-sm">
     <div class="text-sm text-gray-500">{{ _('Invoices') }}</div>
     <div class="text-2xl font-semibold text-blue-900 mt-1">{{ counts.invoices }}</div>
   </div>

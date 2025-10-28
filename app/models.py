@@ -170,6 +170,10 @@ class Setting(db.Model):
     vat_rate = db.Column(db.Numeric(5,2))
     shipping_fee = db.Column(db.Numeric(12,3))
     insurance_rate = db.Column(db.Numeric(5,2))
+    # Books lock date: prevent posting entries on or before this date
+    books_locked_until = db.Column(db.DateTime)
+    # Accounting basis: 'accrual' or 'cash'
+    accounting_method = db.Column(db.String(10), default="accrual")
 
 class AuditLog(db.Model):
     __tablename__ = "audit_logs"
@@ -367,12 +371,19 @@ class JournalEntry(db.Model):
     vehicle_id = db.Column(db.Integer, db.ForeignKey("vehicles.id"), index=True)
     auction_id = db.Column(db.Integer, db.ForeignKey("auctions.id"), index=True)
     invoice_id = db.Column(db.Integer, db.ForeignKey("invoices.id"), index=True)
+    # Compliance & workflow
+    is_client_fund: bool = db.Column(db.Boolean, default=False, nullable=False)
+    status = db.Column(db.String(20), default="approved", nullable=False)  # pending/approved/rejected
+    notes = db.Column(db.Text)
+    approved_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    approved_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     customer = db.relationship("Customer")
     vehicle = db.relationship("Vehicle")
     auction = db.relationship("Auction")
     invoice = db.relationship("Invoice")
+    approved_by = db.relationship("User", foreign_keys=[approved_by_user_id])
     lines = db.relationship("JournalLine", backref="entry", cascade="all, delete-orphan")
 
 

@@ -1,0 +1,42 @@
+{% extends "base_accounting.html" %}
+{% block acct_content %}
+<h2 class="text-2xl font-bold text-blue-900 mb-4">{{ _('Journal Entries') }}</h2>
+<div class="mb-4">
+  <a href="{{ url_for('acct.journals_new') }}" class="px-4 py-2 rounded-lg bg-blue-600 text-white">{{ _('New Journal') }}</a>
+</div>
+<div class="overflow-x-auto">
+<table class="min-w-full divide-y divide-gray-200 text-sm">
+  <thead class="bg-gray-50">
+    <tr>
+      <th class="px-3 py-2 text-left">{{ _('Date') }}</th>
+      <th class="px-3 py-2 text-left">{{ _('Description') }}</th>
+      <th class="px-3 py-2 text-left">{{ _('Reference') }}</th>
+      <th class="px-3 py-2 text-left">{{ _('Client Fund') }}</th>
+      <th class="px-3 py-2 text-left">{{ _('Status') }}</th>
+      <th class="px-3 py-2 text-left">{{ _('Actions') }}</th>
+    </tr>
+  </thead>
+  <tbody class="bg-white divide-y divide-gray-200">
+    {% for e in entries %}
+    <tr>
+      <td class="px-3 py-2">{{ e.entry_date.strftime('%Y-%m-%d') if e.entry_date else '' }}</td>
+      <td class="px-3 py-2">{{ e.description }}</td>
+      <td class="px-3 py-2">{{ e.reference or '-' }}</td>
+      <td class="px-3 py-2">{{ _('Yes') if e.is_client_fund else _('No') }}</td>
+      <td class="px-3 py-2">{{ e.status }}</td>
+      <td class="px-3 py-2">
+        {% if e.status != 'approved' %}
+        <form method="post" action="{{ url_for('acct.journals_approve', entry_id=e.id) }}" class="inline">
+          <button class="px-3 py-1 bg-green-600 text-white rounded">{{ _('Approve') }}</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ url_for('acct.journals_delete', entry_id=e.id) }}" class="inline" onsubmit="return confirm('{{ _('Delete this entry?') }}')">
+          <button class="px-3 py-1 bg-red-600 text-white rounded">{{ _('Delete') }}</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

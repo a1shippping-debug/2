@@ -1,6 +1,6 @@
 from app import create_app
 from app.extensions import db
-from app.models import Role, User, Customer, Auction, Vehicle, Shipment, Invoice, Setting
+from app.models import Role, User, Customer, Auction, Vehicle, Shipment, Invoice, Setting, Account
 from datetime import datetime, timedelta
 
 
@@ -56,6 +56,25 @@ def seed():
         if not Invoice.query.first():
             inv = Invoice(invoice_number="INV-001", customer_id=Customer.query.first().id, total_omr=2500.000, status="Paid")
             db.session.add(inv)
+            db.session.commit()
+
+        # Seed Chart of Accounts (only if empty)
+        if not Account.query.first():
+            accounts = [
+                # Assets
+                ("A100", "Bank", "ASSET"),
+                ("A200", "Vehicle Inventory", "ASSET"),
+                # Liabilities
+                ("L200", "Client Deposits", "LIABILITY"),
+                ("L210", "Auction Payable (Clients)", "LIABILITY"),
+                # Revenue
+                ("R300", "Service Fees / Fines", "REVENUE"),
+                # Expenses
+                ("E200", "Operational Expenses", "EXPENSE"),
+                ("E210", "Internal Shipping", "EXPENSE"),
+            ]
+            for code, name, typ in accounts:
+                db.session.add(Account(code=code, name=name, type=typ))
             db.session.commit()
 
 

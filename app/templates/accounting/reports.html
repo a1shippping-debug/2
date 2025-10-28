@@ -18,7 +18,10 @@
   <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
     {% if chart %}
     <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-semibold text-blue-900">{{ _('Monthly Revenue vs Expenses') }}</h3>
+      <h3 class="text-lg font-semibold text-blue-900">
+        {% if report_type=='monthly' %}{{ _('Monthly Revenue vs Expenses') }}{% endif %}
+        {% if report_type=='taxes' %}{{ _('Taxes by Month') }}{% endif %}
+      </h3>
     </div>
     <canvas id="lineChart" height="120"></canvas>
     {% endif %}

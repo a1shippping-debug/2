@@ -24,6 +24,11 @@
                   {% if request.endpoint and request.endpoint.startswith('acct.invoices') %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
           🧾 {{ _('Invoices') }}
         </a>
+        <a href="{{ url_for('acct.accounts_list') }}" 
+           class="block px-3 py-2 rounded-lg transition 
+                  {% if request.endpoint and request.endpoint.startswith('acct.accounts') %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
+          📒 {{ _('Chart of Accounts') }}
+        </a>
         <a href="{{ url_for('acct.payments_list') }}" 
            class="block px-3 py-2 rounded-lg transition 
                   {% if request.endpoint and request.endpoint.startswith('acct.payments') %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
@@ -39,6 +44,18 @@
                   {% if request.endpoint and request.endpoint.startswith('acct.reports') %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
           📈 {{ _('Reports') }}
         </a>
+        <a href="{{ url_for('acct.journals_list') }}" 
+           class="block px-3 py-2 rounded-lg transition 
+                  {% if request.endpoint and request.endpoint.startswith('acct.journals') %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">
+          📚 {{ _('Journals') }}
+        </a>
+        <div class="mt-3 border-t border-slate-200 pt-3 text-xs text-slate-500">{{ _('Financial Statements') }}</div>
+        <a href="{{ url_for('acct.reports', type='balance_sheet') }}" class="block px-3 py-2 rounded-lg text-blue-900 hover:bg-blue-50">{{ _('Balance Sheet') }}</a>
+        <a href="{{ url_for('acct.reports', type='monthly') }}" class="block px-3 py-2 rounded-lg text-blue-900 hover:bg-blue-50">{{ _('Profit & Loss') }}</a>
+        <a href="{{ url_for('acct.reports', type='taxes') }}" class="block px-3 py-2 rounded-lg text-blue-900 hover:bg-blue-50">{{ _('VAT / Taxes') }}</a>
+        <a href="{{ url_for('acct.reports', type='trial_balance') }}" class="block px-3 py-2 rounded-lg text-blue-900 hover:bg-blue-50">{{ _('Trial Balance') }}</a>
+        <a href="{{ url_for('acct.reports', type='general_ledger') }}" class="block px-3 py-2 rounded-lg text-blue-900 hover:bg-blue-50">{{ _('General Ledger') }}</a>
+        <a href="{{ url_for('acct.reports', type='cash_flow') }}" class="block px-3 py-2 rounded-lg text-blue-900 hover:bg-blue-50">{{ _('Cash Flow') }}</a>
         <a href="{{ url_for('acct.settings') }}" 
            class="block px-3 py-2 rounded-lg transition 
                   {% if request.endpoint=='acct.settings' %}bg-blue-700 text-white shadow-sm{% else %}text-blue-900 hover:bg-blue-50{% endif %}">

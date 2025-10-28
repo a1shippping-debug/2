@@ -94,10 +94,22 @@ def _get_account(code: str) -> Account | None:
 
 def _post_journal(description: str, reference: str | None, lines: list[tuple[str, float, float]],
                   customer_id: int | None = None, vehicle_id: int | None = None,
-                  auction_id: int | None = None, invoice_id: int | None = None):
+                  auction_id: int | None = None, invoice_id: int | None = None,
+                  is_client_fund: bool = False, status: str = 'approved', notes: str | None = None):
     """Create a balanced journal entry from (account_code, debit, credit) lines.
     Amounts are in OMR.
     """
+    from ...models import Setting
+    # Enforce lock period
+    try:
+        settings_row = db.session.query(Setting).first()
+        if settings_row and getattr(settings_row, 'books_locked_until', None):
+            from datetime import datetime
+            if datetime.utcnow() <= settings_row.books_locked_until:
+                status = 'pending'  # queue for approval if within locked period
+    except Exception:
+        pass
+
     entry = JournalEntry(
         description=description,
         reference=reference,
@@ -105,6 +117,9 @@ def _post_journal(description: str, reference: str | None, lines: list[tuple[str
         vehicle_id=vehicle_id,
         auction_id=auction_id,
         invoice_id=invoice_id,
+        is_client_fund=bool(is_client_fund),
+        status=status or 'approved',
+        notes=notes,
     )
     db.session.add(entry)
     db.session.flush()
@@ -124,6 +139,74 @@ def _post_journal(description: str, reference: str | None, lines: list[tuple[str
     return entry
 
 
+# ---- Manual Journals (basic CRUD & listing) ----
+@acct_bp.route('/journals')
+@role_required('accountant', 'admin')
+def journals_list():
+    q = db.session.query(JournalEntry).order_by(JournalEntry.entry_date.desc(), JournalEntry.id.desc())
+    entries = q.limit(200).all()
+    return render_template('accounting/journals_list.html', entries=entries)
+
+
+@acct_bp.route('/journals/new', methods=['GET','POST'])
+@role_required('accountant', 'admin')
+def journals_new():
+    if request.method == 'POST':
+        description = (request.form.get('description') or '').strip()
+        reference = (request.form.get('reference') or '').strip() or None
+        is_client_fund = (request.form.get('is_client_fund') == 'on')
+        # Expect parallel lists of codes/debits/credits
+        codes = request.form.getlist('code')
+        drs = request.form.getlist('debit')
+        crs = request.form.getlist('credit')
+        lines: list[tuple[str, float, float]] = []
+        for c, d, r in zip(codes, drs, crs):
+            c = (c or '').strip()
+            if not c:
+                continue
+            lines.append((c, _parse_number_input(d), _parse_number_input(r)))
+        _post_journal(description=description or 'Manual journal', reference=reference, lines=lines, is_client_fund=is_client_fund)
+        try:
+            db.session.commit(); flash(_('Journal posted'), 'success')
+        except Exception:
+            db.session.rollback(); flash(_('Failed to post journal'), 'danger')
+        return redirect(url_for('acct.journals_list'))
+    return render_template('accounting/journals_form.html')
+
+
+@acct_bp.route('/journals/<int:entry_id>/approve', methods=['POST'])
+@role_required('accountant', 'admin')
+def journals_approve(entry_id: int):
+    je = db.session.get(JournalEntry, entry_id)
+    if not je:
+        flash(_('Not found'), 'danger'); return redirect(url_for('acct.journals_list'))
+    je.status = 'approved'
+    je.approved_at = datetime.utcnow()
+    try:
+        from flask_login import current_user
+        je.approved_by_user_id = getattr(current_user, 'id', None)
+    except Exception:
+        pass
+    try:
+        db.session.commit(); flash(_('Journal approved'), 'success')
+    except Exception:
+        db.session.rollback(); flash(_('Failed to approve journal'), 'danger')
+    return redirect(url_for('acct.journals_list'))
+
+
+@acct_bp.route('/journals/<int:entry_id>/delete', methods=['POST'])
+@role_required('accountant', 'admin')
+def journals_delete(entry_id: int):
+    je = db.session.get(JournalEntry, entry_id)
+    if not je:
+        flash(_('Not found'), 'danger'); return redirect(url_for('acct.journals_list'))
+    db.session.delete(je)
+    try:
+        db.session.commit(); flash(_('Journal deleted'), 'success')
+    except Exception:
+        db.session.rollback(); flash(_('Failed to delete journal'), 'danger')
+    return redirect(url_for('acct.journals_list'))
+
 # ---- Stage 1: Customer Deposit (Security) ----
 def record_customer_deposit(customer_id: int, amount_omr: float, method: str | None = None,
                             reference: str | None = None, vehicle_id: int | None = None,
@@ -136,6 +219,7 @@ def record_customer_deposit(customer_id: int, amount_omr: float, method: str | N
         description='Customer deposit received', reference=reference,
         lines=[('A100', amount_omr, 0.0), ('L200', 0.0, amount_omr)],
         customer_id=customer_id, vehicle_id=vehicle_id, auction_id=auction_id,
+        is_client_fund=True,
     )
     return dep
 
@@ -151,9 +235,39 @@ def refund_customer_deposit(deposit_id: int):
         description='Customer deposit refunded', reference=dep.reference,
         lines=[('L200', amt, 0.0), ('A100', 0.0, amt)],
         customer_id=dep.customer_id, vehicle_id=dep.vehicle_id, auction_id=dep.auction_id,
+        is_client_fund=True,
     )
     return True
 
+
+# ---- Client fund applications & commissions ----
+def pay_auction_from_client_fund(customer_id: int, amount_omr: float, reference: str | None = None,
+                                 vehicle_id: int | None = None, auction_id: int | None = None):
+    """Use held client deposit to pay auction: Dr Client Deposits / Cr Bank.
+
+    Flagged as client fund so excluded from P&L.
+    """
+    if float(amount_omr or 0) <= 0:
+        return None
+    return _post_journal(
+        description='Auction payment from client funds', reference=reference,
+        lines=[('L200', float(amount_omr), 0.0), ('A100', 0.0, float(amount_omr))],
+        customer_id=customer_id, vehicle_id=vehicle_id, auction_id=auction_id,
+        is_client_fund=True,
+    )
+
+
+def record_commission_from_deposit(customer_id: int, amount_omr: float, reference: str | None = None,
+                                   vehicle_id: int | None = None, invoice_id: int | None = None):
+    """Recognize commission by deducting from client deposit: Dr Client Deposits / Cr Revenue (R300)."""
+    if float(amount_omr or 0) <= 0:
+        return None
+    return _post_journal(
+        description='Commission deducted from client deposit', reference=reference,
+        lines=[('L200', float(amount_omr), 0.0), ('R300', 0.0, float(amount_omr))],
+        customer_id=customer_id, vehicle_id=vehicle_id, invoice_id=invoice_id,
+        is_client_fund=True,
+    )
 
 # ---- Stage 2: Car Invoice after winning auction ----
 def create_car_invoice(customer_id: int, vehicle_id: int, price_omr: float,
@@ -190,6 +304,7 @@ def record_vehicle_purchase(vehicle_id: int, auction_id: int | None, purchase_pr
             ('A100', 0.0, float(amount_omr)) if paid_from_bank else ('L210', 0.0, float(amount_omr)),
         ],
         vehicle_id=vehicle_id, auction_id=auction_id,
+        is_client_fund=not paid_from_bank,
     )
     return float(amount_omr)
 
@@ -263,6 +378,7 @@ def create_shipping_invoice(customer_id: int, vehicle_id: int, shipping_cost_omr
             description='Shipping invoice payment', reference=inv.invoice_number,
             lines=lines,
             customer_id=customer_id, vehicle_id=vehicle_id, invoice_id=inv.id,
+            is_client_fund=False,
         )
         inv.status = 'Paid'
     return inv.id
@@ -287,13 +403,13 @@ def dashboard():
         .scalar()
         or 0
     )
+    # Revenue should include service fees only (R* accounts excluding client funds)
+    rev_total = db.session.query(db.func.coalesce(db.func.sum(JournalLine.credit - JournalLine.debit), 0)).\
+        join(Account, JournalLine.account_id == Account.id).\
+        join(JournalEntry, JournalLine.entry_id == JournalEntry.id).\
+        filter(Account.code.like('R%'), JournalEntry.is_client_fund.is_(False)).scalar() or 0
     totals = {
-        "revenue_omr": float(
-            db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0))
-            .filter(Invoice.status == 'Paid', Invoice.invoice_type != 'CAR')
-            .scalar()
-            or 0
-        ),
+        "revenue_omr": float(rev_total),
         "expenses_omr": expenses_omr + car_paid_total,
     }
     totals["net_omr"] = totals["revenue_omr"] - totals["expenses_omr"]
@@ -308,13 +424,16 @@ def dashboard():
             month_end = datetime(month_start.year + 1, 1, 1)
         else:
             month_end = datetime(month_start.year, month_start.month + 1, 1)
+        # Sum monthly revenue from GL (R* accounts), excluding client funds
         total = (
-            db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0))
+            db.session.query(db.func.coalesce(db.func.sum(JournalLine.credit - JournalLine.debit), 0))
+            .join(Account, JournalLine.account_id == Account.id)
+            .join(JournalEntry, JournalLine.entry_id == JournalEntry.id)
             .filter(
-                Invoice.created_at >= month_start,
-                Invoice.created_at < month_end,
-                Invoice.status == 'Paid',
-                Invoice.invoice_type != 'CAR',
+                JournalEntry.entry_date >= month_start,
+                JournalEntry.entry_date < month_end,
+                Account.code.like('R%'),
+                JournalEntry.is_client_fund.is_(False),
             )
             .scalar()
             or 0
@@ -338,6 +457,12 @@ def dashboard():
             or 0
         ),
     }
+
+    # KPI: outstanding client deposits (L200* credit balance)
+    client_deposits = db.session.query(db.func.coalesce(db.func.sum(JournalLine.credit - JournalLine.debit), 0)).\
+        join(Account, JournalLine.account_id == Account.id).\
+        filter(Account.code.like('L200%')).scalar() or 0
+    totals["client_deposits_omr"] = float(client_deposits)
 
     return render_template("accounting/dashboard.html", counts=counts, totals=totals, chart={
         "months": months, "revenue": revenue_series, "exp_labels": list(exp.keys()), "exp_values": list(exp.values())
@@ -591,6 +716,17 @@ def payments_new():
         inv.status = 'Paid'
     else:
         inv.status = 'Partial'
+    # If this is a service invoice (not CAR), treat as commission revenue: Dr Bank / Cr Revenue
+    if inv.invoice_type and inv.invoice_type != 'CAR' and float(amt) > 0:
+        try:
+            _post_journal(
+                description='Commission/service payment', reference=inv.invoice_number,
+                lines=[('A100', float(amt), 0.0), ('R300', 0.0, float(amt))],
+                customer_id=inv.customer_id, invoice_id=inv.id, is_client_fund=False,
+            )
+        except Exception:
+            # Non-blocking
+            pass
     try:
         db.session.commit()
         flash(_('Payment recorded'), 'success')
@@ -704,8 +840,21 @@ def reports():
             start = dt
             end = datetime(dt.year + 1, 1, 1) if dt.month == 12 else datetime(dt.year, dt.month + 1, 1)
             labels.append(dt.strftime('%b %Y'))
-            rev = db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).\
-                filter(Invoice.created_at >= start, Invoice.created_at < end, Invoice.status == 'Paid', Invoice.invoice_type != 'CAR').scalar() or 0
+            # IFRS: revenue from GL R* excluding client funds
+            rev = (
+                db.session.query(db.func.coalesce(db.func.sum(JournalLine.credit - JournalLine.debit), 0))
+                .join(Account, JournalLine.account_id == Account.id)
+                .join(JournalEntry, JournalLine.entry_id == JournalEntry.id)
+                .filter(
+                    JournalEntry.entry_date >= start,
+                    JournalEntry.entry_date < end,
+                    Account.code.like('R%'),
+                    JournalEntry.is_client_fund.is_(False),
+                )
+                .scalar()
+                or 0
+            )
+            # Expenses: combine operational costs + car purchase totals in period
             car_cost = db.session.query(db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).\
                 filter(Invoice.created_at >= start, Invoice.created_at < end, Invoice.status == 'Paid', Invoice.invoice_type == 'CAR').scalar() or 0
             freight = db.session.query(db.func.coalesce(db.func.sum(Shipment.cost_freight_usd), 0)).filter(Shipment.created_at >= start, Shipment.created_at < end).scalar() or 0
@@ -744,8 +893,17 @@ def reports():
 
     if report_type == 'by_client':
         # Aggregate invoices by client
-        rows = db.session.query(Customer.company_name, db.func.coalesce(db.func.sum(Invoice.total_omr), 0)).\
-            join(Invoice, Invoice.customer_id == Customer.id, isouter=True).group_by(Customer.company_name).order_by(Customer.company_name.asc()).all()
+        # Sum GL revenue by customer (R* accounts) excluding client funds
+        rows = (
+            db.session.query(Customer.company_name, db.func.coalesce(db.func.sum(JournalLine.credit - JournalLine.debit), 0))
+            .join(JournalEntry, JournalEntry.customer_id == Customer.id, isouter=True)
+            .join(JournalLine, JournalLine.entry_id == JournalEntry.id, isouter=True)
+            .join(Account, JournalLine.account_id == Account.id, isouter=True)
+            .filter(Account.code.like('R%'), JournalEntry.is_client_fund.is_(False))
+            .group_by(Customer.company_name)
+            .order_by(Customer.company_name.asc())
+            .all()
+        )
         data = [(name or '-', float(total or 0)) for name, total in rows]
         headers = [_('Client'), _('Total (OMR)')]
         if export == 'xlsx':
@@ -797,19 +955,108 @@ def reports():
         return render_template('accounting/reports.html', report_type='taxes', chart={"months": labels, "customs": customs_m, "vat": vat_m})
 
     if report_type == 'balance_sheet':
-        # Simple balance sheet snapshot using GL
-        def sum_acct(prefix: str):
-            from ...models import Account, JournalLine
-            rows = db.session.query(db.func.coalesce(db.func.sum(JournalLine.debit - JournalLine.credit), 0)).\
+        # Balance Sheet with Client Deposits under Current Liabilities
+        def sum_acct(prefix: str, exclude_client_fund: bool | None = None):
+            from ...models import Account, JournalLine, JournalEntry
+            q = db.session.query(db.func.coalesce(db.func.sum(JournalLine.debit - JournalLine.credit), 0)).\
                 join(Account, JournalLine.account_id == Account.id).\
-                filter(Account.code.like(f"{prefix}%")).scalar() or 0
-            return float(rows)
-        assets = sum_acct('A')
-        liabilities = -sum_acct('L')  # credits increase liabilities
-        equity = assets - liabilities
-        data = {'Assets': assets, 'Liabilities': liabilities, 'Equity': equity}
+                join(JournalEntry, JournalLine.entry_id == JournalEntry.id).\
+                filter(Account.code.like(f"{prefix}%"))
+            if exclude_client_fund is True:
+                q = q.filter(JournalEntry.is_client_fund.is_(False))
+            elif exclude_client_fund is False:
+                q = q.filter(JournalEntry.is_client_fund.is_(True))
+            return float(q.scalar() or 0)
+        assets = sum_acct('A', exclude_client_fund=True)
+        # Total liabilities including client funds
+        liabilities_total = -sum_acct('L', exclude_client_fund=None)
+        # Client deposits account (L200*) balance from all entries (client funds scope only preferred)
+        client_deposits = -(
+            db.session.query(db.func.coalesce(db.func.sum(JournalLine.debit - JournalLine.credit), 0))
+            .join(Account, JournalLine.account_id == Account.id)
+            .join(JournalEntry, JournalLine.entry_id == JournalEntry.id)
+            .filter(Account.code.like('L200%'))
+            .scalar() or 0
+        )
+        other_liabilities = max(0.0, liabilities_total - client_deposits)
+        equity = assets - (client_deposits + other_liabilities)
+        data = [
+            (_('Assets'), assets),
+            (_('Client Deposits (Current Liabilities)'), client_deposits),
+            (_('Other Liabilities'), other_liabilities),
+            (_('Equity'), equity),
+        ]
         headers = [_('Category'), _('Amount (OMR)')]
-        return render_template('accounting/reports.html', report_type='balance_sheet', table=list(data.items()), headers=headers)
+        return render_template('accounting/reports.html', report_type='balance_sheet', table=data, headers=headers)
+
+    if report_type == 'trial_balance':
+        # Trial balance from GL (all entries)
+        rows = (
+            db.session.query(
+                Account.code,
+                Account.name,
+                db.func.coalesce(db.func.sum(JournalLine.debit), 0),
+                db.func.coalesce(db.func.sum(JournalLine.credit), 0),
+            )
+            .join(JournalLine, JournalLine.account_id == Account.id)
+            .group_by(Account.code, Account.name)
+            .order_by(Account.code.asc())
+            .all()
+        )
+        data = [(code, name, float(dr or 0), float(cr or 0), float((dr or 0) - (cr or 0))) for code, name, dr, cr in rows]
+        headers = [_('Account Code'), _('Account Name'), _('Debit'), _('Credit'), _('Net (Dr-Cr)')]
+        return render_template('accounting/reports.html', report_type='trial_balance', table=data, headers=headers)
+
+    if report_type == 'general_ledger':
+        # General ledger for a specific account
+        acct_code = (request.args.get('code') or 'A100').strip()
+        acct = db.session.query(Account).filter(Account.code == acct_code).first()
+        if not acct:
+            return render_template('accounting/reports.html', report_type='general_ledger', table=[], headers=[_('Date'), _('Description'), _('Debit'), _('Credit')])
+        rows = (
+            db.session.query(JournalEntry.entry_date, JournalEntry.description, JournalLine.debit, JournalLine.credit)
+            .join(JournalLine, JournalLine.entry_id == JournalEntry.id)
+            .filter(JournalLine.account_id == acct.id)
+            .order_by(JournalEntry.entry_date.asc(), JournalEntry.id.asc())
+            .limit(1000)
+            .all()
+        )
+        data = [(
+            (dt.strftime('%Y-%m-%d') if dt else ''), desc or '-', float(dr or 0), float(cr or 0)
+        ) for dt, desc, dr, cr in rows]
+        headers = [_('Date'), _('Description'), _('Debit'), _('Credit')]
+        return render_template('accounting/reports.html', report_type='general_ledger', table=data, headers=headers)
+
+    if report_type == 'cash_flow':
+        # Simple cash flow (Direct): monthly net cash movement on Bank accounts (A100*)
+        method = (request.args.get('method') or 'direct').strip().lower()
+        now = datetime.utcnow()
+        dt = datetime(now.year, now.month, 1)
+        labels = []
+        net = []
+        for _ in range(12):
+            start = dt
+            end = datetime(dt.year + 1, 1, 1) if dt.month == 12 else datetime(dt.year, dt.month + 1, 1)
+            labels.append(dt.strftime('%b %Y'))
+            q = (
+                db.session.query(db.func.coalesce(db.func.sum(JournalLine.debit - JournalLine.credit), 0))
+                .join(Account, JournalLine.account_id == Account.id)
+                .join(JournalEntry, JournalLine.entry_id == JournalEntry.id)
+                .filter(
+                    JournalEntry.entry_date >= start,
+                    JournalEntry.entry_date < end,
+                    Account.code.like('A100%'),
+                    JournalEntry.is_client_fund.is_(False),
+                )
+            )
+            val = float(q.scalar() or 0)
+            net.append(val)
+            if dt.month == 1: dt = datetime(dt.year - 1, 12, 1)
+            else: dt = datetime(dt.year, dt.month - 1, 1)
+        labels, net = list(reversed(labels)), list(reversed(net))
+        headers = [_('Month'), _('Net Cash Movement (OMR)')]
+        table = list(zip(labels, net))
+        return render_template('accounting/reports.html', report_type='cash_flow', table=table, headers=headers)
 
     if report_type == 'ar_aging':
         # Accounts receivable by customer from invoices minus payments
@@ -831,10 +1078,11 @@ def reports():
         return render_template('accounting/reports.html', report_type='inventory_by_vehicle', table=data, headers=headers)
 
     if report_type == 'fines_revenue':
-        # Sum fines revenue (R300)
+        # Sum fines revenue (R300), excluding client fund flagged entries
         total = db.session.query(db.func.coalesce(db.func.sum(JournalLine.credit - JournalLine.debit), 0)).\
             join(Account, JournalLine.account_id == Account.id).\
-            filter(Account.code == 'R300').scalar() or 0
+            join(JournalEntry, JournalLine.entry_id == JournalEntry.id).\
+            filter(Account.code == 'R300', JournalEntry.is_client_fund.is_(False)).scalar() or 0
         headers = [_('Metric'), _('Amount (OMR)')]
         return render_template('accounting/reports.html', report_type='fines_revenue', table=[[str(_('Fines Revenue')), float(total)]], headers=headers)
 
@@ -884,3 +1132,33 @@ def settings():
         except Exception:
             db.session.rollback(); flash('Failed to save', 'danger')
     return render_template('accounting/settings.html', settings=settings_row)
+
+
+# Chart of Accounts (simple list and create)
+@acct_bp.route('/accounts')
+@role_required('accountant', 'admin')
+def accounts_list():
+    rows = db.session.query(Account).order_by(Account.code.asc()).all()
+    return render_template('accounting/accounts_list.html', accounts=rows)
+
+
+@acct_bp.route('/accounts/new', methods=['GET','POST'])
+@role_required('accountant', 'admin')
+def accounts_new():
+    if request.method == 'POST':
+        code = (request.form.get('code') or '').strip()
+        name = (request.form.get('name') or '').strip()
+        typ = (request.form.get('type') or '').strip().upper()
+        if not code or not name or typ not in {'ASSET','LIABILITY','EQUITY','REVENUE','EXPENSE'}:
+            flash(_('Please fill in all fields.'), 'danger')
+            return render_template('accounting/accounts_form.html')
+        if db.session.query(Account).filter(Account.code == code).first():
+            flash(_('Account code already exists.'), 'danger')
+            return render_template('accounting/accounts_form.html')
+        db.session.add(Account(code=code, name=name, type=typ))
+        try:
+            db.session.commit(); flash(_('Account created'), 'success')
+            return redirect(url_for('acct.accounts_list'))
+        except Exception:
+            db.session.rollback(); flash(_('Failed to create account'), 'danger')
+    return render_template('accounting/accounts_form.html')
