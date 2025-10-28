@@ -4,7 +4,7 @@
 <div class="mb-4 grid md:grid-cols-2 gap-4 text-sm">
   <div>
     <div><strong>VIN:</strong> <span class="font-mono">{{ vehicle.vin }}</span></div>
-    <div><strong>{{ _('Client') }}:</strong> {{ vehicle.owner.company_name if vehicle.owner else '-' }}</div>
+    <div><strong>{{ _('Client') }}:</strong> {{ vehicle.owner.display_name if vehicle.owner else '-' }}</div>
     <div><strong>{{ _('Auction Lot') }}:</strong> {{ vehicle.auction.lot_number if vehicle.auction else '-' }}</div>
   </div>
   <div>

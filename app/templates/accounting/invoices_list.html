@@ -25,7 +25,7 @@
       {% for inv in invoices %}
       <tr class="border-t border-gray-100 hover:bg-blue-50 transition">
         <td class="px-4 py-3 font-medium text-gray-800">{{ inv.invoice_number }}</td>
-        <td class="px-4 py-3">{{ inv.customer.company_name if inv.customer else '-' }}</td>
+        <td class="px-4 py-3">{{ inv.customer.display_name if inv.customer else '-' }}</td>
         <td class="px-4 py-3 text-gray-700">{{ '%.3f'|format(inv.total_omr or 0) }}</td>
         <td class="px-4 py-3">
           <span class="

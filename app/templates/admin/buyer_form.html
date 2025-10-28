@@ -45,7 +45,7 @@
           <option value="">-- اختر عميل --</option>
           {% for c in customers %}
             <option value="{{ c.id }}" {% if form.customer_id == c.id|string %}selected{% endif %}>
-              {{ c.company_name or c.full_name }}
+              {{ c.display_name }}
             </option>
           {% endfor %}
         </select>

@@ -53,6 +53,23 @@ class Customer(db.Model):
     price_category = db.Column(db.String(20), nullable=False, default="normal")
     user = db.relationship("User", backref="customer_profile")
 
+    @property
+    def display_name(self) -> str:
+        """Return the most appropriate display name for the customer.
+
+        Preference order:
+        1) company_name
+        2) full_name
+        3) linked user.name
+        Fallback to '-' when nothing available.
+        """
+        try:
+            name = (self.company_name or self.full_name or (self.user.name if getattr(self, 'user', None) else None))
+            name = (name or "").strip()
+            return name if name else "-"
+        except Exception:
+            return "-"
+
 
 class ClientAccountStructure(db.Model):
     __tablename__ = "client_account_structures"

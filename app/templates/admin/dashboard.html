@@ -131,7 +131,7 @@
         {% for inv in recent.invoices %}
           <tr class="border-t hover:bg-blue-50 transition">
             <td class="py-2">{{ inv.invoice_number }}</td>
-            <td>{{ inv.customer.company_name if inv.customer else '-' }}</td>
+          <td>{{ inv.customer.display_name if inv.customer else '-' }}</td>
             <td>{{ '%.3f'|format(inv.total_omr or 0) }}</td>
             <td>{{ inv.status }}</td>
           </tr>

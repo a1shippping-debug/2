@@ -730,7 +730,7 @@ def cars_export():
     buf = StringIO(); w = csv.writer(buf)
     w.writerow(['VIN','Make','Model','Year','Client','Status'])
     for v in rows:
-        w.writerow([v.vin, v.make, v.model, v.year or '', (v.owner.company_name if v.owner else ''), v.status])
+        w.writerow([v.vin, v.make, v.model, v.year or '', (v.owner.display_name if v.owner else ''), v.status])
     buf.seek(0)
     from flask import send_file
     from io import BytesIO

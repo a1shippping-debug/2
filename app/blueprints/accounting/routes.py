@@ -862,7 +862,7 @@ def invoices_export_xlsx(invoice_id: int):
     wb = Workbook(); ws = wb.active; ws.title = inv.invoice_number or 'Invoice'
     ws.append(['Invoice #', inv.invoice_number])
     ws.append(['Date', inv.created_at.strftime('%Y-%m-%d') if inv.created_at else ''])
-    ws.append(['Client', inv.customer.company_name if inv.customer else '-'])
+    ws.append(['Client', inv.customer.display_name if inv.customer else '-'])
     ws.append([])
     ws.append(['Description', 'Amount (OMR)'])
     for it in items:
@@ -1839,7 +1839,7 @@ def client_view():
             from reportlab.pdfgen import canvas
             buf = BytesIO(); c = canvas.Canvas(buf, pagesize=A4)
             width, height = A4; y = height - 40
-            c.setFont('Helvetica-Bold', 16); c.drawString(40, y, f"Client Statement - {(customer.company_name or customer.full_name or '')}"); y -= 20
+            c.setFont('Helvetica-Bold', 16); c.drawString(40, y, f"Client Statement - {customer.display_name}"); y -= 20
             c.setFont('Helvetica', 10)
             for row in ledger:
                 if y < 40:
