@@ -29,6 +29,41 @@
         <div class="col-md-3"><strong>Total Paid</strong><div>{{ balances.paid|float|round(3) }}</div></div>
         <div class="col-md-3"><strong>Commission Earned</strong><div>{{ balances.revenue|float|round(3) }}</div></div>
       </div>
+      <form method="post" action="{{ url_for('acct.client_view_add_entry') }}" class="row g-2 mt-3">
+        <input type="hidden" name="customer_id" value="{{ customer_id }}" />
+        <div class="col-md-2">
+          <label class="form-label">المبلغ (OMR)</label>
+          <input name="amount" type="number" step="0.001" class="form-control" required />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">نوع القيد</label>
+          <select name="entry_type" class="form-select">
+            <option value="client_fund_deposit">إيداع أموال عميل</option>
+            <option value="client_fund_disbursement">صرف من أموال العميل</option>
+            <option value="ar_settlement">سداد ذمم مدينة</option>
+            <option value="revenue">إيراد خدمة مباشر</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">وصف العملية</label>
+          <input name="description" class="form-control" placeholder="مثال: دفع عمولة" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">طريقة الدفع</label>
+          <select name="method" class="form-select">
+            <option>{{ _('Cash') }}</option>
+            <option>{{ _('Bank Transfer') }}</option>
+            <option>{{ _('Card') }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Reference</label>
+          <input name="reference" class="form-control" />
+        </div>
+        <div class="col-md-12">
+          <button class="btn btn-primary mt-2">حفظ</button>
+        </div>
+      </form>
     </div>
   </div>
 
