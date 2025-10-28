@@ -836,7 +836,7 @@ def reports():
         labels, revenue, expenses = [], [], []
         dt = datetime(now.year, now.month, 1)
         usd_to_omr = float(current_app.config.get('OMR_EXCHANGE_RATE', 0.385))
-        for _ in range(12):
+        for month_index in range(12):
             start = dt
             end = datetime(dt.year + 1, 1, 1) if dt.month == 12 else datetime(dt.year, dt.month + 1, 1)
             labels.append(dt.strftime('%b %Y'))
@@ -926,7 +926,7 @@ def reports():
         # Monthly customs and VAT
         labels, customs_m, vat_m = [], [], []
         dt = datetime(now.year, now.month, 1)
-        for _ in range(12):
+        for month_index in range(12):
             start = dt
             end = datetime(dt.year + 1, 1, 1) if dt.month == 12 else datetime(dt.year, dt.month + 1, 1)
             labels.append(dt.strftime('%b %Y'))
@@ -1034,7 +1034,7 @@ def reports():
         dt = datetime(now.year, now.month, 1)
         labels = []
         net = []
-        for _ in range(12):
+        for month_index in range(12):
             start = dt
             end = datetime(dt.year + 1, 1, 1) if dt.month == 12 else datetime(dt.year, dt.month + 1, 1)
             labels.append(dt.strftime('%b %Y'))

@@ -193,7 +193,7 @@ def share_vehicle(vehicle_id: int):
     # Ensure token exists and is unique; enable sharing
     if not getattr(v, "share_token", None):
         # Retry a few times in the extremely unlikely case of collision
-        for _ in range(5):
+        for attempt_index in range(5):
             candidate = secrets.token_urlsafe(24)[:64]
             exists = db.session.query(Vehicle).filter(Vehicle.share_token == candidate).first()
             if not exists:

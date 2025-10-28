@@ -185,7 +185,7 @@ def dashboard():
     shipped_counts = []
     dt = datetime(now.year, now.month, 1)
     months = []
-    for _ in range(12):
+    for month_index in range(12):
         start = dt
         end = datetime(dt.year + 1, 1, 1) if dt.month == 12 else datetime(dt.year, dt.month + 1, 1)
         months.append((start, end, start.strftime("%b")))
