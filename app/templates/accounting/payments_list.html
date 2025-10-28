@@ -72,6 +72,17 @@
       </div>
 
       <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">نوع القيد</label>
+        <select name="entry_type" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500">
+          <option value="auto">تلقائي</option>
+          <option value="client_fund">أموال عميل (قيد وديعة)</option>
+          <option value="ar_settlement">سداد ذمم مدينة</option>
+          <option value="revenue">إيراد خدمة مباشر</option>
+        </select>
+        <div class="text-xs text-gray-500 mt-1">عند اختيار "تلقائي" سيتم تحديد نوع القيد حسب نوع الفاتورة.</div>
+      </div>
+
+      <div>
         <label class="block text-sm font-medium text-gray-600 mb-1">{{ _('Method') }}</label>
         <select name="method" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500">
           <option>{{ _('Cash') }}</option>

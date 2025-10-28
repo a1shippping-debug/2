@@ -1012,6 +1012,7 @@ def payments_new():
     amount = request.form.get('amount')
     method = request.form.get('method')
     reference = request.form.get('reference')
+    entry_type_raw = (request.form.get('entry_type') or 'auto').strip().lower()
     vin_input = (request.form.get('vin') or '').strip().upper()
 
     # Enforce VIN-only flow: VIN must be provided
@@ -1082,33 +1083,72 @@ def payments_new():
         inv.status = 'Paid'
     else:
         inv.status = 'Partial'
-    # If this is a service invoice (not CAR), prefer AR settlement if revenue already recognized
-    if inv.invoice_type and inv.invoice_type != 'CAR' and float(amt) > 0:
-        try:
-            # Has revenue been recognized for this invoice? If yes: Dr Bank / Cr AR. Else: Dr Bank / Cr Revenue.
-            recognized = (
-                db.session.query(JournalEntry)
-                .join(JournalLine, JournalLine.entry_id == JournalEntry.id)
-                .join(Account, JournalLine.account_id == Account.id)
-                .filter(JournalEntry.invoice_id == inv.id, Account.code.like('R%'))
-                .first()
-            )
-            if recognized:
+
+    # Determine and post journal entry type
+    try:
+        et = entry_type_raw
+        if et in {'auto', 'تلقائي'}:
+            # Auto inference
+            if (inv.invoice_type or '').strip().upper() == 'CAR':
+                et = 'client_fund'
+            else:
+                recognized = (
+                    db.session.query(JournalEntry)
+                    .join(JournalLine, JournalLine.entry_id == JournalEntry.id)
+                    .join(Account, JournalLine.account_id == Account.id)
+                    .filter(JournalEntry.invoice_id == inv.id, Account.code.like('R%'))
+                    .first()
+                )
+                et = 'ar_settlement' if recognized else 'revenue'
+
+        if float(amt) > 0:
+            if et == 'client_fund':
+                dep_code = _get_vehicle_account_code(
+                    vehicle_id,
+                    'deposit',
+                    _get_client_account_code(customer_id, 'deposit', 'L200'),
+                )
+                _post_journal(
+                    description='Client fund deposit',
+                    reference=inv.invoice_number,
+                    lines=[('A100', float(amt), 0.0), (dep_code, 0.0, float(amt))],
+                    customer_id=customer_id,
+                    vehicle_id=vehicle_id,
+                    invoice_id=inv.id,
+                    is_client_fund=True,
+                )
+            elif et == 'ar_settlement':
                 ar_code = _get_client_account_code(inv.customer_id, 'receivable', 'A300')
                 _post_journal(
-                    description='Service invoice payment', reference=inv.invoice_number,
+                    description='Invoice payment (AR settlement)',
+                    reference=inv.invoice_number,
                     lines=[('A100', float(amt), 0.0), (ar_code, 0.0, float(amt))],
-                    customer_id=customer_id, vehicle_id=vehicle_id, invoice_id=inv.id, is_client_fund=False,
+                    customer_id=customer_id,
+                    vehicle_id=vehicle_id,
+                    invoice_id=inv.id,
+                    is_client_fund=False,
+                )
+            elif et == 'revenue':
+                rev_code = _get_vehicle_account_code(
+                    vehicle_id,
+                    'commission',
+                    _get_client_account_code(inv.customer_id, 'service', 'R300'),
+                )
+                _post_journal(
+                    description='Commission/service payment',
+                    reference=inv.invoice_number,
+                    lines=[('A100', float(amt), 0.0), (rev_code, 0.0, float(amt))],
+                    customer_id=customer_id,
+                    vehicle_id=vehicle_id,
+                    invoice_id=inv.id,
+                    is_client_fund=False,
                 )
             else:
-                _post_journal(
-                    description='Commission/service payment', reference=inv.invoice_number,
-                    lines=[('A100', float(amt), 0.0), (_get_client_account_code(inv.customer_id, 'service', 'R300'), 0.0, float(amt))],
-                    customer_id=customer_id, vehicle_id=vehicle_id, invoice_id=inv.id, is_client_fund=False,
-                )
-        except Exception:
-            # Non-blocking
-            pass
+                # Fallback: no journal
+                pass
+    except Exception:
+        # Non-blocking
+        pass
     try:
         db.session.commit()
         flash(_('Payment recorded'), 'success')
