@@ -1393,13 +1393,16 @@ def reports():
         # Total liabilities including client funds
         liabilities_total = -sum_acct('L', exclude_client_fund=None)
         # Client deposits account (L200*) balance from all entries (client funds scope only preferred)
-        client_deposits = -(
+        # Ensure consistent float arithmetic to avoid float-Decimal TypeError
+        client_deposits_raw = (
             db.session.query(db.func.coalesce(db.func.sum(JournalLine.debit - JournalLine.credit), 0))
             .join(Account, JournalLine.account_id == Account.id)
             .join(JournalEntry, JournalLine.entry_id == JournalEntry.id)
             .filter(Account.code.like('L200%'))
-            .scalar() or 0
+            .scalar()
+            or 0
         )
+        client_deposits = -float(client_deposits_raw)
         other_liabilities = max(0.0, liabilities_total - client_deposits)
         equity = assets - (client_deposits + other_liabilities)
         data = [
