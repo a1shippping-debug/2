@@ -45,10 +45,10 @@ const rc = document.getElementById('revChart');
 new Chart(rc, {
   type: 'bar',
   data: {
-    labels: {{ chart.months|tojson|safe }},
+    labels: {{ chart.months | default([]) | tojson | safe }},
     datasets: [{
       label: 'Revenue (OMR)',
-      data: {{ chart.revenue|tojson|safe }},
+      data: {{ chart.revenue | default([]) | tojson | safe }},
       backgroundColor: '#1d4ed8',
       borderRadius: 6
     }]
@@ -63,9 +63,9 @@ const pc = document.getElementById('expPie');
 new Chart(pc, {
   type: 'pie',
   data: {
-    labels: {{ chart.exp_labels|tojson|safe }},
+    labels: {{ chart.exp_labels | default([]) | tojson | safe }},
     datasets: [{
-      data: {{ chart.exp_values|tojson|safe }},
+      data: {{ chart.exp_values | default([]) | tojson | safe }},
       backgroundColor: ['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6']
     }]
   },
