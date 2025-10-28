@@ -11,6 +11,8 @@
         <thead class="bg-blue-50 text-blue-900 font-semibold">
           <tr>
             <th class="px-4 py-3 text-left">{{ _('Invoice') }}</th>
+            <th class="px-4 py-3 text-left">VIN</th>
+            <th class="px-4 py-3 text-left">{{ _('Customer') }}</th>
             <th class="px-4 py-3 text-left">{{ _('Amount (OMR)') }}</th>
             <th class="px-4 py-3 text-left">{{ _('Method') }}</th>
             <th class="px-4 py-3 text-left">{{ _('Date') }}</th>
@@ -22,6 +24,12 @@
           <tr class="border-t border-gray-100 hover:bg-blue-50 transition">
             <td class="px-4 py-3 font-medium text-gray-800">
               {{ p.invoice.invoice_number if p.invoice else '-' }}
+            </td>
+            <td class="px-4 py-3">
+              {{ p.vehicle.vin if p.vehicle else (p.invoice.vehicle.vin if p.invoice and p.invoice.vehicle else '-') }}
+            </td>
+            <td class="px-4 py-3">
+              {{ p.customer.display_name if p.customer else (p.invoice.customer.display_name if p.invoice and p.invoice.customer else '-') }}
             </td>
             <td class="px-4 py-3">{{ '%.3f'|format(p.amount_omr or 0) }}</td>
             <td class="px-4 py-3">{{ p.method }}</td>
@@ -53,6 +61,13 @@
           <option value="{{ inv.id }}">{{ inv.invoice_number }} - {{ '%.3f'|format(inv.total_omr or 0) }}</option>
           {% endfor %}
         </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">رقم الشاصي (VIN)</label>
+        <input name="vin" placeholder="مثال: 1HGCM82633A123456"
+               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500" />
+        <div class="text-xs text-gray-500 mt-1">اختياري: لربط الدفعة بالمركبة والعميل.</div>
       </div>
 
       <div>

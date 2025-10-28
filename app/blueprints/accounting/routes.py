@@ -923,6 +923,7 @@ def payments_new():
     amount = request.form.get('amount')
     method = request.form.get('method')
     reference = request.form.get('reference')
+    vin_input = (request.form.get('vin') or '').strip().upper()
     inv = db.session.get(Invoice, int(invoice_id)) if invoice_id else None
     if not inv:
         flash(_('Invalid invoice'), 'danger')
@@ -931,7 +932,21 @@ def payments_new():
         amt = Decimal(str(amount or 0))
     except Exception:
         amt = Decimal('0')
-    p = Payment(invoice_id=inv.id, amount_omr=amt, method=method, reference=reference)
+    # Try to link vehicle and customer using VIN if provided; otherwise fall back to invoice linkage
+    vehicle_id = None
+    customer_id = inv.customer_id
+    try:
+        if vin_input:
+            veh = db.session.query(Vehicle).filter(db.func.upper(Vehicle.vin) == vin_input).first()
+            if veh:
+                vehicle_id = veh.id
+                # Prefer explicit owner as the customer; fallback to invoice customer
+                if getattr(veh, 'owner_customer_id', None):
+                    customer_id = veh.owner_customer_id
+    except Exception:
+        pass
+    p = Payment(invoice_id=inv.id, amount_omr=amt, method=method, reference=reference,
+                vehicle_id=vehicle_id, customer_id=customer_id)
     db.session.add(p)
     # If this invoice looks like a car purchase (items linked to a vehicle) and has no explicit type,
     # classify it as a CAR invoice so dashboards and reports treat it correctly.
@@ -971,13 +986,13 @@ def payments_new():
                 _post_journal(
                     description='Service invoice payment', reference=inv.invoice_number,
                     lines=[('A100', float(amt), 0.0), (ar_code, 0.0, float(amt))],
-                    customer_id=inv.customer_id, invoice_id=inv.id, is_client_fund=False,
+                    customer_id=customer_id, vehicle_id=vehicle_id, invoice_id=inv.id, is_client_fund=False,
                 )
             else:
                 _post_journal(
                     description='Commission/service payment', reference=inv.invoice_number,
                     lines=[('A100', float(amt), 0.0), (_get_client_account_code(inv.customer_id, 'service', 'R300'), 0.0, float(amt))],
-                    customer_id=inv.customer_id, invoice_id=inv.id, is_client_fund=False,
+                    customer_id=customer_id, vehicle_id=vehicle_id, invoice_id=inv.id, is_client_fund=False,
                 )
         except Exception:
             # Non-blocking
