@@ -535,9 +535,13 @@ def cars_new():
         if should_invoice:
             usd_to_omr = float(current_app.config.get('OMR_EXCHANGE_RATE', 0.385))
             amount_omr = float(v.purchase_price_usd or 0) * usd_to_omr
+            # Create an initial car invoice linked to this vehicle so the accountant dashboard
+            # correctly classifies it as a car cost once paid.
             inv = Invoice(
                 invoice_number=f"INV-{int(datetime.utcnow().timestamp())}",
                 customer_id=v.owner_customer_id,
+                vehicle_id=v.id,
+                invoice_type='CAR',
                 status='Draft',
                 total_omr=amount_omr,
             )
