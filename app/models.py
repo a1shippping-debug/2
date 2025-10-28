@@ -260,11 +260,18 @@ class Payment(db.Model):
     __tablename__ = "payments"
     id = db.Column(db.Integer, primary_key=True)
     invoice_id = db.Column(db.Integer, db.ForeignKey("invoices.id"), index=True)
+    # Optional direct linkage for reporting/traceability
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), index=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey("vehicles.id"), index=True)
     amount_omr = db.Column(db.Numeric(12,3))
     method = db.Column(db.String(50))  # Cash / Bank Transfer / Card
     reference = db.Column(db.String(100))
     received_at = db.Column(db.DateTime, default=datetime.utcnow)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships for convenient access in templates and reports
+    customer = db.relationship("Customer")
+    vehicle = db.relationship("Vehicle")
 
 
 class InternationalCost(db.Model):
