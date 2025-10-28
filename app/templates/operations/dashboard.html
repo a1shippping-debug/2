@@ -207,10 +207,10 @@
   new Chart(ctx, {
     type: 'line',
     data: {
-      labels: {{ chart.months|tojson }},
+      labels: {{ chart.months | default([]) | tojson }},
       datasets: [{
         label: '{{ _("Shipped Cars") }}',
-        data: {{ chart.shipped|tojson }},
+        data: {{ chart.shipped | default([]) | tojson }},
         borderColor: '#1E2BA0',
         backgroundColor: 'rgba(30,43,160,0.1)',
         fill: true,

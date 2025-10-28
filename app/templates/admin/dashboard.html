@@ -196,8 +196,8 @@
 </div>
 
 <script>
-  const months = {{ chart.months|tojson|safe if chart else "[]" }};
-  const revenue = {{ chart.revenue|tojson|safe if chart else "[]" }};
+  const months = {{ (chart.months if chart else []) | tojson | safe }};
+  const revenue = {{ (chart.revenue if chart else []) | tojson | safe }};
   if (window.Chart) {
     const ctx = document.getElementById('revenueChart');
     new Chart(ctx, {
@@ -209,7 +209,7 @@
     const pie = document.getElementById('shipmentPie');
     new Chart(pie, {
       type: 'pie',
-      data: { labels: {{ chart.shipment_status_labels|tojson|safe if chart else "[]" }}, datasets: [{ data: {{ chart.shipment_status_values|tojson|safe if chart else "[]" }}, backgroundColor: ['#1E2BA0','#3b82f6','#60a5fa'] }] },
+      data: { labels: {{ (chart.shipment_status_labels if chart else []) | tojson | safe }}, datasets: [{ data: {{ (chart.shipment_status_values if chart else []) | tojson | safe }}, backgroundColor: ['#1E2BA0','#3b82f6','#60a5fa'] }] },
       options: { plugins: { legend: { labels: { color: '#1E2BA0' } } } }
     });
   }

@@ -60,11 +60,11 @@ const ctx = document.getElementById('lineChart');
 new Chart(ctx, {
   type: 'line',
   data: {
-    labels: {{ chart.months|tojson|safe }},
+    labels: {{ chart.months | default([]) | tojson | safe }},
     datasets: [
       {
         label: '{{ _('Revenue') }}',
-        data: {{ chart.revenue|tojson|safe }},
+        data: {{ chart.revenue | default([]) | tojson | safe }},
         borderColor: '#2563eb',
         backgroundColor: 'rgba(37, 99, 235, 0.1)',
         borderWidth: 2,
@@ -73,7 +73,7 @@ new Chart(ctx, {
       },
       {
         label: '{{ _('Expenses') }}',
-        data: {{ chart.expenses|tojson|safe }},
+        data: {{ chart.expenses | default([]) | tojson | safe }},
         borderColor: '#ef4444',
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
         borderWidth: 2,
