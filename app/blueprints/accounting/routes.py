@@ -1596,7 +1596,49 @@ def api_vehicle_statement(vehicle_id: int):
             'credit': cr_f,
             'balance': running,
         })
-    return jsonify({'vehicle_id': vehicle_id, 'vin': v.vin, 'client_id': v.owner_customer_id, 'entries': data})
+    # Totals using same logic as HTML/PDF (respect vehicle-specific account mapping)
+    def sum_kind(kind: str, default_prefix: str) -> float:
+        codes = []
+        vas = db.session.query(VehicleAccountStructure).filter_by(vehicle_id=vehicle_id).first()
+        if vas:
+            code_val = {
+                'auction': vas.auction_account_code,
+                'freight': vas.freight_account_code,
+                'customs': vas.customs_account_code,
+                'commission': vas.commission_account_code,
+                'storage': vas.storage_account_code,
+                'deposit': vas.deposit_account_code,
+            }.get(kind)
+            if code_val:
+                codes.append(code_val)
+        q = (
+            db.session.query(db.func.coalesce(db.func.sum(JournalLine.debit - JournalLine.credit), 0))
+            .join(Account, JournalLine.account_id == Account.id)
+            .join(JournalEntry, JournalLine.entry_id == JournalEntry.id)
+            .filter(JournalEntry.vehicle_id == vehicle_id)
+        )
+        if codes:
+            q = q.filter(Account.code.in_(codes))
+        else:
+            q = q.filter(Account.code.like(f"{default_prefix}%"))
+        return float(q.scalar() or 0)
+
+    totals = {
+        'auction_cost_omr': sum_kind('auction', 'A150'),
+        'freight_omr': sum_kind('freight', 'E200'),
+        'customs_omr': sum_kind('customs', 'E220'),
+        'service_fee_omr': -sum_kind('commission', 'R300'),  # credit balances as positive
+        'deposit_net_omr': sum_kind('deposit', 'L200'),
+        'outstanding_balance_omr': data[-1]['balance'] if data else 0.0,
+    }
+
+    return jsonify({
+        'vehicle_id': vehicle_id,
+        'vin': v.vin,
+        'client_id': v.owner_customer_id,
+        'entries': data,
+        'totals': totals,
+    })
 
 
 @acct_bp.get('/api/clients/<int:client_id>/vehicles/summary')
