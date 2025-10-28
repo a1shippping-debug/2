@@ -1615,6 +1615,62 @@ def vehicle_statement(vehicle_id: int):
     return render_template('accounting/vehicle_statement.html', vehicle=v, statement=statement, totals=totals)
 
 
+@acct_bp.route('/vehicles/<int:vehicle_id>/payments', methods=['POST'])
+@role_required('accountant', 'admin')
+def vehicle_statement_add_payment(vehicle_id: int):
+    """Record a payment (client fund deposit) for this vehicle with custom description.
+
+    Posts: Dr Bank (A100) / Cr Vehicle Deposit (L200-V{vehicle_id}) as client funds.
+    The user-provided description is stored on the journal so it appears in the statement.
+    """
+    v = db.session.get(Vehicle, vehicle_id)
+    if not v:
+        abort(404)
+    # Inputs
+    amount_val = _parse_number_input(request.form.get('amount'))
+    description = (request.form.get('description') or '').strip()
+    method = (request.form.get('method') or '').strip() or None
+
+    if amount_val <= 0:
+        flash(_('Invalid amount'), 'danger')
+        return redirect(url_for('acct.vehicle_statement', vehicle_id=vehicle_id))
+
+    # Prefer vehicle owner as customer; fallback to None
+    customer_id = getattr(v, 'owner_customer_id', None)
+
+    # Create a CustomerDeposit record for traceability
+    dep = CustomerDeposit(
+        customer_id=customer_id,
+        vehicle_id=vehicle_id,
+        auction_id=getattr(v, 'auction_id', None),
+        amount_omr=float(amount_val),
+        method=method,
+        reference=description or None,
+        status='held',
+    )
+    db.session.add(dep)
+
+    # Journal: Dr Bank / Cr Vehicle Deposit (client fund)
+    dep_code = _get_vehicle_account_code(vehicle_id, 'deposit', _get_client_account_code(customer_id, 'deposit', 'L200'))
+    _post_journal(
+        description=description or _('Vehicle payment received'),
+        reference=(v.vin or str(vehicle_id)),
+        lines=[('A100', float(amount_val), 0.0), (dep_code, 0.0, float(amount_val))],
+        customer_id=customer_id,
+        vehicle_id=vehicle_id,
+        auction_id=getattr(v, 'auction_id', None),
+        is_client_fund=True,
+    )
+
+    try:
+        db.session.commit()
+        flash(_('Payment recorded'), 'success')
+    except Exception:
+        db.session.rollback()
+        flash(_('Failed to save payment'), 'danger')
+    return redirect(url_for('acct.vehicle_statement', vehicle_id=vehicle_id))
+
+
 @acct_bp.route('/vehicles/<int:vehicle_id>/statement.pdf')
 @role_required('accountant', 'admin')
 def vehicle_statement_pdf(vehicle_id: int):
