@@ -22,7 +22,7 @@
     {% for v in vehicles %}
     <tr class="border-t">
       <td class="py-2 font-mono">{{ v.vin }}</td>
-      <td>{{ v.owner.company_name if v.owner else '-' }}</td>
+      <td>{{ v.owner.display_name if v.owner else '-' }}</td>
       <td>{{ v.status or '-' }}</td>
       <td class="text-right">{{ '%.3f'|format(balances.get(v.id,0.0)) }}</td>
       <td class="text-right">

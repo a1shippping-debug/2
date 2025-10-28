@@ -53,7 +53,7 @@
           <tr>
             <td>{{ b.buyer_number or '-' }}</td>
             <td>{{ b.password or '-' }}</td>
-            <td>{{ (b.customer.company_name or b.customer.full_name) if b.customer else '-' }}</td>
+            <td>{{ b.customer.display_name if b.customer else '-' }}</td>
             <td class="nowrap">
               <a href="{{ url_for('admin.buyers_edit', buyer_id=b.id) }}" class="action-link edit">تعديل</a>
               <form action="{{ url_for('admin.buyers_delete', buyer_id=b.id) }}" method="post" style="display:inline" onsubmit="return confirm('هل تريد الحذف؟')">

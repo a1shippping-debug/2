@@ -8,7 +8,7 @@
         <option value="">-- Select Client --</option>
         {% for c in customers %}
           <option value="{{ c.id }}" {% if request.args.get('customer_id') and c.id == customer_id %}selected{% endif %}>
-            {{ c.company_name or c.full_name }}
+            {{ c.display_name }}
           </option>
         {% endfor %}
       </select>
@@ -22,7 +22,7 @@
   {% if customer %}
   <div class="card mb-3">
     <div class="card-body">
-      <h5 class="card-title">{{ customer.company_name or customer.full_name }}</h5>
+      <h5 class="card-title">{{ customer.display_name }}</h5>
       <div class="row">
         <div class="col-md-3"><strong>Deposits</strong><div>{{ balances.deposits|float|round(3) }}</div></div>
         <div class="col-md-3"><strong>Receivables</strong><div>{{ balances.ar|float|round(3) }}</div></div>

@@ -185,16 +185,16 @@
 
     <div>
       <label>العميل</label>
-      <input id="client_search" list="customers_datalist" placeholder="ابحث باسم العميل" value="{{ (vehicle.owner.company_name or vehicle.owner.full_name) if (vehicle and vehicle.owner) else '' }}">
+      <input id="client_search" list="customers_datalist" placeholder="ابحث باسم العميل" value="{{ (vehicle.owner.display_name) if (vehicle and vehicle.owner) else '' }}">
       <datalist id="customers_datalist">
         {% for c in customers %}
-          <option value="{{ c.company_name or c.full_name }}" data-id="{{ c.id }}"></option>
+          <option value="{{ c.display_name }}" data-id="{{ c.id }}"></option>
         {% endfor %}
       </datalist>
       <select name="client_id" id="client_select" class="mt-2">
         <option value="">اختر العميل</option>
         {% for c in customers %}
-          <option value="{{ c.id }}" {% if vehicle and vehicle.owner_customer_id==c.id %}selected{% endif %}>{{ c.company_name or c.full_name }}</option>
+          <option value="{{ c.id }}" {% if vehicle and vehicle.owner_customer_id==c.id %}selected{% endif %}>{{ c.display_name }}</option>
         {% endfor %}
       </select>
     </div>

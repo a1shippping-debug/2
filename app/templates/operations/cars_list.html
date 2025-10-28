@@ -152,7 +152,7 @@
   <select name="client_id">
     <option value="">{{ _('Client') }}</option>
     {% for c in customers %}
-      <option value="{{c.id}}" {% if request.args.get('client_id')==(c.id|string) %}selected{% endif %}>{{ c.company_name or c.full_name }}</option>
+      <option value="{{c.id}}" {% if request.args.get('client_id')==(c.id|string) %}selected{% endif %}>{{ c.display_name }}</option>
     {% endfor %}
   </select>
   <button>{{ _('Filter') }}</button>
@@ -183,7 +183,7 @@
         <td>{{ v.model }}</td>
         <td>{{ v.auction.lot_number if v.auction else '-' }}</td>
         <td>{{ v.current_location or (v.auction.location if v.auction else '-') }}</td>
-        <td>{{ v.owner.company_name if v.owner else '-' }}</td>
+        <td>{{ v.owner.display_name if v.owner else '-' }}</td>
         <td>{% if v.auction and v.auction.buyer %}{{ v.auction.buyer.buyer_number or '-' }}{% else %}-{% endif %}</td>
         <td>{{ v.status }}</td>
         <td>

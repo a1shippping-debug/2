@@ -33,7 +33,7 @@
         <tr class="border-t">
           <td class="p-3">{{ r.id }}</td>
           <td class="p-3">{{ r.vehicle.vin if r.vehicle else '-' }}</td>
-          <td class="p-3">{{ r.customer.company_name or r.customer.full_name if r.customer else '-' }}</td>
+          <td class="p-3">{{ r.customer.display_name if r.customer else '-' }}</td>
           <td class="p-3">{{ '%.3f'|format(r.asking_price_omr) }}</td>
           <td class="p-3">
             <span class="px-2 py-1 rounded text-xs {{ 'bg-yellow-100 text-yellow-800' if r.status=='Pending' else ('bg-green-100 text-green-800' if r.status=='Approved' else 'bg-red-100 text-red-800') }}">{{ r.status }}</span>

@@ -16,7 +16,7 @@
   <h1>Vehicle Statement of Account</h1>
   <div>
     <strong>VIN:</strong> {{ vehicle.vin }} &nbsp; | &nbsp;
-    <strong>Client:</strong> {{ vehicle.owner.company_name if vehicle.owner else '-' }} &nbsp; | &nbsp;
+    <strong>Client:</strong> {{ vehicle.owner.display_name if vehicle.owner else '-' }} &nbsp; | &nbsp;
     <strong>Auction Lot:</strong> {{ vehicle.auction.lot_number if vehicle.auction else '-' }}
   </div>
   <br />

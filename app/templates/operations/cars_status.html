@@ -13,7 +13,7 @@
   <select name="client_id" class="border p-2 rounded">
     <option value="">{{ _('Client') }}</option>
     {% for c in customers %}
-      <option value="{{c.id}}" {% if request.args.get('client_id')==(c.id|string) %}selected{% endif %}>{{ c.company_name or c.full_name }}</option>
+      <option value="{{c.id}}" {% if request.args.get('client_id')==(c.id|string) %}selected{% endif %}>{{ c.display_name }}</option>
     {% endfor %}
   </select>
   <button class="px-3 py-2 bg-gray-800 text-white rounded">{{ _('Filter') }}</button>
@@ -38,7 +38,7 @@
           <td class="py-2 px-3">{{ v.vin }}</td>
           <td class="py-2 px-3">{{ v.make }}</td>
           <td class="py-2 px-3">{{ v.model }}</td>
-          <td class="py-2 px-3">{{ v.owner.company_name if v.owner else '-' }}</td>
+          <td class="py-2 px-3">{{ v.owner.display_name if v.owner else '-' }}</td>
           <td class="py-2 px-3">{{ v.status or '-' }}</td>
           <td class="py-2 px-3">
             <select name="status_{{ v.id }}" class="border p-2 rounded">

@@ -129,7 +129,7 @@
       {% if customers %}
         {% for c in customers %}
         <tr>
-          <td>{{ c.company_name or c.full_name }}</td>
+          <td>{{ c.display_name }}</td>
           <td>{{ c.email or '-' }}</td>
           <td>{{ c.phone or '-' }}</td>
           <td>{{ c.country or '-' }}</td>

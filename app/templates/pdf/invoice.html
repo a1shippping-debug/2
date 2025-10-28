@@ -108,7 +108,7 @@
         <p>
           <strong>{{ _('Invoice #:') }}</strong> {{ invoice.invoice_number }}<br>
           <strong>{{ _('Date:') }}</strong> {{ invoice.created_at.strftime('%Y-%m-%d') }}<br>
-          <strong>{{ _('Client:') }}</strong> {{ invoice.customer.company_name if invoice.customer else '-' }}<br>
+          <strong>{{ _('Client:') }}</strong> {{ invoice.customer.display_name if invoice.customer else '-' }}<br>
           {% if invoice.vehicle and invoice.vehicle.auction and invoice.vehicle.auction.buyer %}
             <strong>{{ _('Buyer #:') }}</strong> {{ invoice.vehicle.auction.buyer.buyer_number or '-' }}
           {% endif %}
