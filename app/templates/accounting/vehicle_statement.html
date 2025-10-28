@@ -74,6 +74,29 @@
   <button type="button" id="btn-refresh" class="px-3 py-1.5 bg-slate-100 rounded border">{{ _('Refresh') }}</button>
 </div>
 
+<form class="mt-6 bg-white border rounded p-4 grid md:grid-cols-5 gap-3 items-end" method="post" action="{{ url_for('acct.vehicle_statement_add_payment', vehicle_id=vehicle.id) }}">
+  <div class="md:col-span-2">
+    <label class="block text-xs text-slate-500 mb-1">{{ _('Description') }}</label>
+    <input type="text" name="description" class="w-full border rounded px-2 py-1" placeholder="{{ _('e.g., Client payment for auction') }}" />
+  </div>
+  <div>
+    <label class="block text-xs text-slate-500 mb-1">{{ _('Amount (OMR)') }}</label>
+    <input type="text" name="amount" class="w-full border rounded px-2 py-1" required />
+  </div>
+  <div>
+    <label class="block text-xs text-slate-500 mb-1">{{ _('Method') }}</label>
+    <select name="method" class="w-full border rounded px-2 py-1">
+      <option value="">-</option>
+      <option>Cash</option>
+      <option>Bank Transfer</option>
+      <option>Card</option>
+    </select>
+  </div>
+  <div>
+    <button type="submit" class="px-3 py-1.5 bg-green-600 text-white rounded w-full">{{ _('Add Payment') }}</button>
+  </div>
+</form>
+
 <script>
   (function(){
     const fmt = (n) => {
