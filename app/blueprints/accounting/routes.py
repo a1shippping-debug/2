@@ -1658,9 +1658,12 @@ def vehicle_statement(vehicle_id: int):
 @acct_bp.route('/vehicles/<int:vehicle_id>/payments', methods=['POST'])
 @role_required('accountant', 'admin')
 def vehicle_statement_add_payment(vehicle_id: int):
-    """Record a payment (client fund deposit) for this vehicle with custom description.
+    """Record a vehicle-related payment with an explicit entry type.
 
-    Posts: Dr Bank (A100) / Cr Vehicle Deposit (L200-V{vehicle_id}) as client funds.
+    Entry types supported:
+      - client_fund: Dr Bank (A100) / Cr Vehicle Deposit (L200-V{vehicle_id}) [client funds]
+      - ar_settlement: Dr Bank (A100) / Cr Accounts Receivable (A300 or client sub-ledger)
+      - revenue: Dr Bank (A100) / Cr Revenue (R300 or vehicle/client sub-ledger)
     The user-provided description is stored on the journal so it appears in the statement.
     """
     v = db.session.get(Vehicle, vehicle_id)
@@ -1670,37 +1673,89 @@ def vehicle_statement_add_payment(vehicle_id: int):
     amount_val = _parse_number_input(request.form.get('amount'))
     description = (request.form.get('description') or '').strip()
     method = (request.form.get('method') or '').strip() or None
+    entry_type = (request.form.get('entry_type') or '').strip().lower()
+    allowed_types = {'client_fund', 'ar_settlement', 'revenue'}
 
     if amount_val <= 0:
         flash(_('Invalid amount'), 'danger')
+        return redirect(url_for('acct.vehicle_statement', vehicle_id=vehicle_id))
+    if entry_type not in allowed_types:
+        flash(_('Entry type is required'), 'danger')
         return redirect(url_for('acct.vehicle_statement', vehicle_id=vehicle_id))
 
     # Prefer vehicle owner as customer; fallback to None
     customer_id = getattr(v, 'owner_customer_id', None)
 
-    # Create a CustomerDeposit record for traceability
-    dep = CustomerDeposit(
-        customer_id=customer_id,
-        vehicle_id=vehicle_id,
-        auction_id=getattr(v, 'auction_id', None),
-        amount_omr=float(amount_val),
-        method=method,
-        reference=description or None,
-        status='held',
-    )
-    db.session.add(dep)
+    # Try to link to the most relevant invoice for traceability (optional)
+    invoice_id = None
+    try:
+        inv = (
+            db.session.query(Invoice)
+            .filter(Invoice.vehicle_id == vehicle_id)
+            .order_by(Invoice.created_at.desc(), Invoice.id.desc())
+            .first()
+        )
+        if inv:
+            invoice_id = inv.id
+    except Exception:
+        invoice_id = None
 
-    # Journal: Dr Bank / Cr Vehicle Deposit (client fund)
-    dep_code = _get_vehicle_account_code(vehicle_id, 'deposit', _get_client_account_code(customer_id, 'deposit', 'L200'))
-    _post_journal(
-        description=description or _('Vehicle payment received'),
-        reference=(v.vin or str(vehicle_id)),
-        lines=[('A100', float(amount_val), 0.0), (dep_code, 0.0, float(amount_val))],
-        customer_id=customer_id,
-        vehicle_id=vehicle_id,
-        auction_id=getattr(v, 'auction_id', None),
-        is_client_fund=True,
-    )
+    if entry_type == 'client_fund':
+        # Create a CustomerDeposit record for traceability
+        dep = CustomerDeposit(
+            customer_id=customer_id,
+            vehicle_id=vehicle_id,
+            auction_id=getattr(v, 'auction_id', None),
+            amount_omr=float(amount_val),
+            method=method,
+            reference=description or None,
+            status='held',
+        )
+        db.session.add(dep)
+
+        # Journal: Dr Bank / Cr Vehicle Deposit (client fund)
+        dep_code = _get_vehicle_account_code(
+            vehicle_id,
+            'deposit',
+            _get_client_account_code(customer_id, 'deposit', 'L200'),
+        )
+        _post_journal(
+            description=description or _('Vehicle payment received'),
+            reference=(v.vin or str(vehicle_id)),
+            lines=[('A100', float(amount_val), 0.0), (dep_code, 0.0, float(amount_val))],
+            customer_id=customer_id,
+            vehicle_id=vehicle_id,
+            auction_id=getattr(v, 'auction_id', None),
+            is_client_fund=True,
+        )
+    elif entry_type == 'ar_settlement':
+        # Dr Bank / Cr Accounts Receivable (client)
+        ar_code = _get_client_account_code(customer_id, 'receivable', 'A300')
+        _post_journal(
+            description=description or _('Invoice payment (AR settlement)'),
+            reference=(v.vin or str(vehicle_id)),
+            lines=[('A100', float(amount_val), 0.0), (ar_code, 0.0, float(amount_val))],
+            customer_id=customer_id,
+            vehicle_id=vehicle_id,
+            invoice_id=invoice_id,
+            is_client_fund=False,
+        )
+    elif entry_type == 'revenue':
+        # Dr Bank / Cr Revenue (commission/service)
+        rev_code = _get_vehicle_account_code(
+            vehicle_id,
+            'commission',
+            _get_client_account_code(customer_id, 'service', 'R300'),
+        )
+        _post_journal(
+            description=description or _('Commission/service payment'),
+            reference=(v.vin or str(vehicle_id)),
+            lines=[('A100', float(amount_val), 0.0), (rev_code, 0.0, float(amount_val))],
+            customer_id=customer_id,
+            vehicle_id=vehicle_id,
+            invoice_id=invoice_id,
+            is_client_fund=False,
+        )
 
     try:
         db.session.commit()
