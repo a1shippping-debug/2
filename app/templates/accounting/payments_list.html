@@ -51,28 +51,23 @@
   <div>
     <h3 class="text-xl font-semibold text-blue-900 mb-3">{{ _('Record Payment') }}</h3>
 
-    <form method="post" action="{{ url_for('acct.payments_new') }}"
+    <form id="payment-form" method="post" action="{{ url_for('acct.payments_new') }}"
           class="space-y-3 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
 
-      <div>
-        <label class="block text-sm font-medium text-gray-600 mb-1">{{ _('Invoice') }}</label>
-        <select name="invoice_id" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500">
-          {% for inv in invoices %}
-          <option value="{{ inv.id }}">{{ inv.invoice_number }} - {{ '%.3f'|format(inv.total_omr or 0) }}</option>
-          {% endfor %}
-        </select>
-      </div>
+      <input type="hidden" name="invoice_id" id="invoice_id" />
 
       <div>
         <label class="block text-sm font-medium text-gray-600 mb-1">رقم الشاصي (VIN)</label>
-        <input name="vin" placeholder="مثال: 1HGCM82633A123456"
+        <input name="vin" id="vin_input" placeholder="مثال: 1HGCM82633A123456"
                class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500" />
-        <div class="text-xs text-gray-500 mt-1">اختياري: لربط الدفعة بالمركبة والعميل.</div>
+        <div class="text-xs text-gray-500 mt-1">أدخل الشاصي وسيتم جلب الفاتورة تلقائياً.</div>
       </div>
+
+      <div id="invoice_preview" class="hidden border rounded-lg p-3 bg-gray-50 text-sm"></div>
 
       <div>
         <label class="block text-sm font-medium text-gray-600 mb-1">{{ _('Amount (OMR)') }}</label>
-        <input name="amount" type="number" step="0.001"
+        <input name="amount" type="number" step="0.001" id="amount_input"
                class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500" />
       </div>
 
@@ -97,6 +92,69 @@
         </button>
       </div>
     </form>
+
+    <script>
+      (function() {
+        const vinInput = document.getElementById('vin_input');
+        const invIdField = document.getElementById('invoice_id');
+        const preview = document.getElementById('invoice_preview');
+        const amountInput = document.getElementById('amount_input');
+
+        let timer = null;
+        function fmt(num) {
+          try { return Number(num || 0).toFixed(3); } catch (e) { return '0.000'; }
+        }
+        function renderPreview(data) {
+          preview.classList.remove('hidden');
+          const itemsHtml = (data.items || []).map(it => `<div class="flex justify-between"><span>${it.description}</span><span>${fmt(it.amount_omr)}</span></div>`).join('');
+          preview.innerHTML = `
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="font-semibold text-blue-900">${data.invoice_number || '-'}</div>
+                <div class="text-gray-600">${data.customer?.name || '-'} • VIN: ${data.vehicle?.vin || '-'}</div>
+              </div>
+              <div class="text-right">
+                <div>{{ _('Total (OMR)') }}: <strong>${fmt(data.total_omr)}</strong></div>
+                <div>{{ _('Paid') }}: ${fmt(data.paid_omr)} • {{ _('Balance') }}: <strong>${fmt(data.balance_omr)}</strong></div>
+              </div>
+            </div>
+            <div class="mt-2 border-t pt-2 space-y-1">${itemsHtml}</div>
+          `;
+        }
+
+        async function lookup() {
+          const vin = (vinInput.value || '').trim();
+          invIdField.value = '';
+          preview.classList.add('hidden');
+          preview.innerHTML = '';
+          if (!vin) return;
+          try {
+            const resp = await fetch(`{{ url_for('acct.api_invoice_by_vin') }}?vin=${encodeURIComponent(vin)}`, { credentials: 'same-origin' });
+            if (!resp.ok) {
+              return;
+            }
+            const data = await resp.json();
+            if (data && data.invoice_id) {
+              invIdField.value = String(data.invoice_id);
+              renderPreview(data);
+              if (Number(amountInput.value || 0) <= 0 && Number(data.balance_omr || 0) > 0) {
+                amountInput.value = Number(data.balance_omr || 0).toFixed(3);
+              }
+            }
+          } catch (e) {
+            // silent fail
+          }
+        }
+
+        function scheduleLookup() {
+          if (timer) clearTimeout(timer);
+          timer = setTimeout(lookup, 400);
+        }
+
+        vinInput.addEventListener('input', scheduleLookup);
+        vinInput.addEventListener('blur', lookup);
+      })();
+    </script>
   </div>
 </div>
 
