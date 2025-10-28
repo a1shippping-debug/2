@@ -2127,3 +2127,140 @@ def client_view():
             return send_file(buf, mimetype='application/pdf', as_attachment=True, download_name='client_statement.pdf')
 
     return render_template('accounting/client_view.html', customers=customers, customer=customer, customer_id=(customer.id if customer else None), ledger=ledger, deposits=deposits, auction_ledger=auction_ledger, service_rows=service_rows, balances=balances, pl=pl)
+
+
+@acct_bp.route('/clients/entry', methods=['POST'])
+@role_required('accountant', 'admin')
+def client_view_add_entry():
+    """Add payment or disbursement for a client with entry type and description.
+
+    Supported entry_type values:
+      - client_fund_deposit: Dr Bank (A100) / Cr Client Deposits (L200-Cxxxxx) [client fund]
+      - client_fund_disbursement: Dr Client Deposits / Cr Bank [client fund]
+      - ar_settlement: Dr Bank / Cr Accounts Receivable (A300-Cxxxxx)
+      - revenue: Dr Bank / Cr Service Revenue (R300-Cxxxxx)
+    """
+    try:
+        customer_id = int(request.form.get('customer_id') or 0)
+    except Exception:
+        customer_id = 0
+    if not customer_id:
+        flash(_('Please select a client'), 'danger')
+        return redirect(url_for('acct.client_view'))
+
+    amount_val = _parse_number_input(request.form.get('amount'))
+    if amount_val <= 0:
+        flash(_('Invalid amount'), 'danger')
+        return redirect(url_for('acct.client_view', customer_id=customer_id))
+
+    entry_type = (request.form.get('entry_type') or 'client_fund_deposit').strip().lower()
+    description = (request.form.get('description') or '').strip()
+    method = (request.form.get('method') or '').strip() or None
+    reference = (request.form.get('reference') or '').strip() or None
+
+    # Ensure client sub-accounts exist
+    cust = db.session.get(Customer, customer_id)
+    if cust:
+        try:
+            _ensure_client_accounts(cust)
+        except Exception:
+            pass
+
+    dep_code = _get_client_account_code(customer_id, 'deposit', 'L200')
+    ar_code = _get_client_account_code(customer_id, 'receivable', 'A300')
+    rev_code = _get_client_account_code(customer_id, 'service', 'R300')
+
+    try:
+        if entry_type in {'client_fund_deposit', 'deposit', 'client_fund'}:
+            # Trace deposit row
+            db.session.add(
+                CustomerDeposit(
+                    customer_id=customer_id,
+                    vehicle_id=None,
+                    auction_id=None,
+                    amount_omr=float(amount_val),
+                    method=method,
+                    reference=reference or description or None,
+                    status='held',
+                )
+            )
+            _post_journal(
+                description=description or _('Client fund deposit'),
+                reference=reference,
+                lines=[('A100', float(amount_val), 0.0), (dep_code, 0.0, float(amount_val))],
+                customer_id=customer_id,
+                is_client_fund=True,
+            )
+            flash(_('Payment recorded'), 'success')
+
+        elif entry_type in {'client_fund_disbursement', 'disbursement', 'refund'}:
+            # Optional trace row as refunded
+            from datetime import datetime as _dt
+            dep = CustomerDeposit(
+                customer_id=customer_id,
+                vehicle_id=None,
+                auction_id=None,
+                amount_omr=float(amount_val),
+                method=method,
+                reference=reference or description or None,
+                status='refunded',
+                refunded_at=_dt.utcnow(),
+            )
+            db.session.add(dep)
+            _post_journal(
+                description=description or _('Client fund disbursement'),
+                reference=reference,
+                lines=[(dep_code, float(amount_val), 0.0), ('A100', 0.0, float(amount_val))],
+                customer_id=customer_id,
+                is_client_fund=True,
+            )
+            flash(_('Disbursement recorded'), 'success')
+
+        elif entry_type in {'ar_settlement', 'ar'}:
+            _post_journal(
+                description=description or _('Invoice payment (AR settlement)'),
+                reference=reference,
+                lines=[('A100', float(amount_val), 0.0), (ar_code, 0.0, float(amount_val))],
+                customer_id=customer_id,
+                is_client_fund=False,
+            )
+            flash(_('Payment recorded'), 'success')
+
+        elif entry_type in {'revenue', 'service'}:
+            _post_journal(
+                description=description or _('Commission/service payment'),
+                reference=reference,
+                lines=[('A100', float(amount_val), 0.0), (rev_code, 0.0, float(amount_val))],
+                customer_id=customer_id,
+                is_client_fund=False,
+            )
+            flash(_('Payment recorded'), 'success')
+
+        else:
+            # Default to client fund deposit
+            db.session.add(
+                CustomerDeposit(
+                    customer_id=customer_id,
+                    vehicle_id=None,
+                    auction_id=None,
+                    amount_omr=float(amount_val),
+                    method=method,
+                    reference=reference or description or None,
+                    status='held',
+                )
+            )
+            _post_journal(
+                description=description or _('Client fund deposit'),
+                reference=reference,
+                lines=[('A100', float(amount_val), 0.0), (dep_code, 0.0, float(amount_val))],
+                customer_id=customer_id,
+                is_client_fund=True,
+            )
+            flash(_('Payment recorded'), 'success')
+
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        flash(_('Failed to save'), 'danger')
+
+    return redirect(url_for('acct.client_view', customer_id=customer_id))
