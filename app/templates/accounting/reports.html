@@ -13,6 +13,13 @@
        class="px-4 py-2 rounded-lg bg-green-600 text-white font-medium shadow hover:bg-green-700 transition">
        {{ _('Export Excel') }}
     </a>
+    <div class="ml-auto flex items-center gap-2">
+      {% if report_type=='by_client' %}
+      <a href="{{ url_for('acct.reports', type='monthly') }}" class="px-3 py-2 rounded-lg bg-slate-100 text-blue-900 hover:bg-slate-200">{{ _('View Consolidated') }}</a>
+      {% else %}
+      <a href="{{ url_for('acct.reports', type='by_client') }}" class="px-3 py-2 rounded-lg bg-slate-100 text-blue-900 hover:bg-slate-200">{{ _('View by Client') }}</a>
+      {% endif %}
+    </div>
   </div>
 
   <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
