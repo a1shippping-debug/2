@@ -1,0 +1,28 @@
+{% extends "base_accounting.html" %}
+{% block acct_content %}
+<h2 class="text-2xl font-bold text-blue-900 mb-4">{{ _('New Account') }}</h2>
+<form method="post" class="space-y-4 max-w-lg">
+  <div>
+    <label class="block text-sm text-gray-600 mb-1">{{ _('Code') }}</label>
+    <input name="code" class="w-full border rounded-lg px-3 py-2" required />
+  </div>
+  <div>
+    <label class="block text-sm text-gray-600 mb-1">{{ _('Name') }}</label>
+    <input name="name" class="w-full border rounded-lg px-3 py-2" required />
+  </div>
+  <div>
+    <label class="block text-sm text-gray-600 mb-1">{{ _('Type') }}</label>
+    <select name="type" class="w-full border rounded-lg px-3 py-2" required>
+      <option value="ASSET">{{ _('Asset') }}</option>
+      <option value="LIABILITY">{{ _('Liability') }}</option>
+      <option value="EQUITY">{{ _('Equity') }}</option>
+      <option value="REVENUE">{{ _('Revenue') }}</option>
+      <option value="EXPENSE">{{ _('Expense') }}</option>
+    </select>
+  </div>
+  <div class="pt-2">
+    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg">{{ _('Create') }}</button>
+    <a href="{{ url_for('acct.accounts_list') }}" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg">{{ _('Cancel') }}</a>
+  </div>
+</form>
+{% endblock %}

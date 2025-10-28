@@ -1,0 +1,47 @@
+{% extends "base_accounting.html" %}
+{% block acct_content %}
+<h2 class="text-2xl font-bold text-blue-900 mb-4">{{ _('New Journal Entry') }}</h2>
+<form method="post" class="space-y-4">
+  <div class="grid md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm text-gray-600 mb-1">{{ _('Description') }}</label>
+      <input name="description" class="w-full border rounded-lg px-3 py-2" required />
+    </div>
+    <div>
+      <label class="block text-sm text-gray-600 mb-1">{{ _('Reference') }}</label>
+      <input name="reference" class="w-full border rounded-lg px-3 py-2" />
+    </div>
+  </div>
+  <label class="inline-flex items-center gap-2">
+    <input type="checkbox" name="is_client_fund" class="rounded" />
+    <span class="text-sm text-gray-700">{{ _('Mark as Client Fund') }}</span>
+  </label>
+
+  <div class="mt-4">
+    <h3 class="font-semibold text-blue-900 mb-2">{{ _('Lines') }}</h3>
+    <div id="lines" class="space-y-2">
+      <div class="grid grid-cols-12 gap-2">
+        <input name="code" placeholder="A100" class="col-span-4 border rounded-lg px-2 py-1" />
+        <input name="debit" placeholder="0.000" class="col-span-4 border rounded-lg px-2 py-1" />
+        <input name="credit" placeholder="0.000" class="col-span-4 border rounded-lg px-2 py-1" />
+      </div>
+    </div>
+    <button type="button" onclick="addLine()" class="mt-2 px-3 py-1 bg-slate-100 rounded">+ {{ _('Add line') }}</button>
+  </div>
+
+  <div class="pt-4">
+    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg">{{ _('Post Journal') }}</button>
+    <a href="{{ url_for('acct.journals_list') }}" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg">{{ _('Cancel') }}</a>
+  </div>
+</form>
+<script>
+function addLine(){
+  const row = document.createElement('div');
+  row.className = 'grid grid-cols-12 gap-2';
+  row.innerHTML = '<input name="code" class="col-span-4 border rounded-lg px-2 py-1" />' +
+                  '<input name="debit" class="col-span-4 border rounded-lg px-2 py-1" />' +
+                  '<input name="credit" class="col-span-4 border rounded-lg px-2 py-1" />';
+  document.getElementById('lines').appendChild(row);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base_accounting.html" %}
+{% block acct_content %}
+<h2 class="text-2xl font-bold text-blue-900 mb-4">{{ _('Chart of Accounts') }}</h2>
+<div class="mb-4">
+  <a href="{{ url_for('acct.accounts_new') }}" class="px-4 py-2 rounded-lg bg-blue-600 text-white">{{ _('New Account') }}</a>
+</div>
+<div class="overflow-x-auto">
+<table class="min-w-full divide-y divide-gray-200 text-sm">
+  <thead class="bg-gray-50">
+    <tr>
+      <th class="px-3 py-2 text-left">{{ _('Code') }}</th>
+      <th class="px-3 py-2 text-left">{{ _('Name') }}</th>
+      <th class="px-3 py-2 text-left">{{ _('Type') }}</th>
+    </tr>
+  </thead>
+  <tbody class="bg-white divide-y divide-gray-200">
+    {% for a in accounts %}
+    <tr>
+      <td class="px-3 py-2">{{ a.code }}</td>
+      <td class="px-3 py-2">{{ a.name }}</td>
+      <td class="px-3 py-2">{{ a.type }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}
