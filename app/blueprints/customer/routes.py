@@ -168,7 +168,7 @@ def car_detail(vehicle_id: int):
     except Exception:
         sale_price_omr = None
 
-    # Reuse the public details template (no timeline)
+    # Allow customers to access their own vehicle statement link
     return render_template(
         "public/vehicle_public.html",
         vehicle=v,
@@ -176,6 +176,7 @@ def car_detail(vehicle_id: int):
         shipments=shipments,
         image_urls=image_urls,
         sale_price_omr=sale_price_omr,
+        soa_url=url_for('acct.vehicle_statement', vehicle_id=v.id),
     )
 
 @cust_bp.post("/cars/<int:vehicle_id>/share")

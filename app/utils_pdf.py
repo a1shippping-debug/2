@@ -39,3 +39,13 @@ def render_bol_pdf(bol, vehicles, template='pdf/bol.html'):
     outpath = os.path.join(outdir, filename)
     _write_pdf(outpath, html)
     return outpath
+
+
+def render_vehicle_statement_pdf(vehicle, statement, totals, template='pdf/vehicle_statement.html'):
+    html = render_template(template, vehicle=vehicle, statement=statement, totals=totals)
+    outdir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'pdfs')
+    os.makedirs(outdir, exist_ok=True)
+    filename = f"vehicle_statement_{vehicle.vin or vehicle.id}.pdf"
+    outpath = os.path.join(outdir, filename)
+    _write_pdf(outpath, html)
+    return outpath
