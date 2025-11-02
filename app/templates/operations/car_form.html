@@ -186,15 +186,16 @@
       <input id="client_search" list="customers_datalist" placeholder="ابحث باسم العميل" value="{{ (vehicle.owner.display_name) if (vehicle and vehicle.owner) else '' }}">
       <datalist id="customers_datalist">
         {% for c in customers %}
-          <option value="{{ c.display_name }}" data-id="{{ c.id }}"></option>
+          <option value="{{ c.display_name }}" data-id="{{ c.id }}" data-category="{{ c.price_category }}"></option>
         {% endfor %}
       </datalist>
       <select name="client_id" id="client_select" class="mt-2">
         <option value="">اختر العميل</option>
         {% for c in customers %}
-          <option value="{{ c.id }}" {% if vehicle and vehicle.owner_customer_id==c.id %}selected{% endif %}>{{ c.display_name }}</option>
+          <option value="{{ c.id }}" data-category="{{ c.price_category }}" {% if vehicle and vehicle.owner_customer_id==c.id %}selected{% endif %}>{{ c.display_name }}</option>
         {% endfor %}
       </select>
+      <input type="hidden" id="price_category_active" value="{{ (vehicle.owner.price_category if vehicle and vehicle.owner else '') }}">
     </div>
 
     <div>
@@ -258,17 +259,67 @@
   const input = document.getElementById('client_search');
   const select = document.getElementById('client_select');
   const datalist = document.getElementById('customers_datalist');
+  const categoryField = document.getElementById('price_category_active');
   if (!input || !select || !datalist) return;
-  function selectByName(name) {
-    const options = Array.from(datalist.options || []);
-    const match = options.find(o => (o.value || '').trim().toLowerCase() === (name || '').trim().toLowerCase());
-    if (match && match.dataset && match.dataset.id) select.value = match.dataset.id;
+
+  function updateCategory(cat) {
+    const normalized = (cat || '').trim().toLowerCase();
+    if (categoryField) categoryField.value = normalized;
+    try {
+      window.dispatchEvent(new CustomEvent('price-category-change', { detail: { category: normalized } }));
+    } catch (_) {
+      // ignore if CustomEvent unsupported
+    }
   }
-  input.addEventListener('change', () => selectByName(input.value));
-  select.addEventListener('change', () => {
-    const opt = Array.from(datalist.options || []).find(o => (o.dataset && o.dataset.id) === select.value);
-    if (opt) input.value = opt.value;
+
+  function findOptionById(id) {
+    return Array.from(datalist.options || []).find(o => (o.dataset && o.dataset.id) === id);
+  }
+
+  function findOptionByName(name) {
+    return Array.from(datalist.options || []).find(o => (o.value || '').trim().toLowerCase() === (name || '').trim().toLowerCase());
+  }
+
+  function applyOption(option) {
+    if (!option) {
+      updateCategory('');
+      return;
+    }
+    if (option.dataset && option.dataset.id) {
+      select.value = option.dataset.id;
+    }
+    updateCategory(option.dataset ? option.dataset.category : '');
+  }
+
+  function syncFromSelect() {
+    const opt = select.selectedOptions && select.selectedOptions.length ? select.selectedOptions[0] : null;
+    if (opt && opt.dataset) {
+      updateCategory(opt.dataset.category);
+      const dlOpt = findOptionById(opt.value);
+      if (dlOpt) input.value = dlOpt.value;
+    } else {
+      updateCategory('');
+    }
+  }
+
+  input.addEventListener('change', () => {
+    const match = findOptionByName(input.value);
+    applyOption(match);
   });
+
+  select.addEventListener('change', () => {
+    syncFromSelect();
+  });
+
+  // Initialize on load
+  if (select.value) {
+    syncFromSelect();
+  } else if (input.value) {
+    const match = findOptionByName(input.value);
+    applyOption(match);
+  } else {
+    updateCategory(categoryField ? categoryField.value : '');
+  }
 })();
 
 // Searchable dropdown + auto-fill shipping price
@@ -310,8 +361,15 @@
     list.hidden = false;
   }
 
+  function getCategory() {
+    const field = document.getElementById('price_category_active');
+    return (field && field.value ? field.value.trim().toLowerCase() : '');
+  }
+
   async function fetchSuggestions(q) {
-    const url = `{{ url_for('ops.shipping_regions_suggest') }}?q=` + encodeURIComponent(q) + '&limit=12';
+    const cat = getCategory();
+    let url = `{{ url_for('ops.shipping_regions_suggest') }}?q=` + encodeURIComponent(q) + '&limit=12';
+    if (cat) url += '&category=' + encodeURIComponent(cat);
     const resp = await fetch(url);
     if (!resp.ok) { items = []; render(); return; }
     items = await resp.json();
@@ -322,7 +380,10 @@
   async function fetchPriceBy(anyText) {
     if (!anyText || !anyText.trim()) return;
     try {
-      const resp = await fetch(`{{ url_for('ops.shipping_region_price') }}?q=` + encodeURIComponent(anyText.trim()));
+      const cat = getCategory();
+      let url = `{{ url_for('ops.shipping_region_price') }}?q=` + encodeURIComponent(anyText.trim());
+      if (cat) url += '&category=' + encodeURIComponent(cat);
+      const resp = await fetch(url);
       if (!resp.ok) { priceField.value = ''; return; }
       const data = await resp.json();
       if (data && data.found) {
@@ -371,6 +432,19 @@
   input.addEventListener('keydown', onKeydown);
   input.addEventListener('blur', onBlur);
   input.addEventListener('focus', () => { if (items.length) list.hidden = false; });
+
+  window.addEventListener('price-category-change', () => {
+    lastQuery = '';
+    const current = input.value.trim();
+    if (current) {
+      fetchSuggestions(current);
+      fetchPriceBy(hidden.value || current);
+    } else {
+      priceField.value = '';
+      items = [];
+      render();
+    }
+  });
 })();
 </script>
 {% endblock %}
