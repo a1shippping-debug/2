@@ -446,7 +446,17 @@ def create_app():
                     ("Planned Load Date", date_map.get("Loading", "-")),
                     ("Shipment #", clean_str(primary_shipment.shipment_number if primary_shipment else "")),
                     ("Shipping Company", clean_str(primary_shipment.shipping_company if primary_shipment else "")),
-                    ("Container #", clean_str(primary_shipment.container_number if primary_shipment else "")),
+                    (
+                        "Container #",
+                        clean_str(
+                            (
+                                primary_shipment.container_number
+                                if primary_shipment and getattr(primary_shipment, "container_number", None)
+                                else None
+                            )
+                            or (vehicle.container_number if vehicle and getattr(vehicle, "container_number", None) else "")
+                        ),
+                    ),
                 ],
             )
 
@@ -456,6 +466,16 @@ def create_app():
                     ("Shipment #", clean_str(primary_shipment.shipment_number if primary_shipment else "")),
                     ("Origin Port", clean_str(primary_shipment.origin_port if primary_shipment else "")),
                     ("Destination Port", clean_str(primary_shipment.destination_port if primary_shipment else "")),
+                    (
+                        "Booking #",
+                        clean_str(
+                            (
+                                vehicle.booking_number
+                                if vehicle and getattr(vehicle, "booking_number", None)
+                                else ""
+                            )
+                        ),
+                    ),
                     ("Departure", date_map.get("Shipping", "-")),
                     ("Arrival", date_map.get("Arrived", "-")),
                     ("Status", clean_str(primary_shipment.status if primary_shipment else "")),
@@ -570,6 +590,7 @@ def create_app():
 
         # Summary fields for quick view
         container_number = "-"
+        booking_number = "-"
         arrival_date = "-"
         total_cost_omr = None
 
@@ -579,6 +600,10 @@ def create_app():
                 if 'latest_shipment' in locals() and latest_shipment:
                     container_number = (latest_shipment.container_number or "-").strip() if getattr(latest_shipment, 'container_number', None) else "-"
                     arrival_date = fmt_dt(getattr(latest_shipment, 'arrival_date', None)) or "-"
+                if (not container_number or container_number == "-") and getattr(vehicle, 'container_number', None):
+                    container_number = (vehicle.container_number or "-").strip() or "-"
+                if getattr(vehicle, 'booking_number', None):
+                    booking_number = (vehicle.booking_number or "-").strip() or "-"
 
                 # Compute total cost in OMR if InternationalCost exists
                 cost_row = db.session.query(InternationalCost).filter_by(vehicle_id=vehicle.id).first()
@@ -608,6 +633,7 @@ def create_app():
             stages=stages,
             stage_details=stage_details,
             container_number=container_number,
+            booking_number=booking_number,
             arrival_date=arrival_date,
             total_cost_omr=total_cost_omr,
         )

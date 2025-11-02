@@ -465,6 +465,8 @@ def cars_new():
         client_id = request.form.get('client_id')
         buyer_id = request.form.get('buyer_id')
         status_val = request.form.get('status') or 'New car'
+        container_number = (request.form.get('container_number') or '').strip()
+        booking_number = (request.form.get('booking_number') or '').strip()
 
         # ensure auction record
         auc = None
@@ -500,6 +502,8 @@ def cars_new():
             owner_customer_id=int(client_id) if client_id else None,
             status=status_val,
             current_location=current_location or None,
+            container_number=container_number or None,
+            booking_number=booking_number or None,
         )
         # Set purchase price (USD) from combined total if provided; otherwise sum legacy fields
         total_usd_val = None
@@ -649,6 +653,10 @@ def cars_edit(vehicle_id: int):
         if status_val and status_val != v.status:
             v.status = status_val
             notify(f"Vehicle {v.vin} status updated to {v.status}", 'Vehicle', v.id)
+        container_val = (request.form.get('container_number') or '').strip()
+        booking_val = (request.form.get('booking_number') or '').strip()
+        v.container_number = container_val or None
+        v.booking_number = booking_val or None
         client_id = request.form.get('client_id')
         buyer_id = request.form.get('buyer_id')
         v.owner_customer_id = int(client_id) if client_id else None
@@ -1200,6 +1208,8 @@ def cars_status():
                     return idx
             return 0
 
+        shipping_idx = stage_index_from_status('Shipping')
+
         def advance_vehicle_status(v: Vehicle, target_status: str) -> bool:
             # Advance vehicle status, auto-filling intermediate stages forward.
             if not target_status or target_status == v.status:
@@ -1225,29 +1235,62 @@ def cars_status():
                     pass
                 return True
 
-        # Support style: status_123=TargetStatus
+        updates = {}
         for key, val in (request.form or {}).items():
             if key.startswith('status_'):
                 try:
                     vid = int(key.split('_', 1)[1])
-                    v = db.session.get(Vehicle, vid)
-                    if v and val:
-                        if advance_vehicle_status(v, val):
-                            updated += 1
                 except Exception:
                     continue
-        # Support style: status[123] = TargetStatus
-        for key in (request.form or {}).keys():
-            if key.startswith('status[') and key.endswith(']'):
+                if val:
+                    updates[vid] = val
+            elif key.startswith('status[') and key.endswith(']'):
                 try:
                     vid = int(key[7:-1])
-                    val = request.form.get(key)
-                    v = db.session.get(Vehicle, vid)
-                    if v and val:
-                        if advance_vehicle_status(v, val):
-                            updated += 1
                 except Exception:
                     continue
+                val = request.form.get(key)
+                if val:
+                    updates[vid] = val
+
+        errors = []
+        pending = []
+
+        for vid, target_status in updates.items():
+            v = db.session.get(Vehicle, vid)
+            if not v:
+                continue
+            container_val = (request.form.get(f'container_{vid}') or '').strip()
+            booking_val = (request.form.get(f'booking_{vid}') or '').strip()
+            target_idx = stage_index_from_status(target_status)
+            requires_shipping_fields = target_idx >= shipping_idx
+            existing_container = (v.container_number or '').strip()
+            existing_booking = (v.booking_number or '').strip()
+            if requires_shipping_fields:
+                if not (container_val or existing_container):
+                    errors.append(_('Container number is required for %(vin)s', vin=v.vin or vid))
+                if not (booking_val or existing_booking):
+                    errors.append(_('Booking number is required for %(vin)s', vin=v.vin or vid))
+            pending.append((v, target_status, container_val, booking_val))
+
+        if errors:
+            db.session.rollback()
+            return jsonify({'errors': errors}), 400
+
+        for v, target_status, container_val, booking_val in pending:
+            existing_container = (v.container_number or '').strip()
+            existing_booking = (v.booking_number or '').strip()
+            fields_changed = False
+            if container_val and container_val != existing_container:
+                v.container_number = container_val
+                fields_changed = True
+            if booking_val and booking_val != existing_booking:
+                v.booking_number = booking_val
+                fields_changed = True
+            if advance_vehicle_status(v, target_status):
+                updated += 1
+            elif fields_changed:
+                updated += 1
         try:
             if updated:
                 db.session.commit()
@@ -1388,6 +1431,11 @@ def vehicle_tracking(vehicle_id: int):
             except Exception:
                 container_number = "-"
             arrival_date = fmt_dt(getattr(primary, "arrival_date", None)) or "-"
+        if (not container_number or container_number == "-") and getattr(v, "container_number", None):
+            try:
+                container_number = (v.container_number or "-").strip() or "-"
+            except Exception:
+                container_number = "-"
 
         # Compute total cost (OMR) from InternationalCost when available
         try:

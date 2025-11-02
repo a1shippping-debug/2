@@ -40,12 +40,18 @@
           <td class="py-2 px-3">{{ v.model }}</td>
           <td class="py-2 px-3">{{ v.owner.display_name if v.owner else '-' }}</td>
           <td class="py-2 px-3">{{ v.status or '-' }}</td>
-          <td class="py-2 px-3">
-            <select name="status_{{ v.id }}" class="border p-2 rounded">
+          <td class="py-2 px-3 align-top">
+            <select name="status_{{ v.id }}" class="border p-2 rounded w-full" data-vehicle-id="{{ v.id }}">
               {% for s in ['New car','Cashier Payment','Auction Payment','Posted','Towing','Warehouse','Loading','Shipping','Port','On way','Arrived','Delivered'] %}
                 <option value="{{s}}" {% if v.status==s %}selected{% endif %}>{{ s }}</option>
               {% endfor %}
             </select>
+            {% set show_shipping_fields = v.status in ['Shipping','Port','On way','Arrived','Delivered'] or v.container_number or v.booking_number %}
+            <div class="mt-2 space-y-2 shipping-extra" data-fields-for="{{ v.id }}" data-has-values="{{ 'yes' if (v.container_number or v.booking_number) else 'no' }}" style="{% if show_shipping_fields %}display:block{% else %}display:none{% endif %};">
+              <input name="container_{{ v.id }}" value="{{ v.container_number or '' }}" placeholder="{{ _('Container Number') }}" class="border p-2 rounded w-full">
+              <input name="booking_{{ v.id }}" value="{{ v.booking_number or '' }}" placeholder="{{ _('Booking Number') }}" class="border p-2 rounded w-full">
+              <p class="text-xs text-slate-500">{{ _('Required when status is Shipping or later') }}</p>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -61,14 +67,54 @@
 <script>
   const form = document.getElementById('statusForm');
   const result = document.getElementById('saveResult');
+  const shippingStages = ['shipping', 'port', 'on way', 'arrived', 'delivered'];
+
+  form.querySelectorAll('select[name^="status"]').forEach((select) => {
+    const vid = select.getAttribute('data-vehicle-id');
+    if (!vid) return;
+    const fields = form.querySelector(`[data-fields-for="${vid}"]`);
+    if (!fields) return;
+    const updateHasValues = () => {
+      const inputs = Array.from(fields.querySelectorAll('input'));
+      const anyValue = inputs.some((input) => (input.value || '').trim().length > 0);
+      fields.setAttribute('data-has-values', anyValue ? 'yes' : 'no');
+      return anyValue;
+    };
+    const toggle = () => {
+      const value = (select.value || '').trim().toLowerCase();
+      const hasValues = updateHasValues();
+      if (shippingStages.includes(value) || hasValues) {
+        fields.style.display = 'block';
+      } else {
+        fields.style.display = 'none';
+      }
+    };
+    fields.querySelectorAll('input').forEach((input) => {
+      input.addEventListener('input', () => {
+        const hasAny = updateHasValues();
+        if (hasAny && fields.style.display === 'none') {
+          fields.style.display = 'block';
+        }
+      });
+    });
+    select.addEventListener('change', toggle);
+    toggle();
+  });
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData(form);
     try {
-      const r = await fetch('{{ url_for('ops.cars_status') }}', { method: 'POST', body: fd });
-      if (!r.ok) throw new Error('Failed');
-      const data = await r.json();
-      result.textContent = `${data.updated} {{ _('vehicles updated') }}`;
+      const response = await fetch("{{ url_for('ops.cars_status') }}", { method: 'POST', body: fd });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        const msg = data && data.errors ? (Array.isArray(data.errors) ? data.errors.join(' / ') : data.errors) : "{{ _('Save failed') }}";
+        result.textContent = msg;
+        result.className = 'ml-3 text-sm text-red-700';
+        return;
+      }
+      const count = data && typeof data.updated === 'number' ? data.updated : 0;
+      result.textContent = `${count} {{ _('vehicles updated') }}`;
       result.className = 'ml-3 text-sm text-green-700';
     } catch (err) {
       result.textContent = '{{ _('Save failed') }}';

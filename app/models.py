@@ -143,6 +143,8 @@ class Vehicle(db.Model):
     owner_customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=True)
     status = db.Column(db.String(50), default="New car")
     current_location = db.Column(db.String(200))
+    container_number = db.Column(db.String(100))
+    booking_number = db.Column(db.String(100))
     purchase_price_usd = db.Column(db.Numeric(12,2))
     purchase_date = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
