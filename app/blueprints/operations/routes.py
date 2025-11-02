@@ -458,9 +458,7 @@ def cars_new():
         # Fallback support for older clients posting separate fields
         purchase_price = request.form.get('purchase_price')
         auction_fees = request.form.get('auction_fees')
-        local_transport = request.form.get('local_transport')
-        # Optional region + precomputed OMR shipping/transport from UI
-        region_val = (request.form.get('region') or '').strip()
+        # Optional region shipping price (OMR from UI)
         shipping_price_omr = request.form.get('shipping_price_omr')
         client_id = request.form.get('client_id')
         buyer_id = request.form.get('buyer_id')
@@ -564,7 +562,7 @@ def cars_new():
             db.session.flush()
             db.session.add(InvoiceItem(invoice_id=inv.id, vehicle_id=v.id, description=f"Vehicle {v.vin} purchase", amount_omr=amount_omr))
 
-        # Optional costs: local transport/shipping (OMR in InternationalCost)
+        # Optional cost: shipping price (OMR in InternationalCost)
         try:
             # Gather values; store OMR amounts in InternationalCost
             cost_row = None
@@ -578,16 +576,7 @@ def cars_new():
                         db.session.flush()
                 return cost_row
 
-            # Local transport (OMR)
-            if local_transport:
-                try:
-                    lt_omr = float(local_transport)
-                except Exception:
-                    lt_omr = None
-                if lt_omr is not None:
-                    ensure_cost_row().local_transport_omr = lt_omr
-
-            # Shipping price from region (OMR) — store into misc_omr to include in totals
+            # Shipping price from region (OMR) ? store into misc_omr to include in totals
             if shipping_price_omr:
                 try:
                     shp_omr = float(shipping_price_omr)
@@ -870,7 +859,7 @@ def shipments_update_status(shipment_id: int):
     old = s.status or ''
     s.status = request.form.get('status') or s.status
     try:
-        db.session.commit(); notify(f"Shipment {s.shipment_number} status: {old} ➜ {s.status}", 'Shipment', s.id)
+        db.session.commit(); notify(f"Shipment {s.shipment_number} status: {old} ? {s.status}", 'Shipment', s.id)
     except Exception:
         db.session.rollback()
     return ("", 204)
@@ -981,19 +970,19 @@ def customers_new():
         has_password = bool(password)
 
         if not has_name:
-            flash(_('الاسم مطلوب (اسم الشركة أو الاسم الكامل)'), 'danger')
+            flash(_('????? ????? (??? ?????? ?? ????? ??????)'), 'danger')
         if not has_phone:
-            flash(_('رقم الجوال مطلوب'), 'danger')
+            flash(_('??? ?????? ?????'), 'danger')
         if not has_country:
-            flash(_('الدولة مطلوبة'), 'danger')
+            flash(_('?????? ??????'), 'danger')
         if not has_card:
-            flash(_('رقم البطاقة مطلوب'), 'danger')
+            flash(_('??? ??????? ?????'), 'danger')
         if not has_email:
-            flash(_('البريد الإلكتروني مطلوب'), 'danger')
+            flash(_('?????? ?????????? ?????'), 'danger')
         if not has_password:
-            flash(_('كلمة المرور مطلوبة'), 'danger')
+            flash(_('???? ?????? ??????'), 'danger')
         if password and password_confirm and password != password_confirm:
-            flash(_('تأكيد كلمة المرور غير مطابق'), 'danger')
+            flash(_('????? ???? ?????? ??? ?????'), 'danger')
         if not (has_name and has_phone and has_country and has_card and has_email and has_password and (password == password_confirm)):
             return render_template('operations/customer_form.html', customer=c)
 
@@ -1007,7 +996,7 @@ def customers_new():
         except Exception:
             existing = None
         if existing:
-            flash(_('هذا البريد الإلكتروني مستخدم بالفعل'), 'danger')
+            flash(_('??? ?????? ?????????? ?????? ??????'), 'danger')
             return render_template('operations/customer_form.html', customer=c)
 
         # Create a login user for this customer and set provided password
@@ -1095,7 +1084,7 @@ def customers_edit(customer_id: int):
         new_password_confirm = (request.form.get('password_confirm') or '').strip()
         if new_password or new_password_confirm:
             if not (new_password and new_password_confirm and new_password == new_password_confirm):
-                flash(_('تأكيد كلمة المرور غير مطابق'), 'danger')
+                flash(_('????? ???? ?????? ??? ?????'), 'danger')
                 return render_template('operations/customer_form.html', customer=c)
             # Ensure customer has a linked user; if not, create one minimally
             user = None
