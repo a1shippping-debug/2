@@ -221,6 +221,16 @@
       </select>
     </div>
 
+    <div>
+      <label>رقم الحاوية</label>
+      <input name="container_number" value="{{ vehicle.container_number if vehicle else '' }}" placeholder="{{ _('رقم الحاوية') }}">
+    </div>
+
+    <div>
+      <label>رقم الحجز</label>
+      <input name="booking_number" value="{{ vehicle.booking_number if vehicle else '' }}" placeholder="{{ _('رقم الحجز') }}">
+    </div>
+
     {% if not vehicle %}
     <div class="upload-section">
       <label>رفع صور السيارة</label>
