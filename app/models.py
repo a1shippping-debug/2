@@ -114,7 +114,7 @@ class Buyer(db.Model):
     # Optional credentials and association for buyer accounts used in auctions
     buyer_number = db.Column(db.String(100))
     password = db.Column(db.String(200))
-    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"))
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id", ondelete="SET NULL"))
     customer = db.relationship("Customer")
 
 class Auction(db.Model):
