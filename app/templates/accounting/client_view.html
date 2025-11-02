@@ -1,141 +1,413 @@
 {% extends 'base_accounting.html' %}
 {% block content %}
-<div class="container mt-3">
-  <h3>Client Accounting View</h3>
-  <form class="row g-2 mb-3" method="get">
-    <div class="col-auto">
-      <select name="customer_id" class="form-select" onchange="this.form.submit()">
-        <option value="">-- Select Client --</option>
-        {% for c in customers %}
-          <option value="{{ c.id }}" {% if request.args.get('customer_id') and c.id == customer_id %}selected{% endif %}>
-            {{ c.display_name }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-auto">
-      <a href="?customer_id={{ customer_id }}&export=pdf" class="btn btn-outline-secondary">Export Statement PDF</a>
-      <a href="?customer_id={{ customer_id }}&export=xlsx" class="btn btn-outline-secondary">Export Statement Excel</a>
+<style>
+/* === Reset & Font === */
+body {
+  font-family: 'Cairo', sans-serif;
+  background: #f5f7fa;
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+/* === Container === */
+.accounting-container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 20px;
+}
+
+/* === Page Title === */
+.page-title {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #0f64a6;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+/* === Customer Select === */
+.customer-select-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.customer-select-form select {
+  padding: 8px;
+  min-width: 200px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.export-buttons a {
+  margin-left: 10px;
+  text-decoration: none;
+  padding: 7px 12px;
+  border: 1px solid #0f64a6;
+  color: #0f64a6;
+  border-radius: 5px;
+  transition: 0.3s;
+}
+
+.export-buttons a:hover {
+  background: #0f64a6;
+  color: white;
+}
+
+/* === Balance Cards === */
+.balances-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.balances-cards .card {
+  position: relative;
+  background: linear-gradient(135deg, #0f64a6, #2a8bd3);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.balances-cards .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+}
+
+.balances-cards .card h4 {
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.balances-cards .card p {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* === Entry Form === */
+.entry-form-card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.entry-form-card h3 {
+  margin-bottom: 20px;
+  color: #0f64a6;
+}
+
+.entry-form-card .form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.entry-form-card label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.entry-form-card input, .entry-form-card select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  transition: 0.3s;
+}
+
+.entry-form-card input:focus, .entry-form-card select:focus {
+  border-color: #0f64a6;
+  outline: none;
+}
+
+.btn-submit {
+  background: #0f64a6;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.btn-submit:hover {
+  background: #084a7c;
+}
+
+/* === Tabs === */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+  gap: 5px;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  border: none;
+  background: #e0e0e0;
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.tab-button.active {
+  background: #0f64a6;
+  color: white;
+}
+
+/* === Tab Content === */
+.tab-content {
+  background: white;
+  padding: 15px;
+  border-radius: 0 12px 12px 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {opacity:0;}
+  to {opacity:1;}
+}
+
+/* === Table Styling === */
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+table th, table td {
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  text-align: left;
+  transition: 0.2s;
+}
+
+table th {
+  background: #0f64a6;
+  color: white;
+}
+
+table tr:hover {
+  background: #f0f8ff;
+}
+
+/* Scrollbar Styling */
+.table-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #0f64a6;
+  border-radius: 3px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+</style>
+
+<div class="accounting-container">
+
+  <h2 class="page-title">عرض حسابات العميل</h2>
+
+  <!-- اختيار العميل -->
+  <form class="customer-select-form" method="get">
+    <select name="customer_id" onchange="this.form.submit()">
+      <option value="">-- اختر العميل --</option>
+      {% for c in customers %}
+        <option value="{{ c.id }}" {% if request.args.get('customer_id') and c.id == customer_id %}selected{% endif %}>
+          {{ c.display_name }}
+        </option>
+      {% endfor %}
+    </select>
+    <div class="export-buttons">
+      <a href="?customer_id={{ customer_id }}&export=pdf">تصدير PDF</a>
+      <a href="?customer_id={{ customer_id }}&export=xlsx">تصدير Excel</a>
     </div>
   </form>
 
   {% if customer %}
-  <div class="card mb-3">
-    <div class="card-body">
-      <h5 class="card-title">{{ customer.display_name }}</h5>
-      <div class="row">
-        <div class="col-md-3"><strong>Deposits</strong><div>{{ balances.deposits|float|round(3) }}</div></div>
-        <div class="col-md-3"><strong>Receivables</strong><div>{{ balances.ar|float|round(3) }}</div></div>
-        <div class="col-md-3"><strong>Total Paid</strong><div>{{ balances.paid|float|round(3) }}</div></div>
-        <div class="col-md-3"><strong>Commission Earned</strong><div>{{ balances.revenue|float|round(3) }}</div></div>
-      </div>
-      <form method="post" action="{{ url_for('acct.client_view_add_entry') }}" class="row g-2 mt-3">
-        <input type="hidden" name="customer_id" value="{{ customer_id }}" />
-        <div class="col-md-2">
-          <label class="form-label">المبلغ (OMR)</label>
-          <input name="amount" type="number" step="0.001" class="form-control" required />
+
+  <!-- ملخص الحساب -->
+  <div class="balances-cards">
+    <div class="card">
+      <h4>الإيداعات</h4>
+      <p>{{ balances.deposits|float|round(3) }} OMR</p>
+    </div>
+    <div class="card">
+      <h4>الذمم المدينة</h4>
+      <p>{{ balances.ar|float|round(3) }} OMR</p>
+    </div>
+    <div class="card">
+      <h4>إجمالي المدفوعات</h4>
+      <p>{{ balances.paid|float|round(3) }} OMR</p>
+    </div>
+    <div class="card">
+      <h4>العمولات</h4>
+      <p>{{ balances.revenue|float|round(3) }} OMR</p>
+    </div>
+  </div>
+
+  <!-- نموذج إضافة قيد جديد -->
+  <div class="entry-form-card">
+    <h3>إضافة قيد جديد</h3>
+    <form method="post" action="{{ url_for('acct.client_view_add_entry') }}">
+      <input type="hidden" name="customer_id" value="{{ customer_id }}">
+      <div class="form-row">
+        <div>
+          <label>المبلغ (OMR)</label>
+          <input type="number" name="amount" step="0.001" required>
         </div>
-        <div class="col-md-3">
-          <label class="form-label">نوع القيد</label>
-          <select name="entry_type" class="form-select">
+        <div>
+          <label>نوع القيد</label>
+          <select name="entry_type">
             <option value="client_fund_deposit">إيداع أموال عميل</option>
             <option value="client_fund_disbursement">صرف من أموال العميل</option>
             <option value="ar_settlement">سداد ذمم مدينة</option>
             <option value="revenue">إيراد خدمة مباشر</option>
           </select>
         </div>
-        <div class="col-md-3">
-          <label class="form-label">وصف العملية</label>
-          <input name="description" class="form-control" placeholder="مثال: دفع عمولة" />
+        <div>
+          <label>وصف العملية</label>
+          <input name="description" placeholder="مثال: دفع عمولة">
         </div>
-        <div class="col-md-2">
-          <label class="form-label">طريقة الدفع</label>
-          <select name="method" class="form-select">
-            <option>{{ _('Cash') }}</option>
-            <option>{{ _('Bank Transfer') }}</option>
-            <option>{{ _('Card') }}</option>
+        <div>
+          <label>طريقة الدفع</label>
+          <select name="method">
+            <option>Cash</option>
+            <option>Bank Transfer</option>
+            <option>Card</option>
           </select>
         </div>
-        <div class="col-md-2">
-          <label class="form-label">Reference</label>
-          <input name="reference" class="form-control" />
+        <div>
+          <label>Reference</label>
+          <input name="reference">
         </div>
-        <div class="col-md-12">
-          <button class="btn btn-primary mt-2">حفظ</button>
-        </div>
-      </form>
+      </div>
+      <button type="submit" class="btn-submit">حفظ القيد</button>
+    </form>
+  </div>
+
+  <!-- التبويبات -->
+  <div class="tabs">
+    <button class="tab-button active" data-tab="ledger">دفتر الأستاذ</button>
+    <button class="tab-button" data-tab="pl">Mini P&L</button>
+    <button class="tab-button" data-tab="deposit">الإيداعات والمستردات</button>
+    <button class="tab-button" data-tab="auction">دفعات المزاد</button>
+    <button class="tab-button" data-tab="service">إيرادات الخدمة</button>
+  </div>
+
+  <div class="tab-content">
+    <div class="tab-panel active" id="ledger">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr><th>التاريخ</th><th>الوصف</th><th>Debit</th><th>Credit</th></tr>
+          </thead>
+          <tbody>
+            {% for row in ledger %}
+              <tr>
+                <td>{{ row.date }}</td><td>{{ row.desc }}</td><td>{{ row.debit }}</td><td>{{ row.credit }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="pl">
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Category</th><th>Amount (OMR)</th></tr></thead>
+          <tbody>
+            <tr><td>Revenue</td><td>{{ pl.revenue|float|round(3) }}</td></tr>
+            <tr><td>Logistics Expense</td><td>{{ pl.logistics|float|round(3) }}</td></tr>
+            <tr><td><strong>Net</strong></td><td><strong>{{ (pl.revenue - pl.logistics)|float|round(3) }}</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="deposit">
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Date</th><th>Reference</th><th>Amount</th><th>Type</th></tr></thead>
+          <tbody>
+            {% for d in deposits %}
+              <tr><td>{{ d.date }}</td><td>{{ d.reference }}</td><td>{{ d.amount }}</td><td>{{ d.type }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="auction">
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead>
+          <tbody>
+            {% for a in auction_ledger %}
+              <tr><td>{{ a.date }}</td><td>{{ a.desc }}</td><td>{{ a.amount }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="service">
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead>
+          <tbody>
+            {% for s in service_rows %}
+              <tr><td>{{ s.date }}</td><td>{{ s.desc }}</td><td>{{ s.amount }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <ul class="nav nav-tabs" id="clientTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="ledger-tab" data-bs-toggle="tab" data-bs-target="#ledger" type="button" role="tab">Ledger</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="pl-tab" data-bs-toggle="tab" data-bs-target="#pl" type="button" role="tab">Mini P&L</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="deposit-tab" data-bs-toggle="tab" data-bs-target="#deposit" type="button" role="tab">Deposits & Refunds</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="auction-tab" data-bs-toggle="tab" data-bs-target="#auction" type="button" role="tab">Auction Payments</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="service-tab" data-bs-toggle="tab" data-bs-target="#service" type="button" role="tab">Service Revenue</button>
-    </li>
-  </ul>
-  <div class="tab-content p-3 border border-top-0" id="clientTabsContent">
-    <div class="tab-pane fade show active" id="ledger" role="tabpanel">
-      <table class="table table-sm">
-        <thead><tr><th>Date</th><th>Description</th><th>Debit</th><th>Credit</th></tr></thead>
-        <tbody>
-          {% for row in ledger %}
-            <tr><td>{{ row.date }}</td><td>{{ row.desc }}</td><td>{{ row.debit }}</td><td>{{ row.credit }}</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div class="tab-pane fade" id="pl" role="tabpanel">
-      <table class="table table-sm">
-        <thead><tr><th>Category</th><th>Amount (OMR)</th></tr></thead>
-        <tbody>
-          <tr><td>Revenue</td><td>{{ pl.revenue|float|round(3) }}</td></tr>
-          <tr><td>Logistics Expense</td><td>{{ pl.logistics|float|round(3) }}</td></tr>
-          <tr><td><strong>Net</strong></td><td><strong>{{ (pl.revenue - pl.logistics)|float|round(3) }}</strong></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="tab-pane fade" id="deposit" role="tabpanel">
-      <table class="table table-sm">
-        <thead><tr><th>Date</th><th>Reference</th><th>Amount (OMR)</th><th>Type</th></tr></thead>
-        <tbody>
-          {% for d in deposits %}
-            <tr><td>{{ d.date }}</td><td>{{ d.reference }}</td><td>{{ d.amount }}</td><td>{{ d.type }}</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div class="tab-pane fade" id="auction" role="tabpanel">
-      <table class="table table-sm">
-        <thead><tr><th>Date</th><th>Description</th><th>Amount (OMR)</th></tr></thead>
-        <tbody>
-          {% for a in auction_ledger %}
-            <tr><td>{{ a.date }}</td><td>{{ a.desc }}</td><td>{{ a.amount }}</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div class="tab-pane fade" id="service" role="tabpanel">
-      <table class="table table-sm">
-        <thead><tr><th>Date</th><th>Description</th><th>Amount (OMR)</th></tr></thead>
-        <tbody>
-          {% for s in service_rows %}
-            <tr><td>{{ s.date }}</td><td>{{ s.desc }}</td><td>{{ s.amount }}</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
   {% endif %}
 </div>
+
+<script>
+document.querySelectorAll('.tab-button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tabId = btn.dataset.tab;
+    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+  });
+});
+</script>
 {% endblock %}

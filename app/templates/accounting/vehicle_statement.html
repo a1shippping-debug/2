@@ -1,7 +1,42 @@
 {% extends "base_accounting.html" %}
 {% block acct_content %}
-<h2 class="text-2xl font-bold text-blue-900 mb-4">{{ _('Vehicle Statement of Account') }}</h2>
-<div class="mb-4 grid md:grid-cols-2 gap-4 text-sm">
+<style>
+/* === Reset & Font === */
+body { font-family: 'Cairo', sans-serif; background:#f7f9fc; color:#333; margin:0; padding:0; }
+h2 { color:#0f64a6; margin-bottom:20px; }
+
+/* === Grid & Container === */
+.grid-container { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:15px; margin-bottom:30px; }
+.card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1); transition:0.3s; }
+.card:hover { transform:translateY(-5px); box-shadow:0 8px 25px rgba(0,0,0,0.2); }
+.card .title { font-size:14px; color:#555; }
+.card .value { font-size:20px; font-weight:700; margin-top:5px; color:#0f64a6; }
+
+/* === Table === */
+.table-container { overflow-x:auto; background:#fff; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); margin-bottom:30px; }
+table { width:100%; border-collapse:collapse; min-width:700px; }
+thead th { background:#0f64a6; color:white; padding:10px; text-align:left; }
+tbody td { padding:8px 10px; border-top:1px solid #e0e0e0; }
+tbody tr:hover { background:#f0f8ff; transition:0.2s; }
+
+/* === Form === */
+.form-card { background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); margin-bottom:30px; }
+.form-card input, .form-card select { width:100%; padding:8px 10px; border-radius:6px; border:1px solid #ccc; transition:0.3s; }
+.form-card input:focus, .form-card select:focus { outline:none; border-color:#0f64a6; }
+.btn-submit { background:#0f64a6; color:#fff; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:600; transition:0.3s; }
+.btn-submit:hover { background:#084a7c; }
+
+/* === Buttons === */
+.btn { padding:8px 12px; border-radius:6px; text-decoration:none; border:1px solid #0f64a6; color:#0f64a6; transition:0.3s; }
+.btn:hover { background:#0f64a6; color:white; }
+
+/* === Responsive === */
+@media(max-width:768px){ .grid-container { grid-template-columns:1fr; } }
+</style>
+
+<h2>{{ _('Vehicle Statement of Account') }}</h2>
+
+<div class="mb-6 grid md:grid-cols-2 gap-4 text-sm">
   <div>
     <div><strong>VIN:</strong> <span class="font-mono">{{ vehicle.vin }}</span></div>
     <div><strong>{{ _('Client') }}:</strong> {{ vehicle.owner.display_name if vehicle.owner else '-' }}</div>
@@ -14,10 +49,40 @@
   </div>
 </div>
 
-<table class="w-full table-auto text-sm">
+<!-- Cards Summary -->
+<div class="grid-container">
+  <div class="card">
+    <div class="title">{{ _('Auction Cost') }}</div>
+    <div class="value" id="total-auction-cost">{{ '%.3f'|format(totals.auction_cost_omr) }}</div>
+  </div>
+  <div class="card">
+    <div class="title">{{ _('Freight') }}</div>
+    <div class="value" id="total-freight">{{ '%.3f'|format(totals.freight_omr) }}</div>
+  </div>
+  <div class="card">
+    <div class="title">{{ _('Customs') }}</div>
+    <div class="value" id="total-customs">{{ '%.3f'|format(totals.customs_omr) }}</div>
+  </div>
+  <div class="card">
+    <div class="title">{{ _('Service Fee') }}</div>
+    <div class="value" id="total-service-fee">{{ '%.3f'|format(totals.service_fee_omr) }}</div>
+  </div>
+  <div class="card">
+    <div class="title">{{ _('Deposit Net') }}</div>
+    <div class="value" id="total-deposit-net">{{ '%.3f'|format(totals.deposit_net_omr) }}</div>
+  </div>
+  <div class="card">
+    <div class="title">{{ _('Outstanding Balance') }}</div>
+    <div class="value" id="total-outstanding">{{ '%.3f'|format(totals.outstanding_balance_omr) }}</div>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="table-container">
+<table>
   <thead>
-    <tr class="text-left text-slate-500">
-      <th class="py-2">{{ _('Date') }}</th>
+    <tr>
+      <th>{{ _('Date') }}</th>
       <th>{{ _('Description') }}</th>
       <th>{{ _('Account') }}</th>
       <th class="text-right">{{ _('Debit') }}</th>
@@ -27,8 +92,8 @@
   </thead>
   <tbody id="statement-body">
     {% for r in statement %}
-    <tr class="border-t">
-      <td class="py-1">{{ r.date }}</td>
+    <tr>
+      <td>{{ r.date }}</td>
       <td>{{ r.description }}</td>
       <td class="font-mono">{{ r.account_code }} — {{ r.account_name }}</td>
       <td class="text-right">{{ '%.3f'|format(r.debit) }}</td>
@@ -40,52 +105,21 @@
     {% endfor %}
   </tbody>
 </table>
-
-<div class="mt-6 grid md:grid-cols-3 gap-4">
-  <div class="bg-slate-50 border rounded p-3">
-    <div class="text-slate-500 text-xs">{{ _('Auction Cost') }}</div>
-    <div id="total-auction-cost" class="text-lg font-semibold">{{ '%.3f'|format(totals.auction_cost_omr) }}</div>
-  </div>
-  <div class="bg-slate-50 border rounded p-3">
-    <div class="text-slate-500 text-xs">{{ _('Freight') }}</div>
-    <div id="total-freight" class="text-lg font-semibold">{{ '%.3f'|format(totals.freight_omr) }}</div>
-  </div>
-  <div class="bg-slate-50 border rounded p-3">
-    <div class="text-slate-500 text-xs">{{ _('Customs') }}</div>
-    <div id="total-customs" class="text-lg font-semibold">{{ '%.3f'|format(totals.customs_omr) }}</div>
-  </div>
-  <div class="bg-slate-50 border rounded p-3">
-    <div class="text-slate-500 text-xs">{{ _('Service Fee') }}</div>
-    <div id="total-service-fee" class="text-lg font-semibold">{{ '%.3f'|format(totals.service_fee_omr) }}</div>
-  </div>
-  <div class="bg-slate-50 border rounded p-3">
-    <div class="text-slate-500 text-xs">{{ _('Deposit Net') }}</div>
-    <div id="total-deposit-net" class="text-lg font-semibold">{{ '%.3f'|format(totals.deposit_net_omr) }}</div>
-  </div>
-  <div class="bg-slate-50 border rounded p-3">
-    <div class="text-slate-500 text-xs">{{ _('Outstanding Balance') }}</div>
-    <div id="total-outstanding" class="text-lg font-semibold">{{ '%.3f'|format(totals.outstanding_balance_omr) }}</div>
-  </div>
 </div>
 
-<div class="mt-6 flex gap-2">
-  <a class="px-3 py-1.5 bg-slate-200 rounded" href="{{ url_for('acct.vehicles_list') }}">{{ _('Back') }}</a>
-  <a class="px-3 py-1.5 bg-blue-600 text-white rounded" href="{{ url_for('acct.vehicle_statement_pdf', vehicle_id=vehicle.id) }}">{{ _('Export PDF') }}</a>
-  <button type="button" id="btn-refresh" class="px-3 py-1.5 bg-slate-100 rounded border">{{ _('Refresh') }}</button>
-</div>
-
-<form class="mt-6 bg-white border rounded p-4 grid md:grid-cols-6 gap-3 items-end" method="post" action="{{ url_for('acct.vehicle_statement_add_payment', vehicle_id=vehicle.id) }}">
+<!-- Form Add Payment -->
+<form class="form-card grid md:grid-cols-6 gap-3 items-end" method="post" action="{{ url_for('acct.vehicle_statement_add_payment', vehicle_id=vehicle.id) }}">
   <div class="md:col-span-2">
-    <label class="block text-xs text-slate-500 mb-1">{{ _('Description') }}</label>
-    <input type="text" name="description" class="w-full border rounded px-2 py-1" placeholder="{{ _('e.g., Client payment for auction') }}" />
+    <label class="text-xs text-slate-500">{{ _('Description') }}</label>
+    <input type="text" name="description" placeholder="{{ _('e.g., Client payment for auction') }}">
   </div>
   <div>
-    <label class="block text-xs text-slate-500 mb-1">{{ _('Amount (OMR)') }}</label>
-    <input type="text" name="amount" class="w-full border rounded px-2 py-1" required />
+    <label class="text-xs text-slate-500">{{ _('Amount (OMR)') }}</label>
+    <input type="text" name="amount" required>
   </div>
   <div>
-    <label class="block text-xs text-slate-500 mb-1">{{ _('Method') }}</label>
-    <select name="method" class="w-full border rounded px-2 py-1">
+    <label class="text-xs text-slate-500">{{ _('Method') }}</label>
+    <select name="method">
       <option value="">-</option>
       <option>Cash</option>
       <option>Bank Transfer</option>
@@ -93,67 +127,62 @@
     </select>
   </div>
   <div>
-    <label class="block text-xs text-slate-500 mb-1">{{ _('Entry Type') }}</label>
-    <select name="entry_type" class="w-full border rounded px-2 py-1" required>
+    <label class="text-xs text-slate-500">{{ _('Entry Type') }}</label>
+    <select name="entry_type" required>
       <option value="">{{ _('- Select -') }}</option>
       <option value="client_fund">{{ _('Client Fund Deposit') }}</option>
-      <option value="ar_settlement">{{ _('AR Settlement (Receivable)') }}</option>
+      <option value="ar_settlement">{{ _('AR Settlement') }}</option>
       <option value="revenue">{{ _('Commission/Service Revenue') }}</option>
     </select>
   </div>
   <div>
-    <button type="submit" class="px-3 py-1.5 bg-green-600 text-white rounded w-full">{{ _('Add Payment') }}</button>
+    <button type="submit" class="btn-submit w-full">{{ _('Add Payment') }}</button>
   </div>
 </form>
 
+<!-- Buttons -->
+<div class="mt-6 flex gap-2">
+  <a class="btn" href="{{ url_for('acct.vehicles_list') }}">{{ _('Back') }}</a>
+  <a class="btn bg-blue-600 text-white border-0" href="{{ url_for('acct.vehicle_statement_pdf', vehicle_id=vehicle.id) }}">{{ _('Export PDF') }}</a>
+  <button type="button" id="btn-refresh" class="btn bg-slate-100 border">{{ _('Refresh') }}</button>
+</div>
+
 <script>
-  (function(){
-    const fmt = (n) => {
-      try { return (Number(n || 0)).toFixed(3); } catch(e) { return '0.000'; }
-    };
-    const tbody = document.getElementById('statement-body');
-    const url = '{{ url_for('acct.api_vehicle_statement', vehicle_id=vehicle.id) }}';
-    async function refreshStatement(){
-      try {
-        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-        if (!res.ok) return;
-        const data = await res.json();
-        // Update rows
-        if (tbody) {
-          if (data.entries && data.entries.length) {
-            tbody.innerHTML = data.entries.map(r => (
-              `<tr class="border-t">`
-              + `<td class="py-1">${r.date || ''}</td>`
-              + `<td>${(r.description || '').replace(/</g,'&lt;')}</td>`
-              + `<td class="font-mono">${r.account_code || ''} — ${(r.account_name || '').replace(/</g,'&lt;')}</td>`
-              + `<td class="text-right">${fmt(r.debit)}</td>`
-              + `<td class="text-right">${fmt(r.credit)}</td>`
-              + `<td class="text-right">${fmt(r.balance)}</td>`
-              + `</tr>`
-            )).join('');
-          } else {
-            tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-400">{{ _('No transactions yet') }}</td></tr>`;
-          }
+(function(){
+  const fmt = n=>Number(n||0).toFixed(3);
+  const tbody = document.getElementById('statement-body');
+  const url = '{{ url_for("acct.api_vehicle_statement", vehicle_id=vehicle.id) }}';
+  async function refresh(){
+    try{
+      const res = await fetch(url, {headers:{'Accept':'application/json'}});
+      if(!res.ok) return;
+      const data = await res.json();
+      if(tbody){
+        if(data.entries && data.entries.length){
+          tbody.innerHTML = data.entries.map(r=>`<tr>
+            <td>${r.date||''}</td>
+            <td>${(r.description||'').replace(/</g,'&lt;')}</td>
+            <td class="font-mono">${r.account_code||''} — ${(r.account_name||'').replace(/</g,'&lt;')}</td>
+            <td class="text-right">${fmt(r.debit)}</td>
+            <td class="text-right">${fmt(r.credit)}</td>
+            <td class="text-right">${fmt(r.balance)}</td>
+          </tr>`).join('');
+        } else {
+          tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-400">{{ _('No transactions yet') }}</td></tr>`;
         }
-        // Update totals
-        const t = data.totals || {};
-        const byId = (id) => document.getElementById(id);
-        const pairs = [
-          ['total-auction-cost', t.auction_cost_omr],
-          ['total-freight', t.freight_omr],
-          ['total-customs', t.customs_omr],
-          ['total-service-fee', t.service_fee_omr],
-          ['total-deposit-net', t.deposit_net_omr],
-          ['total-outstanding', t.outstanding_balance_omr],
-        ];
-        for (const [id, val] of pairs) {
-          const el = byId(id); if (el) el.textContent = fmt(val);
-        }
-      } catch(e) { /* silent */ }
-    }
-    document.getElementById('btn-refresh')?.addEventListener('click', refreshStatement);
-    // Auto refresh every 30s
-    setInterval(refreshStatement, 30000);
-  })();
+      }
+      const t = data.totals||{};
+      [['total-auction-cost', t.auction_cost_omr],
+       ['total-freight', t.freight_omr],
+       ['total-customs', t.customs_omr],
+       ['total-service-fee', t.service_fee_omr],
+       ['total-deposit-net', t.deposit_net_omr],
+       ['total-outstanding', t.outstanding_balance_omr]
+      ].forEach(([id,val])=>document.getElementById(id)?.textContent=fmt(val));
+    }catch(e){}
+  }
+  document.getElementById('btn-refresh')?.addEventListener('click', refresh);
+  setInterval(refresh,30000);
+})();
 </script>
 {% endblock %}

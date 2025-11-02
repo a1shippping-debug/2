@@ -1,17 +1,49 @@
 {% extends "base_accounting.html" %}
 {% block acct_content %}
-<h2 class="text-2xl font-bold text-blue-900 mb-4">{{ _('Vehicle Accounting') }}</h2>
-<form method="get" class="mb-4 flex gap-2 items-end">
+<style>
+/* === Reset & Font === */
+body { font-family: 'Cairo', sans-serif; background:#f4f6f9; color:#333; margin:0; padding:0; }
+h2 { color:#0f64a6; margin-bottom:20px; }
+
+/* === Form === */
+form { display:flex; flex-wrap:wrap; gap:15px; margin-bottom:20px; align-items:flex-end; }
+form label { display:block; font-size:0.875rem; color:#555; margin-bottom:4px; }
+form input { border:1px solid #ccc; border-radius:6px; padding:6px 10px; transition:0.3s; }
+form input:focus { outline:none; border-color:#0f64a6; }
+form button { background:#0f64a6; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; transition:0.3s; }
+form button:hover { background:#084a7c; }
+
+/* === Table === */
+.table-container { overflow-x:auto; background:#fff; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
+table { width:100%; border-collapse:collapse; min-width:700px; }
+thead th { background:#0f64a6; color:white; padding:10px; text-align:left; position:sticky; top:0; }
+tbody td { padding:10px; border-top:1px solid #e0e0e0; }
+tbody tr { transition:0.2s; }
+tbody tr:hover { background:#f0f8ff; transform:translateX(3px); }
+
+/* === Links & Buttons === */
+.link-blue { color:#0f64a6; text-decoration:none; font-weight:500; transition:0.3s; }
+.link-blue:hover { text-decoration:underline; color:#084a7c; }
+
+/* === Responsive === */
+@media(max-width:768px){ form { flex-direction:column; align-items:stretch; } }
+</style>
+
+<h2>{{ _('Vehicle Accounting') }}</h2>
+
+<form method="get">
   <div>
-    <label class="block text-sm text-gray-600 mb-1">{{ _('Client') }}</label>
-    <input name="client_id" class="border rounded px-2 py-1" placeholder="Client ID" value="{{ request.args.get('client_id','') }}" />
+    <label>{{ _('Client') }}</label>
+    <input name="client_id" placeholder="Client ID" value="{{ request.args.get('client_id','') }}" />
   </div>
-  <button class="px-3 py-1.5 bg-blue-600 text-white rounded">{{ _('Filter') }}</button>
+  <button>{{ _('Filter') }}</button>
 </form>
-<table class="w-full table-auto text-sm">
+
+<div class="table-container">
+<table>
   <thead>
-    <tr class="text-left text-slate-500">
-      <th class="py-2">VIN</th>
+    <tr>
+      <th>VIN</th>
       <th>{{ _('Client') }}</th>
       <th>{{ _('Status') }}</th>
       <th class="text-right">{{ _('Balance (OMR)') }}</th>
@@ -20,8 +52,8 @@
   </thead>
   <tbody>
     {% for v in vehicles %}
-    <tr class="border-t">
-      <td class="py-2 font-mono">{{ v.vin }}</td>
+    <tr>
+      <td class="font-mono">{{ v.vin }}</td>
       <td>{{ v.owner.display_name if v.owner else '-' }}</td>
       <td>{{ v.status or '-' }}</td>
       <td class="text-right">{{ '%.3f'|format(balances.get(v.id,0.0)) }}</td>
@@ -34,4 +66,5 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endblock %}
