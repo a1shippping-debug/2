@@ -1,46 +1,137 @@
 {% extends "base_admin.html" %}
 {% block title %}{{ _('Users') }}{% endblock %}
 {% block header %}{{ _('Users') }}{% endblock %}
-{% block content %}
-<div class="flex items-center justify-between mb-4">
-  <h1 class="text-2xl">{{ _('Users') }}</h1>
-  <a href="{{ url_for('admin.users_new') }}" class="px-3 py-2 text-sm bg-primary text-white rounded">+ {{ _('New User') }}</a>
-  </div>
 
-<div class="bg-slate-900/60 border border-slate-800 rounded-2xl">
-  <table class="w-full text-sm">
+{% block content %}
+<style>
+  /* Container */
+  .users-container {
+    background-color: #1e293b; /* slate-900 */
+    border: 1px solid #334155; /* slate-800 */
+    border-radius: 16px;
+    padding: 20px;
+    overflow-x: auto;
+  }
+
+  /* Header */
+  .users-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .users-header h1 {
+    font-size: 24px;
+    color: #f1f5f9; /* slate-100 */
+  }
+  .btn-new-user {
+    padding: 8px 14px;
+    font-size: 14px;
+    background-color: #2563eb; /* blue-600 */
+    color: white;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.3s;
+  }
+  .btn-new-user:hover {
+    background-color: #1d4ed8; /* blue-700 */
+  }
+
+  /* Table */
+  table.users-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #cbd5e1; /* slate-300 */
+    font-size: 14px;
+  }
+  table.users-table th, table.users-table td {
+    padding: 12px 10px;
+    text-align: left;
+  }
+  table.users-table thead {
+    border-bottom: 2px solid #334155;
+  }
+  table.users-table tbody tr {
+    border-bottom: 1px solid #334155;
+  }
+  table.users-table tbody tr:hover {
+    background-color: #334155; /* hover effect */
+  }
+
+  /* Action buttons */
+  .btn-edit {
+    padding: 5px 10px;
+    font-size: 12px;
+    background-color: #475569; /* slate-600 */
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background 0.3s;
+  }
+  .btn-edit:hover {
+    background-color: #64748b; /* slate-500 */
+  }
+  .btn-delete {
+    padding: 5px 10px;
+    font-size: 12px;
+    background-color: #dc2626; /* red-600 */
+    color: white;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .btn-delete:hover {
+    background-color: #b91c1c; /* red-700 */
+  }
+
+  /* No users message */
+  .no-users {
+    text-align: center;
+    padding: 20px;
+    color: #94a3b8; /* slate-400 */
+  }
+</style>
+
+<div class="users-header">
+  <h1>{{ _('Users') }}</h1>
+  <a href="{{ url_for('admin.users_new') }}" class="btn-new-user">+ {{ _('New User') }}</a>
+</div>
+
+<div class="users-container">
+  <table class="users-table">
     <thead>
-      <tr class="text-left text-slate-400">
-        <th class="p-2">{{ _('Name') }}</th>
-        <th class="p-2">{{ _('Email') }}</th>
-        <th class="p-2">{{ _('Phone') }}</th>
-        <th class="p-2">{{ _('Role') }}</th>
-        <th class="p-2">{{ _('Last Login') }}</th>
-        <th class="p-2">{{ _('Active') }}</th>
-        <th class="p-2">{{ _('Created') }}</th>
-        <th class="p-2">{{ _('Actions') }}</th>
+      <tr>
+        <th>{{ _('Name') }}</th>
+        <th>{{ _('Email') }}</th>
+        <th>{{ _('Phone') }}</th>
+        <th>{{ _('Role') }}</th>
+        <th>{{ _('Last Login') }}</th>
+        <th>{{ _('Active') }}</th>
+        <th>{{ _('Created') }}</th>
+        <th>{{ _('Actions') }}</th>
       </tr>
     </thead>
     <tbody>
       {% for u in users %}
-      <tr class="border-t border-slate-800">
-        <td class="p-2">{{ u.name }}</td>
-        <td class="p-2">{{ u.email }}</td>
-        <td class="p-2">{{ u.phone or '-' }}</td>
-        <td class="p-2">{{ u.role.name if u.role else '-' }}</td>
-        <td class="p-2">{{ u.last_login_at or '-' }}</td>
-        <td class="p-2">{{ _('Yes') if u.active else _('No') }}</td>
-        <td class="p-2">{{ u.created_at }}</td>
-        <td class="p-2">
-          <a href="{{ url_for('admin.users_edit', user_id=u.id) }}" class="text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">{{ _('Edit') }}</a>
+      <tr>
+        <td>{{ u.name }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.phone or '-' }}</td>
+        <td>{{ u.role.name if u.role else '-' }}</td>
+        <td>{{ u.last_login_at or '-' }}</td>
+        <td>{{ _('Yes') if u.active else _('No') }}</td>
+        <td>{{ u.created_at }}</td>
+        <td>
+          <a href="{{ url_for('admin.users_edit', user_id=u.id) }}" class="btn-edit">{{ _('Edit') }}</a>
           <form action="{{ url_for('admin.users_delete', user_id=u.id) }}" method="post" style="display:inline" onsubmit="return confirm('{{ _('Delete user?') }}');">
-            <button class="text-xs px-2 py-1 rounded bg-rose-700 hover:bg-rose-600 text-white">{{ _('Delete') }}</button>
+            <button type="submit" class="btn-delete">{{ _('Delete') }}</button>
           </form>
         </td>
       </tr>
       {% else %}
       <tr>
-        <td colspan="7" class="p-3 text-slate-500">{{ _('No users found') }}</td>
+        <td colspan="8" class="no-users">{{ _('No users found') }}</td>
       </tr>
       {% endfor %}
     </tbody>
