@@ -484,216 +484,276 @@
 
   <!-- Scripts: GSAP animations, counters, background & waves -->
   <script>
-    // set year
-    document.getElementById('year').textContent = new Date().getFullYear();
+    (function(){
+      var yearEl = document.getElementById('year');
+      if(yearEl){
+        yearEl.textContent = new Date().getFullYear();
+      }
 
-    // register ScrollTrigger
-    gsap.registerPlugin(ScrollTrigger);
+      var hasWindow = typeof window !== 'undefined';
+      var gsapInstance = hasWindow ? window.gsap : undefined;
+      var scrollTriggerInstance = hasWindow ? window.ScrollTrigger : undefined;
+      var hasGsap = typeof gsapInstance !== 'undefined';
+      var hasScrollTrigger = typeof scrollTriggerInstance !== 'undefined';
 
-    // 1) Animated gradient background: subtle vertical motion loop (reduced on mobile)
-    const isLowPowerDevice = matchMedia('(prefers-reduced-motion: reduce)').matches || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
-    gsap.to("#animated-bg", {
-      backgroundPosition: "0% 80%",
-      duration: isLowPowerDevice ? 24 : 16,
-      ease: "sine.inOut",
-      repeat: -1,
-      yoyo: true
-    });
+      if(hasGsap && hasScrollTrigger){
+        gsapInstance.registerPlugin(scrollTriggerInstance);
+      }
 
-    // 2) Waves movement (infinite, slower on low-power/mobile)
-    gsap.to("#wave1", { x: -160, duration: isLowPowerDevice ? 12 : 8, ease: "sine.inOut", repeat: -1, yoyo: true });
-    gsap.to("#wave2", { x: 120, duration: isLowPowerDevice ? 14 : 10, ease: "sine.inOut", repeat: -1, yoyo: true, delay: 0.5 });
+      var hasMatchMedia = hasWindow && typeof window.matchMedia === 'function';
+      var prefersReduced = hasMatchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false;
+      var lowCores = typeof navigator !== 'undefined' && typeof navigator.hardwareConcurrency === 'number' ? navigator.hardwareConcurrency <= 4 : false;
+      var isLowPowerDevice = prefersReduced || lowCores;
 
-    // 3) Ship bobbing (if image present)
-    const ship = document.getElementById('ship');
-    if(ship){
-      gsap.to(ship, { y: -12, duration:isLowPowerDevice ? 6 : 4.5, ease:'sine.inOut', repeat:-1, yoyo:true });
-    }
+      if(hasGsap){
+        gsapInstance.to("#animated-bg", {
+          backgroundPosition: "0% 80%",
+          duration: isLowPowerDevice ? 24 : 16,
+          ease: "sine.inOut",
+          repeat: -1,
+          yoyo: true
+        });
 
-    // 4) Reveal sections on scroll
-    document.querySelectorAll('.reveal').forEach(el=>{
-      gsap.fromTo(el, { y: 20, opacity:0 }, {
-        y:0, opacity:1, duration:0.9, ease:'power2.out',
-        scrollTrigger: { trigger: el, start: 'top 85%' }
-      });
-    });
+        gsapInstance.to("#wave1", { x: -160, duration: isLowPowerDevice ? 12 : 8, ease: "sine.inOut", repeat: -1, yoyo: true });
+        gsapInstance.to("#wave2", { x: 120, duration: isLowPowerDevice ? 14 : 10, ease: "sine.inOut", repeat: -1, yoyo: true, delay: 0.5 });
 
-    // 5) Counters: inline small and big stats
-    function runCounter(el, end, duration=1.6){
-      const obj = { val: 0 };
-      gsap.to(obj, {
-        val: end,
-        duration: duration,
-        ease: 'power1.out',
-        onUpdate: ()=> {
-          const v = Math.floor(obj.val);
-          el.innerText = v.toLocaleString('en-US');
+        var ship = document.getElementById('ship');
+        if(ship){
+          gsapInstance.to(ship, { y: -12, duration: isLowPowerDevice ? 6 : 4.5, ease:'sine.inOut', repeat:-1, yoyo:true });
         }
-      });
-    }
+      }
 
-    // Observe small hero inline counters
-    document.querySelectorAll('.num-inline').forEach(el=>{
-      const target = parseInt(el.dataset.target || '0',10);
-      ScrollTrigger.create({
-        trigger: el,
-        start: 'top 90%',
-        onEnter: ()=> runCounter(el, target, 1.4)
-      });
-    });
-
-    // Observe big stat cards
-    document.querySelectorAll('.stat-card .num').forEach(el=>{
-      const target = parseInt(el.dataset.target || '0',10);
-      ScrollTrigger.create({
-        trigger: el,
-        start: 'top 90%',
-        onEnter: ()=> runCounter(el, target, 1.6)
-      });
-    });
-
-    // 6) Text color swap based on scroll: white on top, dark on white sections
-    const body = document.body;
-    const heroSection = document.getElementById('hero');
-    const whiteSections = document.querySelectorAll('.section-white');
-
-    // function to set theme based on section in view
-    function updateTextColor(){
-      // if top of viewport within hero -> maintain white text
-      const heroRect = heroSection.getBoundingClientRect();
-      if(heroRect.bottom > 80){
-        // inside hero area: set text-on-dark (white)
-        document.documentElement.style.setProperty('--text-on-dark', '#ffffff');
-        document.documentElement.style.setProperty('--text-on-light', '#1f2937');
+      var revealElements = document.querySelectorAll('.reveal');
+      if(hasGsap && hasScrollTrigger){
+        revealElements.forEach(function(el){
+          gsapInstance.fromTo(el, { y: 20, opacity: 0 }, {
+            y: 0,
+            opacity: 1,
+            duration: 0.9,
+            ease: 'power2.out',
+            scrollTrigger: { trigger: el, start: 'top 85%' }
+          });
+        });
       } else {
-        document.documentElement.style.setProperty('--text-on-dark', '#0f172a');
-        document.documentElement.style.setProperty('--text-on-light', '#0f172a');
-      }
-    }
-    window.addEventListener('scroll', gsap.utils.throttle(updateTextColor, 50));
-    updateTextColor();
-
-    // 7) Smooth anchor scrolling
-    document.querySelectorAll('a[href^="#"]').forEach(a=>{
-      a.addEventListener('click', function(e){
-        const href = this.getAttribute('href');
-        if(href.length>1){
-          e.preventDefault();
-          const target = document.querySelector(href);
-          if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
-        }
-      });
-    });
-
-    // 8) tiny tilt for cards on mousemove (desktop)
-    document.querySelectorAll('.card, .car-card, .stat-card').forEach(card=>{
-      card.addEventListener('mousemove', e=>{
-        const rect = card.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width - 0.5;
-        const y = (e.clientY - rect.top) / rect.height - 0.5;
-        card.style.transform = `perspective(700px) rotateX(${y*6}deg) rotateY(${x*10}deg) translateZ(0)`;
-      });
-      card.addEventListener('mouseleave', ()=>{ card.style.transform=''; });
-    });
-
-    // 9) Mobile menu toggle
-    const menuBtn = document.querySelector('.menu-toggle');
-    const mobileMenu = document.getElementById('mobile-menu');
-    if(menuBtn && mobileMenu){
-      const bodyEl = document.body;
-      const menuItems = Array.from(mobileMenu.querySelectorAll('[role="menuitem"]'));
-      const setMenuItemsTabIndex = (value)=>{
-        menuItems.forEach(item=> item.setAttribute('tabindex', value));
-      };
-      if(menuItems.length){
-        setMenuItemsTabIndex('-1');
+        revealElements.forEach(function(el){
+          el.style.opacity = '1';
+          el.style.transform = 'none';
+        });
       }
 
-      function toggleMenu(willOpen, options={}){
-        const { returnFocus = true } = options;
-        mobileMenu.classList.toggle('open', willOpen);
-        bodyEl.classList.toggle('menu-open', willOpen);
-        menuBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        if(menuItems.length){
-          setMenuItemsTabIndex(willOpen ? '0' : '-1');
+      function runCounter(el, end, duration){
+        if(duration === undefined){
+          duration = 1.6;
         }
-
-        if(willOpen && menuItems.length){
-          requestAnimationFrame(()=>{
-            const firstItem = menuItems[0];
-            if(!firstItem){
-              return;
-            }
-            try {
-              firstItem.focus({ preventScroll: true });
-            } catch (_err) {
-              firstItem.focus();
-            }
-          });
-        } else if(!willOpen && returnFocus){
-          requestAnimationFrame(()=>{
-            try {
-              menuBtn.focus({ preventScroll: true });
-            } catch (_err) {
-              menuBtn.focus();
-            }
-          });
+        var targetValue = Number.isFinite(end) ? end : 0;
+        if(!hasGsap){
+          el.innerText = targetValue.toLocaleString('en-US');
+          return;
         }
-      }
-
-      const closeMenu = (options)=>{
-        if(mobileMenu.classList.contains('open')){
-          toggleMenu(false, options);
-        }
-      };
-
-      const toggleFromButton = ()=>{
-        toggleMenu(!mobileMenu.classList.contains('open'));
-      };
-
-      menuBtn.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        toggleFromButton();
-      });
-
-      menuBtn.addEventListener('keydown', (e)=>{
-        if(e.key === 'Enter' || e.key === ' '){
-          e.preventDefault();
-          toggleFromButton();
-        } else if(e.key === 'Escape'){
-          e.preventDefault();
-          closeMenu();
-        }
-      });
-
-      mobileMenu.addEventListener('click', (e)=>{
-        const targetLink = e.target.closest('[role="menuitem"]');
-        if(targetLink){
-          closeMenu({ returnFocus: false });
-        }
-      });
-
-      document.addEventListener('click', (e)=>{
-        if(!mobileMenu.contains(e.target) && !menuBtn.contains(e.target)){
-          closeMenu();
-        }
-      });
-
-      document.addEventListener('keydown', (e)=>{
-        if(e.key === 'Escape'){
-          if(mobileMenu.classList.contains('open')){
-            e.preventDefault();
+        var obj = { val: 0 };
+        gsapInstance.to(obj, {
+          val: targetValue,
+          duration: duration,
+          ease: 'power1.out',
+          onUpdate: function(){
+            var v = Math.floor(obj.val);
+            el.innerText = v.toLocaleString('en-US');
+          },
+          onComplete: function(){
+            el.innerText = targetValue.toLocaleString('en-US');
           }
-          closeMenu();
+        });
+      }
+
+      if(hasGsap && hasScrollTrigger){
+        document.querySelectorAll('.num-inline').forEach(function(el){
+          var target = parseInt(el.dataset.target || '0', 10);
+          if(!Number.isFinite(target)){
+            target = 0;
+          }
+          scrollTriggerInstance.create({
+            trigger: el,
+            start: 'top 90%',
+            onEnter: function(){ runCounter(el, target, 1.4); }
+          });
+        });
+
+        document.querySelectorAll('.stat-card .num').forEach(function(el){
+          var target = parseInt(el.dataset.target || '0', 10);
+          if(!Number.isFinite(target)){
+            target = 0;
+          }
+          scrollTriggerInstance.create({
+            trigger: el,
+            start: 'top 90%',
+            onEnter: function(){ runCounter(el, target, 1.6); }
+          });
+        });
+      } else {
+        document.querySelectorAll('.num-inline').forEach(function(el){
+          var target = parseInt(el.dataset.target || '0', 10);
+          if(!Number.isFinite(target)){
+            target = 0;
+          }
+          runCounter(el, target, 0);
+        });
+        document.querySelectorAll('.stat-card .num').forEach(function(el){
+          var target = parseInt(el.dataset.target || '0', 10);
+          if(!Number.isFinite(target)){
+            target = 0;
+          }
+          runCounter(el, target, 0);
+        });
+      }
+
+      var heroSection = document.getElementById('hero');
+      function updateTextColor(){
+        if(!heroSection){
+          return;
         }
+        var heroRect = heroSection.getBoundingClientRect();
+        if(heroRect.bottom > 80){
+          document.documentElement.style.setProperty('--text-on-dark', '#ffffff');
+          document.documentElement.style.setProperty('--text-on-light', '#1f2937');
+        } else {
+          document.documentElement.style.setProperty('--text-on-dark', '#0f172a');
+          document.documentElement.style.setProperty('--text-on-light', '#0f172a');
+        }
+      }
+
+      if(hasGsap && gsapInstance.utils && typeof gsapInstance.utils.throttle === 'function'){
+        window.addEventListener('scroll', gsapInstance.utils.throttle(updateTextColor, 50));
+      } else {
+        window.addEventListener('scroll', updateTextColor);
+      }
+      updateTextColor();
+
+      document.querySelectorAll('a[href^="#"]').forEach(function(a){
+        a.addEventListener('click', function(e){
+          var href = this.getAttribute('href');
+          if(href && href.length > 1){
+            var target = document.querySelector(href);
+            if(target){
+              e.preventDefault();
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
+        });
       });
 
-      window.addEventListener('resize', ()=>{
-        if(window.innerWidth >= 900){
-          closeMenu({ returnFocus: false });
-        }
+      document.querySelectorAll('.card, .car-card, .stat-card').forEach(function(card){
+        card.addEventListener('mousemove', function(e){
+          var rect = card.getBoundingClientRect();
+          var x = (e.clientX - rect.left) / rect.width - 0.5;
+          var y = (e.clientY - rect.top) / rect.height - 0.5;
+          card.style.transform = 'perspective(700px) rotateX(' + (y * 6) + 'deg) rotateY(' + (x * 10) + 'deg) translateZ(0)';
+        });
+        card.addEventListener('mouseleave', function(){
+          card.style.transform = '';
+        });
       });
-    }
+
+      var menuBtn = document.querySelector('.menu-toggle');
+      var mobileMenu = document.getElementById('mobile-menu');
+      if(menuBtn && mobileMenu){
+        var bodyEl = document.body;
+        var menuItems = Array.prototype.slice.call(mobileMenu.querySelectorAll('[role="menuitem"]'));
+        var setMenuItemsTabIndex = function(value){
+          menuItems.forEach(function(item){
+            item.setAttribute('tabindex', value);
+          });
+        };
+        if(menuItems.length){
+          setMenuItemsTabIndex('-1');
+        }
+
+        var toggleMenu = function(willOpen, options){
+          var opts = options || {};
+          var returnFocus = opts.returnFocus !== false;
+          mobileMenu.classList.toggle('open', willOpen);
+          bodyEl.classList.toggle('menu-open', willOpen);
+          menuBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+          if(menuItems.length){
+            setMenuItemsTabIndex(willOpen ? '0' : '-1');
+          }
+
+          if(willOpen && menuItems.length){
+            requestAnimationFrame(function(){
+              var firstItem = menuItems[0];
+              if(!firstItem){
+                return;
+              }
+              try {
+                firstItem.focus({ preventScroll: true });
+              } catch (_err) {
+                firstItem.focus();
+              }
+            });
+          } else if(!willOpen && returnFocus){
+            requestAnimationFrame(function(){
+              try {
+                menuBtn.focus({ preventScroll: true });
+              } catch (_err) {
+                menuBtn.focus();
+              }
+            });
+          }
+        };
+
+        var closeMenu = function(options){
+          if(mobileMenu.classList.contains('open')){
+            toggleMenu(false, options);
+          }
+        };
+
+        var toggleFromButton = function(){
+          toggleMenu(!mobileMenu.classList.contains('open'));
+        };
+
+        menuBtn.addEventListener('click', function(e){
+          e.stopPropagation();
+          toggleFromButton();
+        });
+
+        menuBtn.addEventListener('keydown', function(e){
+          if(e.key === 'Enter' || e.key === ' '){
+            e.preventDefault();
+            toggleFromButton();
+          } else if(e.key === 'Escape'){
+            e.preventDefault();
+            closeMenu();
+          }
+        });
+
+        mobileMenu.addEventListener('click', function(e){
+          var targetLink = e.target.closest('[role="menuitem"]');
+          if(targetLink){
+            closeMenu({ returnFocus: false });
+          }
+        });
+
+        document.addEventListener('click', function(e){
+          if(!mobileMenu.contains(e.target) && !menuBtn.contains(e.target)){
+            closeMenu();
+          }
+        });
+
+        document.addEventListener('keydown', function(e){
+          if(e.key === 'Escape'){
+            if(mobileMenu.classList.contains('open')){
+              e.preventDefault();
+            }
+            closeMenu();
+          }
+        });
+
+        window.addEventListener('resize', function(){
+          if(window.innerWidth >= 900){
+            closeMenu({ returnFocus: false });
+          }
+        });
+      }
+    })();
 
   </script>
 </body>
