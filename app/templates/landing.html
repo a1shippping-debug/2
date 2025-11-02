@@ -37,6 +37,9 @@
       overflow-x:hidden;
       background:var(--page-white);
     }
+    body.menu-open{
+      overflow:hidden;
+    }
 
     /* Animated gradient layer (full-screen) */
     #animated-bg{
@@ -63,7 +66,7 @@
     img{max-width:100%;height:auto}
 
     /* NAV */
-    header { position:sticky; top:12px; z-index:60; display:flex; justify-content:center; pointer-events:none; }
+    header { position:sticky; top:12px; z-index:60; display:flex; justify-content:center; }
     nav{ pointer-events:auto; width:100%; max-width:1180px; display:flex; align-items:center; justify-content:space-between;
       background: rgba(255,255,255,0.03); border-radius:18px; padding:10px 18px; box-shadow: 0 8px 30px rgba(2,6,23,0.55);
       border:1px solid rgba(255,255,255,0.04); backdrop-filter: blur(6px);
@@ -597,36 +600,97 @@
     const menuBtn = document.querySelector('.menu-toggle');
     const mobileMenu = document.getElementById('mobile-menu');
     if(menuBtn && mobileMenu){
-      const firstItem = mobileMenu.querySelector('[role="menuitem"]');
-      function toggleMenu(willOpen){
+      const bodyEl = document.body;
+      const menuItems = Array.from(mobileMenu.querySelectorAll('[role="menuitem"]'));
+      const setMenuItemsTabIndex = (value)=>{
+        menuItems.forEach(item=> item.setAttribute('tabindex', value));
+      };
+      if(menuItems.length){
+        setMenuItemsTabIndex('-1');
+      }
+
+      function toggleMenu(willOpen, options={}){
+        const { returnFocus = true } = options;
         mobileMenu.classList.toggle('open', willOpen);
+        bodyEl.classList.toggle('menu-open', willOpen);
         menuBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        if(willOpen && firstItem){
-          // Delay focus until menu is visible
-          setTimeout(()=> firstItem.focus(), 50);
-        } else {
-          menuBtn.focus();
+        if(menuItems.length){
+          setMenuItemsTabIndex(willOpen ? '0' : '-1');
+        }
+
+        if(willOpen && menuItems.length){
+          requestAnimationFrame(()=>{
+            const firstItem = menuItems[0];
+            if(!firstItem){
+              return;
+            }
+            try {
+              firstItem.focus({ preventScroll: true });
+            } catch (_err) {
+              firstItem.focus();
+            }
+          });
+        } else if(!willOpen && returnFocus){
+          requestAnimationFrame(()=>{
+            try {
+              menuBtn.focus({ preventScroll: true });
+            } catch (_err) {
+              menuBtn.focus();
+            }
+          });
         }
       }
+
+      const closeMenu = (options)=>{
+        if(mobileMenu.classList.contains('open')){
+          toggleMenu(false, options);
+        }
+      };
+
+      const toggleFromButton = ()=>{
+        toggleMenu(!mobileMenu.classList.contains('open'));
+      };
+
       menuBtn.addEventListener('click', (e)=>{
         e.stopPropagation();
-        const willOpen = !mobileMenu.classList.contains('open');
-        toggleMenu(willOpen);
+        toggleFromButton();
       });
-      // Close on outside click
-      document.addEventListener('click', (e)=>{
-        if(mobileMenu.classList.contains('open')){
-          const target = e.target;
-          if(!mobileMenu.contains(target) && !menuBtn.contains(target)){
-            toggleMenu(false);
-          }
+
+      menuBtn.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          toggleFromButton();
+        } else if(e.key === 'Escape'){
+          e.preventDefault();
+          closeMenu();
         }
       });
-      // Close on Escape
+
+      mobileMenu.addEventListener('click', (e)=>{
+        const targetLink = e.target.closest('[role="menuitem"]');
+        if(targetLink){
+          closeMenu({ returnFocus: false });
+        }
+      });
+
+      document.addEventListener('click', (e)=>{
+        if(!mobileMenu.contains(e.target) && !menuBtn.contains(e.target)){
+          closeMenu();
+        }
+      });
+
       document.addEventListener('keydown', (e)=>{
-        if(e.key === 'Escape' && mobileMenu.classList.contains('open')){
-          e.preventDefault();
-          toggleMenu(false);
+        if(e.key === 'Escape'){
+          if(mobileMenu.classList.contains('open')){
+            e.preventDefault();
+          }
+          closeMenu();
+        }
+      });
+
+      window.addEventListener('resize', ()=>{
+        if(window.innerWidth >= 900){
+          closeMenu({ returnFocus: false });
         }
       });
     }
