@@ -1,24 +1,122 @@
 {% extends "base_admin.html" %}
 {% block title %}{{ _('Edit User') if user else _('New User') }}{% endblock %}
 {% block header %}{{ _('Edit User') if user else _('New User') }}{% endblock %}
+
 {% block content %}
-<form method="post" class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 max-w-2xl">
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<style>
+  /* Form container */
+  .user-form {
+    background-color: #1e293b; /* slate-900 */
+    border: 1px solid #334155; /* slate-800 */
+    border-radius: 16px;
+    padding: 30px;
+    max-width: 600px;
+    margin: 0 auto;
+    color: #f1f5f9; /* slate-100 */
+  }
+
+  /* Grid layout for inputs */
+  .user-form .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  @media (min-width: 768px) {
+    .user-form .grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* Labels */
+  .user-form label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: #cbd5e1; /* slate-300 */
+  }
+  .user-form span.optional {
+    color: #94a3b8; /* slate-400 */
+    font-size: 12px;
+    margin-left: 4px;
+  }
+
+  /* Inputs & Select */
+  .user-form input,
+  .user-form select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #475569; /* slate-600 */
+    border-radius: 8px;
+    background-color: #1e293b; /* slate-900 */
+    color: #f1f5f9;
+    font-size: 14px;
+  }
+  .user-form input:focus,
+  .user-form select:focus {
+    outline: none;
+    border-color: #2563eb; /* blue-600 */
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
+  }
+
+  /* Checkbox */
+  .user-form .checkbox {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .user-form .checkbox input {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Buttons */
+  .user-form .actions {
+    margin-top: 30px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .user-form button {
+    padding: 10px 20px;
+    background-color: #2563eb; /* blue-600 */
+    color: #fff;
+    font-size: 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .user-form button:hover {
+    background-color: #1d4ed8; /* blue-700 */
+  }
+  .user-form .cancel {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 14px;
+  }
+  .user-form .cancel:hover {
+    text-decoration: underline;
+  }
+</style>
+
+<form method="post" class="user-form">
+  <div class="grid">
     <div>
-      <label class="block text-sm text-slate-300">{{ _('Name') }}</label>
-      <input name="name" value="{{ form.name or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" required>
+      <label>{{ _('Name') }}</label>
+      <input name="name" value="{{ form.name or '' }}" required>
     </div>
     <div>
-      <label class="block text-sm text-slate-300">{{ _('Email') }}</label>
-      <input type="email" name="email" value="{{ form.email or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2" required>
+      <label>{{ _('Email') }}</label>
+      <input type="email" name="email" value="{{ form.email or '' }}" required>
     </div>
     <div>
-      <label class="block text-sm text-slate-300">{{ _('Phone') }}</label>
-      <input name="phone" value="{{ form.phone or '' }}" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
+      <label>{{ _('Phone') }}</label>
+      <input name="phone" value="{{ form.phone or '' }}">
     </div>
     <div>
-      <label class="block text-sm text-slate-300">{{ _('Role') }}</label>
-      <select name="role_id" class="w-full bg-slate-900 border border-slate-700 rounded p-2" required>
+      <label>{{ _('Role') }}</label>
+      <select name="role_id" required>
         <option value="">-- {{ _('Select Role') }} --</option>
         {% for r in roles %}
           <option value="{{ r.id }}" {% if form.role_id == r.id|string %}selected{% endif %}>{{ r.name }}</option>
@@ -26,18 +124,18 @@
       </select>
     </div>
     <div class="md:col-span-2">
-      <label class="block text-sm text-slate-300">{{ _('Password') }} {% if user %}<span class="text-slate-400">({{ _('leave blank to keep') }})</span>{% endif %}</label>
-      <input type="password" name="password" class="w-full bg-slate-900 border border-slate-700 rounded p-2" {% if not user %}required{% endif %}>
+      <label>{{ _('Password') }} {% if user %}<span class="optional">({{ _('leave blank to keep') }})</span>{% endif %}</label>
+      <input type="password" name="password" {% if not user %}required{% endif %}>
     </div>
-    <div class="flex items-center mt-2">
-      <input type="checkbox" name="active" {% if form.active %}checked{% endif %} class="mr-2">
-      <span class="text-sm text-slate-300">{{ _('Active') }}</span>
+    <div class="checkbox md:col-span-2">
+      <input type="checkbox" name="active" {% if form.active %}checked{% endif %}>
+      <span>{{ _('Active') }}</span>
     </div>
   </div>
 
-  <div class="mt-6 flex items-center gap-3">
-    <button class="px-4 py-2 bg-primary text-white rounded" type="submit">{{ _('Save') if user else _('Create') }}</button>
-    <a href="{{ url_for('admin.users_list') }}" class="text-slate-300">{{ _('Cancel') }}</a>
+  <div class="actions">
+    <button type="submit">{{ _('Save') if user else _('Create') }}</button>
+    <a href="{{ url_for('admin.users_list') }}" class="cancel">{{ _('Cancel') }}</a>
   </div>
 </form>
 {% endblock %}
