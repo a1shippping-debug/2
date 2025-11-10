@@ -1,66 +1,148 @@
-<nav class="fixed top-0 inset-x-0 z-50 bg-gradient-to-b from-[#0B1E3F] to-[#123055] text-white shadow-md">
-  <div class="max-w-7xl mx-auto px-4">
-    <div class="h-16 flex items-center justify-between px-2" 
-         x-data="{ open:false, m:false }"
-         x-effect="document.body.style.overflow = open ? 'hidden' : ''"
-         @click.outside="open=false"
-         @keydown.escape.window="open=false">
+<header class="main-header is-rtl" id="site-header">
+  <div class="main-header__inner">
 
-      <!-- Logo -->
-      <a href="/" class="flex items-center gap-2 font-heading font-extrabold text-lg tracking-tight hover:opacity-90 transition">
-        <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo" class="h-8 w-8 rounded-full object-cover">
-        <span>A1 Shipping</span>
-      </a>
+    <!-- ✅ Logo -->
+    <div class="main-header__left">
+      <div class="main-header__logo">
+        <a href="/">
+          <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="A1 Shipping Logo">
+          <span>A1 SHIPPING</span>
+        </a>
+      </div>
+    </div>
 
-      <!-- Desktop Menu -->
-      <div class="hidden md:flex items-center gap-6 text-sm">
-        <a href="/ops/cars" class="hover:text-[#FFB838]">السيارات</a>
-        <a href="/ops/customers" class="hover:text-[#FFB838]">العملاء</a>
-        <a href="/acct/bol" class="hover:text-[#FFB838]">المستندات</a>
-        <a href="/ops/sale-listings" class="hover:text-[#FFB838]">طلبات البيع</a>
-        <a href="/admin/dashboard" class="hover:text-[#FFB838]">لوحة التحكم</a>
+    <!-- ✅ Navigation -->
+    <nav class="main-header__nav" aria-label="Main navigation">
+      <ul class="main-header__nav-list">
+        <li><a href="/ops/cars" class="main-header__link">السيارات</a></li>
+        <li><a href="/ops/customers" class="main-header__link">العملاء</a></li>
+        <li><a href="/acct/bol" class="main-header__link">المستندات</a></li>
+        <li><a href="/ops/sale-listings" class="main-header__link">طلبات البيع</a></li>
+        <li><a href="/admin/dashboard" class="main-header__link">لوحة التحكم</a></li>
+      </ul>
+    </nav>
 
-        <!-- VIN Search -->
-        <form id="vehicle-search-form" class="relative hidden lg:block">
-          <input id="vehicle-search-input" type="search" inputmode="latin" dir="ltr" placeholder="VIN"
-                 class="w-52 rounded-full bg-white/10 placeholder-white/70 focus:bg-white/20 focus:ring-2 focus:ring-[#FFB838] px-3 py-1.5 text-sm outline-none transition">
-          <button class="absolute right-3 top-2 text-white/80" type="submit">
+    <!-- ✅ Actions -->
+    <div class="main-header__actions">
+
+      <!-- Search -->
+      <div class="main-header__search">
+        <form id="vehicle-search-form">
+          <input type="text" class="main-header__input" id="vehicle-search-input" placeholder="رقم VIN">
+          <button type="submit" class="main-header__search-btn">
             <i class="fa-solid fa-magnifying-glass"></i>
           </button>
         </form>
+      </div>
 
-        <!-- User -->
-        <div class="relative" x-data="{m:false}">
-          <button @click="m=!m" class="flex items-center gap-2 hover:text-[#FFB838]">
-            <i class="fa-regular fa-user text-lg"></i>
-            <span class="hidden lg:inline text-sm">Admin</span>
-          </button>
-          <div x-show="m" @click.outside="m=false" x-transition
-               class="absolute right-0 mt-2 w-48 bg-white text-neutral-800 rounded-md shadow-lg py-2 text-sm z-50">
-            <div class="px-3 py-2 text-gray-600">مرحباً، Admin</div>
-            <a href="/auth/logout" class="block px-3 py-2 hover:bg-gray-100 text-red-600">خروج</a>
-          </div>
+      <!-- Languages -->
+      <div class="main-header__languages">
+        <a href="?lang=ar" class="is-active">العربية</a>
+        <a href="?lang=en">EN</a>
+      </div>
+
+      <!-- User -->
+      <div class="main-header__user">
+        <button class="main-header__user-btn" id="userMenuBtn">
+          <i class="fa-regular fa-user"></i>
+          <span>Admin</span>
+        </button>
+        <div class="main-header__user-menu" id="userMenu">
+          <div class="main-header__user-name">مرحباً، Admin</div>
+          <a href="/auth/logout">خروج</a>
         </div>
       </div>
 
-      <!-- Mobile Menu Button -->
-      <button class="md:hidden p-2 rounded hover:bg-white/10 focus:ring-2 focus:ring-white/40 transition"
-              @click="open=!open"
-              :aria-expanded="open ? 'true' : 'false'"
-              aria-controls="mobile-menu">
-        <i class="fa-solid fa-bars text-xl"></i>
-      </button>
+      <!-- CTA -->
+      <a href="#contact" class="main-header__cta">
+        تواصل معنا <span>جديد</span>
+      </a>
     </div>
 
-    <!-- Mobile Menu -->
-    <div id="mobile-menu" x-show="open" x-transition
-         class="md:hidden bg-[#0B1E3F] text-white border-t border-white/10 rounded-b-md py-3 px-4 space-y-2 text-sm">
-      <a href="/ops/cars" class="block hover:text-[#FFB838]">السيارات</a>
-      <a href="/ops/customers" class="block hover:text-[#FFB838]">العملاء</a>
-      <a href="/acct/bol" class="block hover:text-[#FFB838]">المستندات</a>
-      <a href="/ops/sale-listings" class="block hover:text-[#FFB838]">طلبات البيع</a>
-      <a href="/admin/dashboard" class="block hover:text-[#FFB838]">لوحة التحكم</a>
-      <a href="/auth/logout" class="block text-red-400 font-semibold hover:text-red-300 mt-3">خروج</a>
+    <!-- ✅ Mobile Toggle -->
+    <button class="main-header__toggle" id="mobileToggle" aria-expanded="false" aria-controls="mobileMenu">
+      <i class="fa-solid fa-bars"></i>
+      <span class="sr-only">فتح القائمة</span>
+    </button>
+
+    <!-- ✅ Mobile Menu -->
+    <div class="main-header__mobile" id="mobileMenu">
+      <div class="main-header__mobile-search">
+        <input type="text" placeholder="رقم VIN">
+        <button type="button"><i class="fa-solid fa-magnifying-glass"></i></button>
+      </div>
+
+      <nav class="main-header__mobile-nav" role="menu">
+        <a href="/ops/cars" role="menuitem">السيارات</a>
+        <a href="/ops/customers" role="menuitem">العملاء</a>
+        <a href="/acct/bol" role="menuitem">المستندات</a>
+        <a href="/ops/sale-listings" role="menuitem">طلبات البيع</a>
+        <a href="/admin/dashboard" role="menuitem">لوحة التحكم</a>
+      </nav>
+
+      <div class="main-header__mobile-meta">
+        <div class="main-header__mobile-account">
+          <a href="/auth/logout">خروج</a>
+        </div>
+
+        <div class="main-header__languages">
+          <a href="?lang=ar" class="is-active">العربية</a>
+          <a href="?lang=en">EN</a>
+        </div>
+
+        <a href="#contact" class="main-header__mobile-cta">تواصل معنا</a>
+      </div>
     </div>
   </div>
-</nav>
+</header>
+
+<!-- ✅ Overlay -->
+<div class="main-header__overlay" id="menuOverlay"></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const body = document.body;
+  const header = document.getElementById("site-header");
+  const toggle = document.getElementById("mobileToggle");
+  const menu = document.getElementById("mobileMenu");
+  const overlay = document.getElementById("menuOverlay");
+  const userBtn = document.getElementById("userMenuBtn");
+  const userMenu = document.getElementById("userMenu");
+
+  // Mobile toggle
+  toggle.addEventListener("click", () => {
+    const isOpen = header.classList.toggle("main-header--open");
+    toggle.setAttribute("aria-expanded", isOpen);
+    body.classList.toggle("menu-open", isOpen);
+  });
+
+  // Overlay click closes menu
+  overlay.addEventListener("click", () => {
+    header.classList.remove("main-header--open");
+    body.classList.remove("menu-open");
+  });
+
+  // User dropdown
+  userBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    userMenu.classList.toggle("open");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!userMenu.contains(e.target) && !userBtn.contains(e.target)) {
+      userMenu.classList.remove("open");
+    }
+  });
+
+  // VIN Search redirect
+  const searchForm = document.getElementById("vehicle-search-form");
+  const searchInput = document.getElementById("vehicle-search-input");
+  if (searchForm) {
+    searchForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const vin = searchInput.value.trim();
+      if (vin) window.location.href = "/tracking/" + encodeURIComponent(vin);
+    });
+  }
+});
+</script>
