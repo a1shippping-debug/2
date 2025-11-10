@@ -2,120 +2,97 @@
 {% set is_rtl = (lang == 'ar') %}
 {% set role_name = (current_user.role.name|lower) if (current_user.is_authenticated and current_user.role) else '' %}
 
-<nav class="bg-primary text-white fixed top-0 inset-x-0 z-50 shadow-md">
+<nav class="fixed top-0 inset-x-0 z-50 bg-[#0B1E3F]/95 backdrop-blur-md text-white shadow transition-all duration-300"
+     x-data="{ open:false, scrolled:false }"
+     x-init="window.addEventListener('scroll',()=>{scrolled=window.scrollY>50})"
+     :class="scrolled ? 'shadow-lg bg-[#0B1E3F]' : 'shadow-sm bg-[#0B1E3F]/95'">
+
   <div class="max-w-7xl mx-auto px-4">
-    <div class="h-16 relative flex items-center justify-between {% if is_rtl %}flex-row-reverse{% endif %}"
-         x-data="{ open:false }"
+    <div class="h-16 flex items-center justify-between {% if is_rtl %}flex-row-reverse{% endif %}"
          x-effect="document.body.style.overflow = open ? 'hidden' : ''"
-         @click.outside="open=false"
-         @keydown.escape.window="open=false">
+         @click.outside="open=false" @keydown.escape.window="open=false">
+
       <!-- Logo -->
-      <a href="/" class="flex items-center gap-2 font-heading font-extrabold text-xl tracking-tight">
-        <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo" class="h-8 w-8 rounded"/>
-        <span>A1 Shipping</span>
+      <a href="/" class="flex items-center gap-2 font-heading font-extrabold text-lg tracking-tight hover:opacity-90 transition">
+        <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo" class="h-8 w-8 rounded-full object-cover"/>
+        <span class="text-white">A1 Shipping</span>
       </a>
 
-      <!-- Desktop Nav -->
+      <!-- Desktop Menu -->
       <div class="hidden md:flex items-center gap-6">
         {% if current_user.is_authenticated and role_name in ['admin','employee'] %}
-          <a href="{{ url_for('ops.cars_list') }}" class="hover:text-accent">{{ _('السيارات') }}</a>
-          <a href="{{ url_for('ops.customers_list') }}" class="hover:text-accent">{{ _('العملاء') }}</a>
-          <a href="{{ url_for('acct.bol_list') }}" class="hover:text-accent">{{ _('المستندات') }}</a>
-          <a href="{{ url_for('ops.sale_listings_list') }}" class="hover:text-accent">{{ _('طلبات البيع') }}</a>
-          <a href="{{ url_for('ops.dashboard') if role_name=='employee' else url_for('admin.dashboard') }}" class="hover:text-accent">{{ _('لوحة التحكم') }}</a>
+          <a href="{{ url_for('ops.cars_list') }}" class="hover:text-[#FFB838]">{{ _('السيارات') }}</a>
+          <a href="{{ url_for('ops.customers_list') }}" class="hover:text-[#FFB838]">{{ _('العملاء') }}</a>
+          <a href="{{ url_for('acct.bol_list') }}" class="hover:text-[#FFB838]">{{ _('المستندات') }}</a>
+          <a href="{{ url_for('ops.sale_listings_list') }}" class="hover:text-[#FFB838]">{{ _('طلبات البيع') }}</a>
+          <a href="{{ url_for('ops.dashboard') if role_name=='employee' else url_for('admin.dashboard') }}" class="hover:text-[#FFB838]">{{ _('لوحة التحكم') }}</a>
         {% elif current_user.is_authenticated and role_name == 'customer' %}
-          <a href="{{ url_for('cust.my_cars') }}" class="hover:text-accent">{{ _('سياراتي') }}</a>
-          <a href="{{ url_for('cust.invoices_list') }}" class="hover:text-accent">{{ _('فواتيري') }}</a>
-          <a href="{{ url_for('cust.dashboard') }}" class="hover:text-accent">{{ _('لوحة التحكم') }}</a>
+          <a href="{{ url_for('cust.my_cars') }}" class="hover:text-[#FFB838]">{{ _('سياراتي') }}</a>
+          <a href="{{ url_for('cust.invoices_list') }}" class="hover:text-[#FFB838]">{{ _('فواتيري') }}</a>
+          <a href="{{ url_for('cust.dashboard') }}" class="hover:text-[#FFB838]">{{ _('لوحة التحكم') }}</a>
         {% else %}
-          <a href="/" class="hover:text-accent">{{ _('الرئيسية') }}</a>
-          <a href="{{ url_for('about_page') }}" class="hover:text-accent">{{ _('من نحن') }}</a>
-          <a href="{{ url_for('services_page') }}" class="hover:text-accent">{{ _('خدماتنا') }}</a>
-          <a href="{{ url_for('contact_page') }}" class="hover:text-accent">{{ _('تواصل معنا') }}</a>
-          <a href="{{ url_for('auth.login') }}" class="hover:text-accent">{{ _('تسجيل الدخول') }}</a>
+          <a href="/" class="hover:text-[#FFB838]">{{ _('الرئيسية') }}</a>
+          <a href="{{ url_for('about_page') }}" class="hover:text-[#FFB838]">{{ _('من نحن') }}</a>
+          <a href="{{ url_for('services_page') }}" class="hover:text-[#FFB838]">{{ _('خدماتنا') }}</a>
+          <a href="{{ url_for('contact_page') }}" class="hover:text-[#FFB838]">{{ _('تواصل معنا') }}</a>
         {% endif %}
 
-        <!-- Search -->
-        <form id="vehicle-search-form" class="relative">
-          <input id="vehicle-search-input" type="search" inputmode="latin" dir="ltr" placeholder="VIN" aria-label="VIN"
-                 class="w-44 lg:w-56 rounded-md bg-white/10 placeholder-white/60 focus:bg-white/20 px-3 py-1.5 text-sm outline-none"/>
-          <button class="absolute {{ 'left-2' if is_rtl else 'right-2' }} top-1.5 text-white/80" type="submit">
+        <!-- VIN Search -->
+        <form id="vehicle-search-form" class="relative hidden lg:block">
+          <input id="vehicle-search-input" type="search" inputmode="latin" dir="ltr" placeholder="VIN"
+                 class="w-52 rounded-full bg-white/10 placeholder-white/70 focus:bg-white/20 focus:ring-2 focus:ring-[#FFB838] px-3 py-1.5 text-sm outline-none transition"/>
+          <button class="absolute {{ 'left-3' if is_rtl else 'right-3' }} top-2 text-white/80" type="submit">
             <i class="fa-solid fa-magnifying-glass"></i>
           </button>
         </form>
 
-        <!-- Icons -->
+        <!-- User / Auth -->
         {% if current_user.is_authenticated %}
-          <a href="{{ url_for('ops.dashboard') if role_name in ['admin','employee'] else url_for('cust.dashboard') }}" class="hover:text-accent">
-            <i class="fa-regular fa-bell text-lg"></i>
-          </a>
-          <div class="relative" x-data="{ m:false }">
-            <button @click="m=!m" class="flex items-center gap-2 hover:text-accent">
+          <div class="relative" x-data="{m:false}">
+            <button @click="m=!m" class="flex items-center gap-2 hover:text-[#FFB838]">
               <i class="fa-regular fa-user text-lg"></i>
               <span class="hidden lg:inline text-sm">{{ current_user.name or current_user.email }}</span>
             </button>
-            <div x-show="m" @click.outside="m=false" class="absolute {{ 'left-0' if is_rtl else 'right-0' }} mt-2 w-48 bg-white text-neutral rounded-md shadow-lg py-2 text-sm">
-              <div class="px-3 py-2 text-muted">{{ _('مرحبا،') }} {{ current_user.name or current_user.email }}</div>
-              <a href="{{ url_for('auth.logout') }}" class="block px-3 py-2 hover:bg-background text-red-600">{{ _('خروج') }}</a>
+            <div x-show="m" @click.outside="m=false" x-transition
+                 class="absolute {{ 'left-0' if is_rtl else 'right-0' }} mt-2 w-48 bg-white text-neutral-800 rounded-md shadow-lg py-2 text-sm z-50">
+              <div class="px-3 py-2 text-gray-600">{{ _('مرحبا،') }} {{ current_user.name or current_user.email }}</div>
+              <a href="{{ url_for('auth.logout') }}" class="block px-3 py-2 hover:bg-gray-100 text-red-600">{{ _('خروج') }}</a>
             </div>
           </div>
         {% else %}
-          <a href="{{ url_for('auth.login') }}" class="px-3 py-1.5 rounded-md bg-accent text-neutral font-medium hover:opacity-90">{{ _('دخول') }}</a>
+          <a href="{{ url_for('auth.login') }}" class="px-4 py-1.5 rounded-full bg-[#FFB838] text-black font-medium hover:opacity-90 transition">{{ _('دخول') }}</a>
         {% endif %}
-
-        <!-- Lang Switch -->
-        <div class="flex items-center gap-2">
-          <a href="{{ request.path }}?lang=en" class="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-xs">EN</a>
-          <a href="{{ request.path }}?lang=ar" class="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-xs">العربية</a>
-        </div>
       </div>
 
-      <!-- Mobile -->
-      <button class="md:hidden p-2 rounded hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40"
-              @click="open=!open"
-              :aria-expanded="open ? 'true' : 'false'" aria-controls="mobile-menu" aria-label="القائمة">
+      <!-- Mobile Button -->
+      <button class="md:hidden p-2 rounded hover:bg-white/10 focus:ring-2 focus:ring-white/40 transition"
+              @click="open=!open" :aria-expanded="open ? 'true' : 'false'" aria-controls="mobile-menu">
         <i class="fa-solid fa-bars text-xl"></i>
       </button>
-      <!-- Overlay -->
-      <div id="mobile-menu-overlay" class="fixed inset-0 bg-black/30 md:hidden z-40" x-show="open" x-cloak x-transition.opacity @click="open=false"></div>
+    </div>
+  </div>
 
-      <div id="mobile-menu" class="md:hidden absolute {{ 'left-4' if is_rtl else 'right-4' }} top-full mt-2 w-60 bg-white text-neutral rounded-md shadow-lg py-2 z-50 max-h-[70vh] overflow-auto"
-           x-show="open" x-cloak x-transition
-           @click="if($event.target.tagName==='A' || $event.target.closest('a')){ open=false }">
-        <div class="px-4 py-2 font-semibold text-primary">A1 Shipping</div>
-        <div class="px-3 py-2 border-t">
-          <form id="vehicle-search-form-mobile" class="flex items-center gap-2">
-            <input id="vehicle-search-input-mobile" type="search" inputmode="latin" dir="ltr" placeholder="VIN" class="flex-1 border rounded px-2 py-1.5 text-sm"/>
-            <button class="px-2 py-1.5 bg-primary text-white rounded" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
-          </form>
-        </div>
-        <div class="py-1 text-sm">
-          {% if current_user.is_authenticated and role_name in ['admin','employee'] %}
-            <a href="{{ url_for('ops.cars_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('السيارات') }}</a>
-            <a href="{{ url_for('ops.customers_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('العملاء') }}</a>
-            <a href="{{ url_for('acct.bol_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('المستندات') }}</a>
-            <a href="{{ url_for('ops.sale_listings_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('طلبات البيع') }}</a>
-            <a href="{{ url_for('ops.dashboard') if role_name=='employee' else url_for('admin.dashboard') }}" class="block px-4 py-2 hover:bg-background">{{ _('لوحة التحكم') }}</a>
-          {% elif current_user.is_authenticated and role_name == 'customer' %}
-            <a href="{{ url_for('cust.my_cars') }}" class="block px-4 py-2 hover:bg-background">{{ _('سياراتي') }}</a>
-            <a href="{{ url_for('cust.invoices_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('فواتيري') }}</a>
-            <a href="{{ url_for('cust.dashboard') }}" class="block px-4 py-2 hover:bg-background">{{ _('لوحة التحكم') }}</a>
-          {% else %}
-            <a href="/" class="block px-4 py-2 hover:bg-background">{{ _('الرئيسية') }}</a>
-            <a href="{{ url_for('about_page') }}" class="block px-4 py-2 hover:bg-background">{{ _('من نحن') }}</a>
-            <a href="{{ url_for('services_page') }}" class="block px-4 py-2 hover:bg-background">{{ _('خدماتنا') }}</a>
-            <a href="{{ url_for('contact_page') }}" class="block px-4 py-2 hover:bg-background">{{ _('تواصل معنا') }}</a>
-            <a href="{{ url_for('auth.login') }}" class="block px-4 py-2 hover:bg-background">{{ _('تسجيل الدخول') }}</a>
-          {% endif %}
-          {% if current_user.is_authenticated %}
-            <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-red-600 hover:bg-background">{{ _('خروج') }}</a>
-          {% endif %}
-          <div class="flex items-center gap-2 px-4 py-2">
-            <a href="{{ request.path }}?lang=en" class="px-2 py-1 rounded bg-background">EN</a>
-            <a href="{{ request.path }}?lang=ar" class="px-2 py-1 rounded bg-background">العربية</a>
-          </div>
-        </div>
-      </div>
+  <!-- Mobile Menu -->
+  <div x-show="open" x-cloak x-transition
+       class="md:hidden fixed top-16 inset-x-0 bg-white text-neutral-800 z-40 shadow-lg rounded-b-lg overflow-hidden">
+    <div class="px-5 py-4 border-b font-semibold text-[#0B1E3F]">A1 Shipping</div>
+
+    <div class="p-3 space-y-2 text-sm">
+      {% if not current_user.is_authenticated %}
+        <a href="/" class="block px-3 py-2 hover:bg-gray-100 rounded">{{ _('الرئيسية') }}</a>
+        <a href="{{ url_for('about_page') }}" class="block px-3 py-2 hover:bg-gray-100 rounded">{{ _('من نحن') }}</a>
+        <a href="{{ url_for('services_page') }}" class="block px-3 py-2 hover:bg-gray-100 rounded">{{ _('خدماتنا') }}</a>
+        <a href="{{ url_for('contact_page') }}" class="block px-3 py-2 hover:bg-gray-100 rounded">{{ _('تواصل معنا') }}</a>
+      {% else %}
+        <a href="{{ url_for('ops.dashboard') if role_name in ['admin','employee'] else url_for('cust.dashboard') }}"
+           class="block px-3 py-2 hover:bg-gray-100 rounded">{{ _('لوحة التحكم') }}</a>
+        <a href="{{ url_for('auth.logout') }}" class="block px-3 py-2 text-red-600 hover:bg-gray-100 rounded">{{ _('خروج') }}</a>
+      {% endif %}
+    </div>
+
+    <div class="p-3 border-t flex justify-between text-xs">
+      <a href="{{ request.path }}?lang=en" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">EN</a>
+      <a href="{{ request.path }}?lang=ar" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">العربية</a>
     </div>
   </div>
 </nav>
@@ -123,68 +100,12 @@
 <script>
   (function(){
     function bindForm(formId, inputId){
-      const f = document.getElementById(formId); const inp = document.getElementById(inputId);
-      if(!f||!inp) return; f.addEventListener('submit', function(e){ e.preventDefault();
-        const vin = (inp.value||'').trim(); if(!vin) return; window.location.href = '/tracking/' + encodeURIComponent(vin);
+      const f=document.getElementById(formId),inp=document.getElementById(inputId);
+      if(!f||!inp)return;f.addEventListener('submit',e=>{
+        e.preventDefault();const vin=(inp.value||'').trim();if(!vin)return;
+        window.location.href='/tracking/'+encodeURIComponent(vin);
       });
     }
     bindForm('vehicle-search-form','vehicle-search-input');
-    bindForm('vehicle-search-form-mobile','vehicle-search-input-mobile');
   })();
-
-  // Fallback: enable mobile menu toggle if Alpine isn't available/initialized
-  document.addEventListener('DOMContentLoaded', function(){
-    try {
-      var toggleBtn = document.querySelector('button[aria-controls="mobile-menu"]');
-      var mobileMenu = document.getElementById('mobile-menu');
-      var overlay = document.getElementById('mobile-menu-overlay');
-      if (!toggleBtn || !mobileMenu) return;
-      // If Alpine loaded and initialized, it removes x-cloak; skip fallback then
-      var alpineReady = !!window.Alpine && !mobileMenu.hasAttribute('x-cloak');
-      if (alpineReady) return;
-
-      var isOpen = false;
-      function setOpen(next){
-        isOpen = !!next;
-        toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        if (isOpen) {
-          mobileMenu.style.display = 'block';
-          mobileMenu.removeAttribute('x-cloak');
-          if (overlay) { overlay.style.display = 'block'; overlay.removeAttribute('x-cloak'); }
-          document.body.style.overflow = 'hidden';
-        } else {
-          mobileMenu.style.display = 'none';
-          if (overlay) overlay.style.display = 'none';
-          document.body.style.overflow = '';
-        }
-      }
-      setOpen(false);
-
-      toggleBtn.addEventListener('click', function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        setOpen(!isOpen);
-      });
-
-      document.addEventListener('click', function(e){
-        if (!isOpen) return;
-        var t = e.target;
-        if (!mobileMenu.contains(t) && !toggleBtn.contains(t)) {
-          setOpen(false);
-        }
-      });
-
-      document.addEventListener('keydown', function(e){
-        if (e.key === 'Escape' && isOpen) setOpen(false);
-      });
-      // Close menu on any link click inside the menu
-      mobileMenu.addEventListener('click', function(e){
-        var link = e.target.closest('a');
-        if (link) {
-          setOpen(false);
-        }
-      });
-
-    } catch (_err) {}
-  });
 </script>
