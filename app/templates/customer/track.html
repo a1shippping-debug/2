@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}{{ _('تتبع السيارات') }}{% endblock %}
+{% block title %}{{ _('Track Shipment') }}{% endblock %}
 {% block content %}
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
@@ -89,15 +89,15 @@
 
 <div class="track-container">
   <div class="track-header">
-    <h1>🔍 {{ _('تتبع السيارات') }}</h1>
-    <p>{{ _('أدخل رقم الشاصي (VIN) للانتقال إلى صفحة التتبع الخاصة بمركبتك.') }}</p>
+    <h1>{{ _('Track Shipment') }}</h1>
+    <p>{{ _('Anyone can look up a shipment with the VIN (chassis) or Lot number. Public updates appear instantly and prices remain hidden.') }}</p>
   </div>
 
   <form method="get" action="{{ url_for('cust.track') }}" class="track-form">
-    <input name="vin" placeholder="{{ _('مثال: 1HGCM82633A123456') }}" class="track-input" required />
-    <button type="submit" class="track-button">{{ _('تتبع الآن') }}</button>
+    <input name="q" placeholder="{{ _('Example: 1HGCM82633A123456 or 2023-7890') }}" class="track-input" required />
+    <button type="submit" class="track-button">{{ _('Track Now') }}</button>
     <div class="track-example">
-      {{ _('تأكد من إدخال رقم الشاصي الصحيح. مثال:') }} <span>1HGCM82633A123456</span>
+      {{ _('Need help? Try entering the full VIN or the auction lot number.') }}
     </div>
   </form>
 </div>

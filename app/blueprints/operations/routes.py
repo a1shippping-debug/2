@@ -214,6 +214,41 @@ def dashboard():
     # Notifications (latest 10)
     notifications = db.session.query(Notification).order_by(Notification.created_at.desc()).limit(10).all()
 
+    # Vehicles currently shipping / in transit
+    shipping_statuses = {"in transit", "shipping", "shipped", "loaded", "departed", "on way"}
+    shipping_pairs = (
+        db.session.query(Shipment, Vehicle)
+        .join(VehicleShipment, Shipment.id == VehicleShipment.shipment_id)
+        .join(Vehicle, Vehicle.id == VehicleShipment.vehicle_id)
+        .filter(
+            db.or_(
+                db.func.lower(db.func.coalesce(Shipment.status, "")) .in_(shipping_statuses),
+                db.and_(
+                    Shipment.departure_date.isnot(None),
+                    Shipment.arrival_date.is_(None),
+                ),
+            )
+        )
+        .order_by(db.func.coalesce(Shipment.departure_date, Shipment.created_at).desc())
+        .limit(12)
+        .all()
+    )
+
+    shipping_rows = []
+    seen_vehicle_ids = set()
+    for shipment, vehicle in shipping_pairs:
+        if not vehicle or vehicle.id in seen_vehicle_ids:
+            continue
+        seen_vehicle_ids.add(vehicle.id)
+        status_text = (shipment.status or vehicle.status or "").strip() or "-"
+        shipping_rows.append(
+            {
+                "vehicle": vehicle,
+                "shipment": shipment,
+                "status": status_text,
+            }
+        )
+
     counts = {
         "total_cars": total_cars,
         "in_transit_cars": in_transit_cars,
@@ -222,7 +257,14 @@ def dashboard():
         "customers": customers_count,
     }
     chart = {"months": month_labels, "shipped": shipped_counts}
-    return render_template("operations/dashboard.html", counts=counts, chart=chart, recent=recent_vehicles, notifications=notifications)
+    return render_template(
+        "operations/dashboard.html",
+        counts=counts,
+        chart=chart,
+        recent=recent_vehicles,
+        notifications=notifications,
+        shipping=shipping_rows,
+    )
 
 
 @ops_bp.route("/notifications.json")

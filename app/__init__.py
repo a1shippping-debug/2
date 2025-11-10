@@ -269,9 +269,69 @@ def create_app():
         # GET -> render contact page
         return render_template("info/contact.html")
 
+    @app.route("/pricing-request", methods=["GET", "POST"])
+    def pricing_request():
+        if request.method == "POST":
+            name = (request.form.get("name") or "").strip()
+            email = (request.form.get("email") or "").strip()
+            phone = (request.form.get("phone") or "").strip()
+            company = (request.form.get("company") or "").strip()
+            shipment_type = (request.form.get("shipment_type") or "").strip()
+            details = (request.form.get("details") or request.form.get("message") or "").strip()
+
+            has_contact = bool(email or phone)
+            if not name or not has_contact:
+                try:
+                    from flask import flash
+                    flash("Please share your name and at least one contact method so we can reach out.", "danger")
+                except Exception:
+                    pass
+            else:
+                try:
+                    to_email = (
+                        os.getenv("PRICING_EMAIL")
+                        or os.getenv("CONTACT_EMAIL")
+                        or current_app.config.get("MAIL_USERNAME")
+                    )
+                    if to_email:
+                        from flask_mail import Message
+
+                        subject = "New pricing request"
+                        body_lines = [
+                            f"Name: {name}",
+                            f"Email: {email or '-'}",
+                            f"Phone: {phone or '-'}",
+                            f"Company: {company or '-'}",
+                            f"Shipment type: {shipment_type or '-'}",
+                            "",
+                            "Details:",
+                            details or "-",
+                        ]
+                        msg = Message(subject=subject, recipients=[to_email])
+                        msg.body = "\n".join(body_lines)
+                        try:
+                            mail.send(msg)
+                        except Exception:
+                            pass
+                    from flask import flash
+                    flash("Thanks! Your pricing request was received and our team will contact you shortly.", "success")
+                except Exception:
+                    try:
+                        from flask import flash
+                        flash("Something went wrong while sending your request. Please try again later.", "danger")
+                    except Exception:
+                        pass
+            try:
+                from flask import redirect
+                return redirect(url_for("pricing_request"))
+            except Exception:
+                return render_template("info/pricing_request.html")
+
+        return render_template("info/pricing_request.html")
+
     @app.route("/tracking/<string:vin>")
     def tracking_page(vin: str):
-        """Public vehicle shipment tracking by VIN.
+        """Public vehicle shipment tracking by VIN or Lot number.
 
         Renders a Bootstrap-based horizontal 12-stage timeline with icons and
         green/red status indicators. Data is derived from DB where available
@@ -279,23 +339,30 @@ def create_app():
         """
         from datetime import datetime, timedelta
         from .extensions import db
-        from .models import Vehicle, Auction, Shipment, VehicleShipment, InternationalCost
-        from decimal import Decimal
+        from .models import Vehicle, Auction, Shipment, VehicleShipment
 
-        vin_norm = (vin or "").strip()
+        identifier = (vin or "").strip()
+        identifier_lower = identifier.lower()
 
         vehicle = (
             db.session.query(Vehicle)
             .join(Auction, Vehicle.auction_id == Auction.id, isouter=True)
-            .filter(db.func.lower(Vehicle.vin) == db.func.lower(vin_norm))
+            .filter(
+                db.or_(
+                    db.func.lower(Vehicle.vin) == identifier_lower,
+                    db.func.lower(Auction.lot_number) == identifier_lower,
+                )
+            )
             .first()
         )
 
         stages = []
         stage_details = {}
         lot_number = "-"
+        vin_label = identifier.upper() if identifier else "-"
 
         if vehicle:
+            vin_label = (vehicle.vin or identifier).strip().upper() or "-"
             lot_number = vehicle.auction.lot_number if vehicle.auction and vehicle.auction.lot_number else "-"
 
             shipments = (
@@ -592,7 +659,6 @@ def create_app():
         container_number = "-"
         booking_number = "-"
         arrival_date = "-"
-        total_cost_omr = None
 
         try:
             if vehicle:
@@ -604,30 +670,14 @@ def create_app():
                     container_number = (vehicle.container_number or "-").strip() or "-"
                 if getattr(vehicle, 'booking_number', None):
                     booking_number = (vehicle.booking_number or "-").strip() or "-"
-
-                # Compute total cost in OMR if InternationalCost exists
-                cost_row = db.session.query(InternationalCost).filter_by(vehicle_id=vehicle.id).first()
-                if cost_row:
-                    def dec(x):
-                        try:
-                            return Decimal(str(x or 0))
-                        except Exception:
-                            return Decimal('0')
-
-                    usd_sum = dec(vehicle.purchase_price_usd) + dec(cost_row.freight_usd) + dec(cost_row.insurance_usd) + dec(cost_row.auction_fees_usd)
-                    omr_rate = Decimal(str(current_app.config.get("OMR_EXCHANGE_RATE", 0.385)))
-                    omr_from_usd = usd_sum * omr_rate
-                    omr_local = dec(cost_row.customs_omr) + dec(cost_row.vat_omr) + dec(cost_row.local_transport_omr) + dec(cost_row.misc_omr)
-                    total_cost_omr = omr_from_usd + omr_local
         except Exception:
             # Fail-safe: keep defaults
             container_number = container_number or "-"
             arrival_date = arrival_date or "-"
-            total_cost_omr = total_cost_omr
 
         return render_template(
             "tracking.html",
-            vin=vin_norm.upper(),
+            vin=vin_label,
             lot_number=lot_number,
             vehicle=vehicle,
             stages=stages,
@@ -635,7 +685,6 @@ def create_app():
             container_number=container_number,
             booking_number=booking_number,
             arrival_date=arrival_date,
-            total_cost_omr=total_cost_omr,
         )
 
     @app.route("/vehicle/<string:vin>")

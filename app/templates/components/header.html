@@ -1,190 +1,279 @@
 {% set lang = g.get('lang_code', 'ar') %}
 {% set is_rtl = (lang == 'ar') %}
-{% set role_name = (current_user.role.name|lower) if (current_user.is_authenticated and current_user.role) else '' %}
+{% set is_authenticated = current_user.is_authenticated %}
+{% set role_name = (current_user.role.name|lower) if (is_authenticated and current_user.role) else '' %}
 
-<nav class="bg-primary text-white fixed top-0 inset-x-0 z-50 shadow-md">
-  <div class="max-w-7xl mx-auto px-4">
-    <div class="h-16 relative flex items-center justify-between {% if is_rtl %}flex-row-reverse{% endif %}"
-         x-data="{ open:false }"
-         x-effect="document.body.style.overflow = open ? 'hidden' : ''"
-         @click.outside="open=false"
-         @keydown.escape.window="open=false">
-      <!-- Logo -->
-      <a href="/" class="flex items-center gap-2 font-heading font-extrabold text-xl tracking-tight">
-        <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo" class="h-8 w-8 rounded"/>
-        <span>A1 Shipping</span>
-      </a>
+{% set label_home = 'الرئيسية' if is_rtl else 'Home' %}
+{% set label_services = 'الخدمات' if is_rtl else 'Services' %}
+{% set label_track = 'تتبع الشحنة' if is_rtl else 'Track Shipment' %}
+{% set label_prices = '???? ???????' if is_rtl else 'Request Pricing' %}
+{% set label_about = 'عن الشركة' if is_rtl else 'About' %}
+{% set label_contact = 'اتصل بنا' if is_rtl else 'Contact' %}
+{% set label_login = 'تسجيل الدخول' if is_rtl else 'Login' %}
+{% set label_dashboard = 'لوحة التحكم' if is_rtl else 'Dashboard' %}
+{% set label_logout = 'تسجيل الخروج' if is_rtl else 'Logout' %}
+{% set label_search_placeholder = 'ابحث برقم الشاسي (VIN)' if is_rtl else 'Search VIN' %}
+{% set label_new = 'جديد' if is_rtl else 'New' %}
 
-      <!-- Desktop Nav -->
-      <div class="hidden md:flex items-center gap-6">
-        {% if current_user.is_authenticated and role_name in ['admin','employee'] %}
-          <a href="{{ url_for('ops.cars_list') }}" class="hover:text-accent">{{ _('السيارات') }}</a>
-          <a href="{{ url_for('ops.customers_list') }}" class="hover:text-accent">{{ _('العملاء') }}</a>
-          <a href="{{ url_for('acct.bol_list') }}" class="hover:text-accent">{{ _('المستندات') }}</a>
-          <a href="{{ url_for('ops.sale_listings_list') }}" class="hover:text-accent">{{ _('طلبات البيع') }}</a>
-          <a href="{{ url_for('ops.dashboard') if role_name=='employee' else url_for('admin.dashboard') }}" class="hover:text-accent">{{ _('لوحة التحكم') }}</a>
-        {% elif current_user.is_authenticated and role_name == 'customer' %}
-          <a href="{{ url_for('cust.my_cars') }}" class="hover:text-accent">{{ _('سياراتي') }}</a>
-          <a href="{{ url_for('cust.invoices_list') }}" class="hover:text-accent">{{ _('فواتيري') }}</a>
-          <a href="{{ url_for('cust.dashboard') }}" class="hover:text-accent">{{ _('لوحة التحكم') }}</a>
-        {% else %}
-          <a href="/" class="hover:text-accent">{{ _('الرئيسية') }}</a>
-          <a href="{{ url_for('about_page') }}" class="hover:text-accent">{{ _('من نحن') }}</a>
-          <a href="{{ url_for('services_page') }}" class="hover:text-accent">{{ _('خدماتنا') }}</a>
-          <a href="{{ url_for('contact_page') }}" class="hover:text-accent">{{ _('تواصل معنا') }}</a>
-          <a href="{{ url_for('auth.login') }}" class="hover:text-accent">{{ _('تسجيل الدخول') }}</a>
-        {% endif %}
+{% set nav_items = [] %}
+{% set search_enabled = false %}
+{% set cta_button = none %}
+{% set user_menu_links = [] %}
 
-        <!-- Search -->
-        <form id="vehicle-search-form" class="relative">
-          <input id="vehicle-search-input" type="search" inputmode="latin" dir="ltr" placeholder="VIN" aria-label="VIN"
-                 class="w-44 lg:w-56 rounded-md bg-white/10 placeholder-white/60 focus:bg-white/20 px-3 py-1.5 text-sm outline-none"/>
-          <button class="absolute {{ 'left-2' if is_rtl else 'right-2' }} top-1.5 text-white/80" type="submit">
-            <i class="fa-solid fa-magnifying-glass"></i>
-          </button>
-        </form>
+{% if is_authenticated %}
+  {% if role_name in ['admin', 'employee'] %}
+    {% set nav_items = [
+      {'href': url_for('ops.cars_list'), 'label': 'المركبات' if is_rtl else 'Cars'},
+      {'href': url_for('ops.customers_list'), 'label': 'العملاء' if is_rtl else 'Customers'},
+      {'href': url_for('acct.bol_list'), 'label': 'بوليصة الشحن' if is_rtl else 'BOL'},
+      {'href': url_for('ops.sale_listings_list'), 'label': 'إعلانات البيع' if is_rtl else 'Sale Listings'},
+      {'href': url_for('ops.dashboard') if role_name == 'employee' else url_for('admin.dashboard'), 'label': label_dashboard}
+    ] %}
+    {% set search_enabled = true %}
+    {% set user_menu_links = [
+      {'href': url_for('ops.dashboard') if role_name == 'employee' else url_for('admin.dashboard'), 'label': label_dashboard},
+      {'href': url_for('auth.logout'), 'label': label_logout, 'class': 'text-danger'}
+    ] %}
+  {% elif role_name == 'customer' %}
+    {% set nav_items = [
+      {'href': url_for('cust.my_cars'), 'label': 'مركباتي' if is_rtl else 'My Vehicles'},
+      {'href': url_for('cust.invoices_list'), 'label': 'الفواتير' if is_rtl else 'Invoices'},
+      {'href': url_for('cust.dashboard'), 'label': label_dashboard}
+    ] %}
+    {% set search_enabled = true %}
+    {% set user_menu_links = [
+      {'href': url_for('cust.dashboard'), 'label': label_dashboard},
+      {'href': url_for('auth.logout'), 'label': label_logout, 'class': 'text-danger'}
+    ] %}
+  {% else %}
+    {% set nav_items = [
+      {'href': '/', 'label': label_home},
+      {'href': '/#services', 'label': label_services},
+      {'href': url_for('cust.track'), 'label': label_track},
+      {'href': url_for('pricing_request'), 'label': label_prices},
+      {'href': '/#about', 'label': label_about},
+      {'href': '/#contact', 'label': label_contact}
+    ] %}
+    {% set user_menu_links = [
+      {'href': url_for('auth.logout'), 'label': label_logout, 'class': 'text-danger'}
+    ] %}
+  {% endif %}
+{% else %}
+  {% set nav_items = [
+    {'href': '/', 'label': label_home},
+    {'href': '/#services', 'label': label_services},
+    {'href': url_for('cust.track'), 'label': label_track},
+    {'href': url_for('pricing_request'), 'label': label_prices},
+    {'href': '/#about', 'label': label_about},
+    {'href': '/#contact', 'label': label_contact}
+  ] %}
+  {% set cta_button = {'href': url_for('auth.login'), 'label': label_login, 'badge': label_new} %}
+{% endif %}
 
-        <!-- Icons -->
-        {% if current_user.is_authenticated %}
-          <a href="{{ url_for('ops.dashboard') if role_name in ['admin','employee'] else url_for('cust.dashboard') }}" class="hover:text-accent">
-            <i class="fa-regular fa-bell text-lg"></i>
-          </a>
-          <div class="relative" x-data="{ m:false }">
-            <button @click="m=!m" class="flex items-center gap-2 hover:text-accent">
-              <i class="fa-regular fa-user text-lg"></i>
-              <span class="hidden lg:inline text-sm">{{ current_user.name or current_user.email }}</span>
-            </button>
-            <div x-show="m" @click.outside="m=false" class="absolute {{ 'left-0' if is_rtl else 'right-0' }} mt-2 w-48 bg-white text-neutral rounded-md shadow-lg py-2 text-sm">
-              <div class="px-3 py-2 text-muted">{{ _('مرحبا،') }} {{ current_user.name or current_user.email }}</div>
-              <a href="{{ url_for('auth.logout') }}" class="block px-3 py-2 hover:bg-background text-red-600">{{ _('خروج') }}</a>
-            </div>
-          </div>
-        {% else %}
-          <a href="{{ url_for('auth.login') }}" class="px-3 py-1.5 rounded-md bg-accent text-neutral font-medium hover:opacity-90">{{ _('دخول') }}</a>
-        {% endif %}
-
-        <!-- Lang Switch -->
-        <div class="flex items-center gap-2">
-          <a href="{{ request.path }}?lang=en" class="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-xs">EN</a>
-          <a href="{{ request.path }}?lang=ar" class="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-xs">العربية</a>
-        </div>
-      </div>
-
-      <!-- Mobile -->
-      <button class="md:hidden p-2 rounded hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40"
-              @click="open=!open"
-              :aria-expanded="open ? 'true' : 'false'" aria-controls="mobile-menu" aria-label="القائمة">
-        <i class="fa-solid fa-bars text-xl"></i>
+<header id="main-header" class="main-header{% if is_rtl %} is-rtl{% endif %}">
+  <div class="main-header__inner">
+    <div class="main-header__left">
+      <button id="main-header-toggle" class="main-header__toggle" type="button" aria-expanded="false" aria-controls="main-header-mobile">
+        <span aria-hidden="true">☰</span>
+        <span class="sr-only">{{ 'القائمة' if is_rtl else 'Menu' }}</span>
       </button>
-      <!-- Overlay -->
-      <div id="mobile-menu-overlay" class="fixed inset-0 bg-black/30 md:hidden z-40" x-show="open" x-cloak x-transition.opacity @click="open=false"></div>
-
-      <div id="mobile-menu" class="md:hidden absolute {{ 'left-4' if is_rtl else 'right-4' }} top-full mt-2 w-60 bg-white text-neutral rounded-md shadow-lg py-2 z-50 max-h-[70vh] overflow-auto"
-           x-show="open" x-cloak x-transition
-           @click="if($event.target.tagName==='A' || $event.target.closest('a')){ open=false }">
-        <div class="px-4 py-2 font-semibold text-primary">A1 Shipping</div>
-        <div class="px-3 py-2 border-t">
-          <form id="vehicle-search-form-mobile" class="flex items-center gap-2">
-            <input id="vehicle-search-input-mobile" type="search" inputmode="latin" dir="ltr" placeholder="VIN" class="flex-1 border rounded px-2 py-1.5 text-sm"/>
-            <button class="px-2 py-1.5 bg-primary text-white rounded" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
-          </form>
-        </div>
-        <div class="py-1 text-sm">
-          {% if current_user.is_authenticated and role_name in ['admin','employee'] %}
-            <a href="{{ url_for('ops.cars_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('السيارات') }}</a>
-            <a href="{{ url_for('ops.customers_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('العملاء') }}</a>
-            <a href="{{ url_for('acct.bol_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('المستندات') }}</a>
-            <a href="{{ url_for('ops.sale_listings_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('طلبات البيع') }}</a>
-            <a href="{{ url_for('ops.dashboard') if role_name=='employee' else url_for('admin.dashboard') }}" class="block px-4 py-2 hover:bg-background">{{ _('لوحة التحكم') }}</a>
-          {% elif current_user.is_authenticated and role_name == 'customer' %}
-            <a href="{{ url_for('cust.my_cars') }}" class="block px-4 py-2 hover:bg-background">{{ _('سياراتي') }}</a>
-            <a href="{{ url_for('cust.invoices_list') }}" class="block px-4 py-2 hover:bg-background">{{ _('فواتيري') }}</a>
-            <a href="{{ url_for('cust.dashboard') }}" class="block px-4 py-2 hover:bg-background">{{ _('لوحة التحكم') }}</a>
-          {% else %}
-            <a href="/" class="block px-4 py-2 hover:bg-background">{{ _('الرئيسية') }}</a>
-            <a href="{{ url_for('about_page') }}" class="block px-4 py-2 hover:bg-background">{{ _('من نحن') }}</a>
-            <a href="{{ url_for('services_page') }}" class="block px-4 py-2 hover:bg-background">{{ _('خدماتنا') }}</a>
-            <a href="{{ url_for('contact_page') }}" class="block px-4 py-2 hover:bg-background">{{ _('تواصل معنا') }}</a>
-            <a href="{{ url_for('auth.login') }}" class="block px-4 py-2 hover:bg-background">{{ _('تسجيل الدخول') }}</a>
-          {% endif %}
-          {% if current_user.is_authenticated %}
-            <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-red-600 hover:bg-background">{{ _('خروج') }}</a>
-          {% endif %}
-          <div class="flex items-center gap-2 px-4 py-2">
-            <a href="{{ request.path }}?lang=en" class="px-2 py-1 rounded bg-background">EN</a>
-            <a href="{{ request.path }}?lang=ar" class="px-2 py-1 rounded bg-background">العربية</a>
-          </div>
-        </div>
+      <div class="main-header__logo">
+        <a href="/">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="A1 Shipping Logo" onerror="this.style.display='none'">
+          <span>A1 SHIPPING</span>
+        </a>
       </div>
     </div>
+
+    <nav class="main-header__nav" aria-label="{{ 'التنقل الرئيسي' if is_rtl else 'Primary navigation' }}">
+      <ul class="main-header__nav-list">
+        {% for item in nav_items %}
+          <li>
+            <a href="{{ item.href }}" class="main-header__link{% if request.path == item.href %} is-active{% endif %}">{{ item.label }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+
+    <div class="main-header__actions">
+      {% if search_enabled %}
+        <form id="vehicle-search-form" class="main-header__search" role="search">
+          <label class="sr-only" for="vehicle-search-input">{{ label_search_placeholder }}</label>
+          <input id="vehicle-search-input" type="search" inputmode="latin" dir="ltr" class="main-header__input" placeholder="{{ label_search_placeholder }}">
+          <button type="submit" class="main-header__search-btn" aria-label="{{ 'ابحث' if is_rtl else 'Search' }}"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </form>
+      {% endif %}
+
+      <div class="main-header__languages">
+        <a href="{{ request.path }}?lang=en" class="{% if not is_rtl %}is-active{% endif %}">EN</a>
+        <a href="{{ request.path }}?lang=ar" class="{% if is_rtl %}is-active{% endif %}">AR</a>
+      </div>
+
+      {% if is_authenticated %}
+        <div class="main-header__user">
+          <button id="main-header-user-btn" class="main-header__user-btn" type="button" aria-haspopup="true" aria-expanded="false">
+            <i class="fa-regular fa-user"></i>
+            <span>{{ (current_user.name or current_user.email or label_dashboard)[:22] }}</span>
+          </button>
+          <div id="main-header-user-menu" class="main-header__user-menu" role="menu">
+            <div class="main-header__user-name">{{ current_user.name or current_user.email }}</div>
+            {% for link in user_menu_links %}
+              <a href="{{ link.href }}" class="{{ link.class if link.class is defined else '' }}" role="menuitem">{{ link.label }}</a>
+            {% endfor %}
+          </div>
+        </div>
+      {% elif cta_button %}
+        <a href="{{ cta_button.href }}" class="main-header__cta">
+          {% if cta_button.badge %}<span>{{ cta_button.badge }}</span>{% endif %}
+          {{ cta_button.label }}
+        </a>
+      {% endif %}
+    </div>
   </div>
-</nav>
+
+  <div id="main-header-mobile" class="main-header__mobile" aria-hidden="true">
+    {% if search_enabled %}
+      <form id="vehicle-search-form-mobile" class="main-header__mobile-search" role="search">
+        <label class="sr-only" for="vehicle-search-input-mobile">{{ label_search_placeholder }}</label>
+        <input id="vehicle-search-input-mobile" type="search" inputmode="latin" dir="ltr" placeholder="{{ label_search_placeholder }}">
+        <button type="submit" aria-label="{{ 'ابحث' if is_rtl else 'Search' }}"><i class="fa-solid fa-magnifying-glass"></i></button>
+      </form>
+    {% endif %}
+
+    <nav class="main-header__mobile-nav" role="menu">
+      {% for item in nav_items %}
+        <a href="{{ item.href }}" role="menuitem">{{ item.label }}</a>
+      {% endfor %}
+    </nav>
+
+    <div class="main-header__mobile-meta">
+      <div class="main-header__languages">
+        <a href="{{ request.path }}?lang=en" class="{% if not is_rtl %}is-active{% endif %}">EN</a>
+        <a href="{{ request.path }}?lang=ar" class="{% if is_rtl %}is-active{% endif %}">AR</a>
+      </div>
+
+      {% if not is_authenticated and cta_button %}
+        <a href="{{ cta_button.href }}" class="main-header__mobile-cta">
+          {% if cta_button.badge %}<span>{{ cta_button.badge }}</span>{% endif %}
+          {{ cta_button.label }}
+        </a>
+      {% elif is_authenticated %}
+        <div class="main-header__mobile-account">
+          {% for link in user_menu_links %}
+            <a href="{{ link.href }}" class="{{ link.class if link.class is defined else '' }}">{{ link.label }}</a>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</header>
+<div id="main-header-overlay" class="main-header__overlay" hidden></div>
 
 <script>
   (function(){
-    function bindForm(formId, inputId){
-      const f = document.getElementById(formId); const inp = document.getElementById(inputId);
-      if(!f||!inp) return; f.addEventListener('submit', function(e){ e.preventDefault();
-        const vin = (inp.value||'').trim(); if(!vin) return; window.location.href = '/tracking/' + encodeURIComponent(vin);
+    function bindSearch(formId, inputId){
+      var form = document.getElementById(formId);
+      var input = document.getElementById(inputId);
+      if(!form || !input){ return; }
+      form.addEventListener('submit', function(ev){
+        ev.preventDefault();
+        var vin = (input.value || '').trim();
+        if(!vin){
+          input.focus();
+          return;
+        }
+        window.location.href = '/tracking/' + encodeURIComponent(vin);
       });
     }
-    bindForm('vehicle-search-form','vehicle-search-input');
-    bindForm('vehicle-search-form-mobile','vehicle-search-input-mobile');
-  })();
+    bindSearch('vehicle-search-form', 'vehicle-search-input');
+    bindSearch('vehicle-search-form-mobile', 'vehicle-search-input-mobile');
 
-  // Fallback: enable mobile menu toggle if Alpine isn't available/initialized
-  document.addEventListener('DOMContentLoaded', function(){
-    try {
-      var toggleBtn = document.querySelector('button[aria-controls="mobile-menu"]');
-      var mobileMenu = document.getElementById('mobile-menu');
-      var overlay = document.getElementById('mobile-menu-overlay');
-      if (!toggleBtn || !mobileMenu) return;
-      // If Alpine loaded and initialized, it removes x-cloak; skip fallback then
-      var alpineReady = !!window.Alpine && !mobileMenu.hasAttribute('x-cloak');
-      if (alpineReady) return;
+    var body = document.body;
+    var header = document.getElementById('main-header');
+    var toggle = document.getElementById('main-header-toggle');
+    var mobile = document.getElementById('main-header-mobile');
+    var overlay = document.getElementById('main-header-overlay');
 
-      var isOpen = false;
-      function setOpen(next){
-        isOpen = !!next;
-        toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        if (isOpen) {
-          mobileMenu.style.display = 'block';
-          mobileMenu.removeAttribute('x-cloak');
-          if (overlay) { overlay.style.display = 'block'; overlay.removeAttribute('x-cloak'); }
-          document.body.style.overflow = 'hidden';
-        } else {
-          mobileMenu.style.display = 'none';
-          if (overlay) overlay.style.display = 'none';
-          document.body.style.overflow = '';
-        }
+    function setMobile(open){
+      if(!header){ return; }
+      header.classList.toggle('main-header--open', !!open);
+      if(mobile){
+        mobile.setAttribute('aria-hidden', open ? 'false' : 'true');
       }
-      setOpen(false);
+      if(toggle){
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+      if(overlay){
+        overlay.hidden = !open;
+      }
+      body.classList.toggle('menu-open', !!open);
+      if(open){
+        var focusable = mobile ? mobile.querySelector('a, button, input, textarea') : null;
+        if(focusable){
+          try { focusable.focus({ preventScroll: true }); } catch (err) { focusable.focus(); }
+        }
+      } else if(toggle){
+        try { toggle.focus({ preventScroll: true }); } catch (err) { toggle.focus(); }
+      }
+    }
 
-      toggleBtn.addEventListener('click', function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        setOpen(!isOpen);
+    if(toggle){
+      toggle.addEventListener('click', function(ev){
+        ev.preventDefault();
+        var willOpen = !header.classList.contains('main-header--open');
+        setMobile(willOpen);
+      });
+    }
+
+    if(overlay){
+      overlay.addEventListener('click', function(){ setMobile(false); });
+    }
+
+    if(mobile){
+      mobile.addEventListener('click', function(ev){
+        var link = ev.target.closest('a');
+        if(link){
+          setMobile(false);
+        }
+      });
+    }
+
+    window.addEventListener('resize', function(){
+      if(window.innerWidth >= 901){
+        setMobile(false);
+      }
+    });
+
+    document.addEventListener('keydown', function(ev){
+      if(ev.key === 'Escape'){
+        setMobile(false);
+      }
+    });
+
+    var userBtn = document.getElementById('main-header-user-btn');
+    var userMenu = document.getElementById('main-header-user-menu');
+    if(userBtn && userMenu){
+      userBtn.addEventListener('click', function(ev){
+        ev.stopPropagation();
+        var willOpen = !userMenu.classList.contains('open');
+        userMenu.classList.toggle('open', willOpen);
+        userBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
       });
 
-      document.addEventListener('click', function(e){
-        if (!isOpen) return;
-        var t = e.target;
-        if (!mobileMenu.contains(t) && !toggleBtn.contains(t)) {
-          setOpen(false);
+      document.addEventListener('click', function(ev){
+        if(userMenu.classList.contains('open') && !userMenu.contains(ev.target) && !userBtn.contains(ev.target)){
+          userMenu.classList.remove('open');
+          userBtn.setAttribute('aria-expanded', 'false');
         }
       });
 
-      document.addEventListener('keydown', function(e){
-        if (e.key === 'Escape' && isOpen) setOpen(false);
-      });
-      // Close menu on any link click inside the menu
-      mobileMenu.addEventListener('click', function(e){
-        var link = e.target.closest('a');
-        if (link) {
-          setOpen(false);
+      document.addEventListener('keydown', function(ev){
+        if(ev.key === 'Escape' && userMenu.classList.contains('open')){
+          userMenu.classList.remove('open');
+          userBtn.setAttribute('aria-expanded', 'false');
+          try { userBtn.focus({ preventScroll: true }); } catch (err) { userBtn.focus(); }
         }
       });
-
-    } catch (_err) {}
-  });
+    }
+  })();
 </script>

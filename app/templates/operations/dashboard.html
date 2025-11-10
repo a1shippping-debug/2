@@ -1,231 +1,487 @@
 {% extends "layout.html" %}
 {% block title %}{{ _('Operations Dashboard') }}{% endblock %}
+
 {% block content %}
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
-  body { font-family: 'Cairo', sans-serif; background-color: #fff; color: #1E2BA0; }
+<section class="space-y-8">
+  <header class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div>
+      <p class="text-sm text-muted uppercase tracking-widest">{{ _('Operations Control Center') }}</p>
+      <h1 class="text-3xl font-extrabold text-neutral mt-1">{{ _('Operations Dashboard') }}</h1>
+      <p class="text-muted mt-2 max-w-2xl">
+        {{ _('Monitor shipments, keep vehicles moving, and jump straight into the tools your team uses most often.') }}
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <a href="{{ url_for('cust.dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-600 text-white hover:bg-green-700 transition shadow-soft">
+        <i class="fa-solid fa-gauge"></i>
+        <span>{{ _('Customer Portal') }}</span>
+      </a>
+      <a href="{{ url_for('cust.track') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-soft">
+        <i class="fa-solid fa-map-location-dot"></i>
+        <span>{{ _('Track Shipments') }}</span>
+      </a>
+    </div>
+  </header>
 
-  /* ==== HEADER ==== */
-  .dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-  }
+  <!-- Quick actions -->
+  <section aria-labelledby="quick-actions-title">
+    <div class="flex items-center justify-between mb-3">
+      <h2 id="quick-actions-title" class="text-lg font-semibold text-neutral">{{ _('Quick actions') }}</h2>
+      <span class="text-xs text-muted uppercase tracking-widest">{{ _('Always available shortcuts') }}</span>
+    </div>
+    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <a href="{{ url_for('ops.cars_new') }}" class="group rounded-2xl border border-transparent bg-white p-4 shadow-soft hover:border-primary/40 hover:shadow-lg transition">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-sm font-semibold text-neutral">{{ _('Add Vehicle') }}</p>
+            <p class="text-xs text-muted mt-1">{{ _('Capture purchase details and documents in minutes.') }}</p>
+          </div>
+          <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <i class="fa-solid fa-car-side"></i>
+          </span>
+        </div>
+      </a>
+      <a href="{{ url_for('ops.cars_status') }}" class="group rounded-2xl border border-transparent bg-white p-4 shadow-soft hover:border-primary/40 hover:shadow-lg transition">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-sm font-semibold text-neutral">{{ _('Update Statuses') }}</p>
+            <p class="text-xs text-muted mt-1">{{ _('Bulk mark vehicles as posted, shipped, or arrived.') }}</p>
+          </div>
+          <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </span>
+        </div>
+      </a>
+      <a href="{{ url_for('ops.customers_new') }}" class="group rounded-2xl border border-transparent bg-white p-4 shadow-soft hover:border-primary/40 hover:shadow-lg transition">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-sm font-semibold text-neutral">{{ _('Add Customer') }}</p>
+            <p class="text-xs text-muted mt-1">{{ _('Create a customer profile and invite them to the portal.') }}</p>
+          </div>
+          <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <i class="fa-solid fa-user-plus"></i>
+          </span>
+        </div>
+      </a>
+      <a href="{{ url_for('ops.cars_list') }}" class="group rounded-2xl border border-transparent bg-white p-4 shadow-soft hover:border-primary/40 hover:shadow-lg transition">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-sm font-semibold text-neutral">{{ _('Manage Inventory') }}</p>
+            <p class="text-xs text-muted mt-1">{{ _('Search, filter, and export all operational vehicles.') }}</p>
+          </div>
+          <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <i class="fa-solid fa-table-list"></i>
+          </span>
+        </div>
+      </a>
+    </div>
+  </section>
 
-  .dashboard-header h1 {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #1E2BA0;
-  }
+  <!-- KPI cards -->
+  <section aria-labelledby="kpi-title">
+    <div class="flex items-center justify-between mb-3">
+      <h2 id="kpi-title" class="text-lg font-semibold text-neutral">{{ _('Live metrics') }}</h2>
+      <span class="text-xs text-muted uppercase tracking-widest">{{ _('Refreshes automatically with each visit') }}</span>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <article class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
+        <p class="text-xs uppercase tracking-widest text-muted">{{ _('Total vehicles') }}</p>
+        <p class="mt-3 text-3xl font-bold text-neutral">{{ counts.total_cars }}</p>
+      </article>
+      <article class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
+        <p class="text-xs uppercase tracking-widest text-blue-600 flex items-center gap-1">
+          <span class="inline-flex h-2 w-2 rounded-full bg-blue-500"></span>{{ _('In transit') }}
+        </p>
+        <p class="mt-3 text-3xl font-bold text-blue-600">{{ counts.in_transit_cars }}</p>
+      </article>
+      <article class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
+        <p class="text-xs uppercase tracking-widest text-emerald-600 flex items-center gap-1">
+          <span class="inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>{{ _('Arrived / delivered') }}
+        </p>
+        <p class="mt-3 text-3xl font-bold text-emerald-600">{{ counts.arrived_cars }}</p>
+      </article>
+      <article class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
+        <p class="text-xs uppercase tracking-widest text-amber-600 flex items-center gap-1">
+          <span class="inline-flex h-2 w-2 rounded-full bg-amber-500"></span>{{ _('Open shipments') }}
+        </p>
+        <p class="mt-3 text-3xl font-bold text-amber-600">{{ counts.open_shipments }}</p>
+      </article>
+      <article class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
+        <p class="text-xs uppercase tracking-widest text-purple-600 flex items-center gap-1">
+          <span class="inline-flex h-2 w-2 rounded-full bg-purple-500"></span>{{ _('Active customers') }}
+        </p>
+        <p class="mt-3 text-3xl font-bold text-purple-600">{{ counts.customers }}</p>
+      </article>
+    </div>
+  </section>
 
-  .action-buttons {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
+  <!-- Status filters -->
+  <section class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <h2 class="text-lg font-semibold text-neutral">{{ _('Vehicle pipeline focus') }}</h2>
+        <p class="text-sm text-muted">{{ _('Use the chips to spotlight vehicles that need attention right now.') }}</p>
+      </div>
+      <div class="flex flex-wrap gap-2" role="group" aria-label="{{ _('Filter by shipment phase') }}">
+        <button type="button" data-status-filter="all" class="status-chip active">{{ _('All') }}</button>
+        <button type="button" data-status-filter="in_transit" class="status-chip">
+          {{ _('In transit') }} <span class="chip-count">{{ counts.in_transit_cars }}</span>
+        </button>
+        <button type="button" data-status-filter="arrived" class="status-chip">
+          {{ _('Arrived') }} <span class="chip-count">{{ counts.arrived_cars }}</span>
+        </button>
+        <button type="button" data-status-filter="open" class="status-chip">
+          {{ _('Open shipments') }} <span class="chip-count">{{ counts.open_shipments }}</span>
+        </button>
+      </div>
+    </div>
+  </section>
 
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.6rem 1.1rem;
-    font-size: 0.9rem;
-    border-radius: 0.6rem;
-    font-weight: 600;
-    text-decoration: none;
-    color: #fff;
-    transition: 0.2s;
-  }
+  <!-- Charts and notifications -->
+  <div class="grid gap-6 xl:grid-cols-3">
+    <section class="xl:col-span-2 rounded-2xl bg-white p-6 shadow-soft border border-slate-100">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold text-neutral">{{ _('Monthly shipped vehicles') }}</h2>
+          <p class="text-sm text-muted">{{ _('Rolling 12-month export activity across all shipments.') }}</p>
+        </div>
+        <a href="{{ url_for('ops.cars_list') }}" class="text-xs font-semibold uppercase tracking-widest text-primary hover:text-primary/80">
+          {{ _('View vehicles') }} <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i>
+        </a>
+      </div>
+      <canvas id="shippedChart" class="mt-6" height="140"></canvas>
+    </section>
 
-  .btn span.material-icons,
-  .btn i {
-    font-size: 1.1rem;
-    margin-right: 0.4rem;
-  }
-
-  .btn-blue { background-color: #1E2BA0; }
-  .btn-blue:hover { background-color: #2734c2; }
-
-  .btn-green { background-color: #059669; }
-  .btn-green:hover { background-color: #047857; }
-
-  .btn-indigo { background-color: #4338ca; }
-  .btn-indigo:hover { background-color: #3730a3; }
-
-  .btn-amber { background-color: #d97706; }
-  .btn-amber:hover { background-color: #b45309; }
-
-  /* ==== SUMMARY CARDS ==== */
-  .summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-
-  .card {
-    background-color: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 1rem;
-    padding: 1.2rem;
-    text-align: center;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.04);
-    transition: transform 0.2s;
-  }
-
-  .card:hover { transform: translateY(-3px); }
-
-  .card-title {
-    font-size: 0.75rem;
-    color: #64748b;
-    text-transform: uppercase;
-    margin-bottom: 0.3rem;
-  }
-
-  .card-value {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #1E2BA0;
-  }
-
-  /* ==== CHART + TABLE SECTION ==== */
-  .grid-container {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 1.5rem;
-  }
-
-  .panel {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 1rem;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-    padding: 1.5rem;
-  }
-
-  .panel h2 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    color: #1E2BA0;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  th, td {
-    text-align: left;
-    padding: 0.75rem;
-    border-top: 1px solid #e2e8f0;
-    font-size: 0.9rem;
-  }
-
-  th {
-    color: #64748b;
-    font-weight: 600;
-  }
-
-  tr:hover td {
-    background-color: #f9fafb;
-  }
-
-  .status {
-    padding: 0.3rem 0.6rem;
-    border-radius: 0.5rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: white;
-  }
-
-  .status.in_transit { background-color: #2563eb; }
-  .status.arrived { background-color: #16a34a; }
-  .status.pending { background-color: #f59e0b; }
-</style>
-
-<div class="dashboard-header">
-  <h1>{{ _('Operations Dashboard') }}</h1>
-  <div class="action-buttons">
-    <a href="{{ url_for('cust.dashboard') }}" class="btn btn-green"><i class="fa-solid fa-gauge"></i>{{ _('Customer portal') }}</a>
-    <a href="{{ url_for('cust.track') }}" class="btn btn-indigo"><i class="fa-solid fa-map"></i>{{ _('Track Vehicles') }}</a>
-    <a href="{{ url_for('ops.cars_status') }}" class="btn btn-amber"><i class="fa-solid fa-pen-to-square"></i>{{ _('Update Statuses') }}</a>
-    <a href="{{ url_for('ops.customers_new') }}" class="btn btn-blue"><i class="fa-solid fa-user-plus"></i>{{ _('Add Customer') }}</a>
-    <a href="{{ url_for('ops.cars_new') }}" class="btn btn-blue"><i class="fa-solid fa-plus"></i>{{ _('Add Car') }}</a>
+    <section class="rounded-2xl bg-white p-6 shadow-soft border border-slate-100">
+      <div class="flex items-start justify-between">
+        <div>
+          <h2 class="text-lg font-semibold text-neutral">{{ _('Latest notifications') }}</h2>
+          <p class="text-sm text-muted">{{ _('Automatic alerts from system monitors and teammates.') }}</p>
+        </div>
+        <a href="{{ url_for('ops.notifications_feed') }}" class="text-xs font-semibold uppercase tracking-widest text-primary hover:text-primary/80">
+          {{ _('JSON feed') }}
+        </a>
+      </div>
+      <div class="mt-5 space-y-4 max-h-80 overflow-y-auto pr-1">
+        {% if notifications %}
+          {% for note in notifications %}
+            {% set level = (note.level or 'info').lower() %}
+            {% set tone_class = {
+              'success': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+              'warning': 'bg-amber-50 text-amber-700 border-amber-200',
+              'error': 'bg-red-50 text-red-700 border-red-200',
+              'danger': 'bg-red-50 text-red-700 border-red-200',
+              'info': 'bg-blue-50 text-blue-700 border-blue-200'
+            } %}
+            <article class="rounded-xl border px-4 py-3 text-sm {{ tone_class.get(level, 'bg-blue-50 text-blue-700 border-blue-200') }}">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex-1">
+                  <p class="font-semibold">{{ note.message }}</p>
+                  <p class="mt-2 text-xs opacity-75">
+                    <span class="uppercase tracking-widest">{{ level }}</span>
+                    · {{ note.created_at.strftime('%b %d, %H:%M') if note.created_at else _('Unknown time') }}
+                  </p>
+                </div>
+                {% if note.target_type and note.target_id %}
+                  <a href="{{ url_for('ops.cars_list') }}?focus={{ note.target_type }}-{{ note.target_id }}" class="text-xs font-semibold uppercase tracking-widest underline">
+                    {{ _('Open') }}
+                  </a>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        {% else %}
+          <div class="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-muted">
+            {{ _('No notifications yet. You are all caught up!') }}
+          </div>
+        {% endif %}
+      </div>
+    </section>
   </div>
-</div>
 
-<!-- Summary Cards -->
-<div class="summary">
-  <div class="card"><div class="card-title">{{ _('إجمالي السيارات') }}</div><div class="card-value">{{ counts.total_cars }}</div></div>
-  <div class="card"><div class="card-title">{{ _('في الطريق') }}</div><div class="card-value">{{ counts.in_transit_cars }}</div></div>
-  <div class="card"><div class="card-title">{{ _('وصلت') }}</div><div class="card-value">{{ counts.arrived_cars }}</div></div>
-  <div class="card"><div class="card-title">{{ _('الشحنات المفتوحة') }}</div><div class="card-value">{{ counts.open_shipments }}</div></div>
-  <div class="card"><div class="card-title">{{ _('العملاء') }}</div><div class="card-value">{{ counts.customers }}</div></div>
-</div>
+  <!-- Vehicles currently in shipping -->
+  <section class="rounded-2xl bg-white p-6 shadow-soft border border-slate-100">
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <h2 class="text-lg font-semibold text-neutral">{{ _('Vehicles currently in shipping') }}</h2>
+        <p class="text-sm text-muted">
+          {{ _('Stay on top of containers that have already departed but not yet arrived. Click any record to open full details.') }}
+        </p>
+      </div>
+      <a href="{{ url_for('ops.cars_list') }}?filter=in_transit" class="text-xs font-semibold uppercase tracking-widest text-primary hover:text-primary/80">
+        {{ _('See all in-transit vehicles') }} <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i>
+      </a>
+    </div>
 
-<!-- Chart + Latest Vehicles -->
-<div class="grid-container">
-  <div class="panel">
-    <h2>{{ _('السيارات المشحونة شهرياً') }}</h2>
-    <canvas id="shippedChart" height="110"></canvas>
-  </div>
+    {% if shipping %}
+      <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {% for row in shipping %}
+          {% set vehicle = row.vehicle %}
+          {% set shipment = row.shipment %}
+          {% set ship_status = row.status %}
+          <article class="h-full rounded-2xl border border-slate-100 bg-gradient-to-br from-white to-slate-50 p-5 shadow-soft hover:shadow-lg transition">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="text-xs uppercase tracking-widest text-muted">{{ _('VIN') }}</p>
+                <p class="mt-1 font-mono text-sm font-semibold text-neutral">{{ vehicle.vin or '-' }}</p>
+              </div>
+              <span class="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                <span class="inline-flex h-2 w-2 rounded-full bg-blue-500"></span>
+                {{ ship_status }}
+              </span>
+            </div>
+            <div class="mt-4 space-y-2 text-sm text-muted">
+              <div class="flex items-center justify-between gap-2">
+                <span>{{ _('Vehicle') }}</span>
+                <span class="font-semibold text-neutral">{{ vehicle.make or '-' }} {{ vehicle.model or '' }} {{ vehicle.year or '' }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <span>{{ _('Container') }}</span>
+                <span class="font-semibold text-neutral">{{ shipment.container_number or vehicle.container_number or '-' }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <span>{{ _('Shipping line') }}</span>
+                <span class="font-semibold text-neutral">{{ shipment.shipping_company or '-' }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <span>{{ _('Origin → Destination') }}</span>
+                <span class="font-semibold text-neutral text-right">
+                  {{ shipment.origin_port or '-' }} → {{ shipment.destination_port or '-' }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <span>{{ _('Departed') }}</span>
+                <span class="font-semibold text-neutral">
+                  {{ shipment.departure_date.strftime('%d %b %Y') if shipment.departure_date else _('Pending') }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <span>{{ _('ETA') }}</span>
+                <span class="font-semibold text-neutral">
+                  {{ shipment.arrival_date.strftime('%d %b %Y') if shipment.arrival_date else _('Awaiting update') }}
+                </span>
+              </div>
+            </div>
+            <div class="mt-5 flex items-center gap-2 text-xs">
+              <a href="{{ url_for('ops.vehicle_tracking', vehicle_id=vehicle.id) }}" class="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 hover:border-primary hover:text-primary transition">
+                <i class="fa-solid fa-route"></i>
+                {{ _('Timeline') }}
+              </a>
+              <a href="{{ url_for('ops.cars_list') }}?focus={{ vehicle.id }}" class="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 hover:border-primary hover:text-primary transition">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                {{ _('View details') }}
+              </a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="mt-6 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-muted">
+        {{ _('No vehicles are currently marked as shipping. Enjoy the calm!') }}
+      </div>
+    {% endif %}
+  </section>
 
-  <div class="panel">
-    <h2>{{ _('أحدث السيارات') }}</h2>
-    <div class="overflow-x-auto">
-      <table>
-        <thead>
+  <!-- Recent vehicles table -->
+  <section class="rounded-2xl bg-white p-6 shadow-soft border border-slate-100">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <h2 class="text-lg font-semibold text-neutral">{{ _('Recently added vehicles') }}</h2>
+        <p class="text-sm text-muted">{{ _('Highlighting the latest activity across auctions and inbound purchases.') }}</p>
+      </div>
+      <div class="flex flex-wrap gap-2 items-center">
+        <label for="statusFilter" class="text-xs font-semibold uppercase tracking-widest text-muted">{{ _('Quick filter') }}</label>
+        <select id="statusFilter" class="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+          <option value="all">{{ _('All statuses') }}</option>
+          <option value="in_transit">{{ _('In transit') }}</option>
+          <option value="arrived">{{ _('Arrived / delivered') }}</option>
+          <option value="open">{{ _('Open shipments') }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mt-6 overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+        <thead class="bg-slate-50 text-xs uppercase tracking-widest text-muted">
           <tr>
-            <th>{{ _('VIN') }}</th>
-            <th>{{ _('الماركة') }}</th>
-            <th>{{ _('الموديل') }}</th>
-            <th>{{ _('الحالة') }}</th>
+            <th class="px-4 py-3 font-semibold">{{ _('VIN') }}</th>
+            <th class="px-4 py-3 font-semibold">{{ _('Make') }}</th>
+            <th class="px-4 py-3 font-semibold">{{ _('Model') }}</th>
+            <th class="px-4 py-3 font-semibold">{{ _('Year') }}</th>
+            <th class="px-4 py-3 font-semibold">{{ _('Status') }}</th>
+            <th class="px-4 py-3 font-semibold">{{ _('Actions') }}</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="recentVehiclesBody" class="divide-y divide-slate-100">
           {% for v in recent %}
-          <tr>
-            <td>{{ v.vin }}</td>
-            <td>{{ v.make }}</td>
-            <td>{{ v.model }}</td>
-            <td><span class="status {{ v.status|lower|replace(' ','_') }}">{{ v.status }}</span></td>
-          </tr>
+            {% set status_raw = (v.status or '-').strip() %}
+            {% set status_lower = status_raw.lower() %}
+            {% set status_category = (
+              'in_transit' if 'transit' in status_lower or 'shipping' in status_lower
+              else 'arrived' if 'arrived' in status_lower or 'delivered' in status_lower
+              else 'open' if 'open' in status_lower or 'pending' in status_lower or 'posted' in status_lower
+              else 'other'
+            ) %}
+            <tr class="hover:bg-slate-50 transition" data-status-category="{{ status_category }}">
+              <td class="px-4 py-3 font-mono text-xs">{{ v.vin or '-' }}</td>
+              <td class="px-4 py-3">{{ v.make or '-' }}</td>
+              <td class="px-4 py-3">{{ v.model or '-' }}</td>
+              <td class="px-4 py-3">{{ v.year or '-' }}</td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold
+                  {% if status_category == 'in_transit' %}bg-blue-100 text-blue-700
+                  {% elif status_category == 'arrived' %}bg-emerald-100 text-emerald-700
+                  {% elif status_category == 'open' %}bg-amber-100 text-amber-700
+                  {% else %}bg-slate-100 text-slate-600{% endif %}">
+                  <span class="inline-flex h-2 w-2 rounded-full
+                    {% if status_category == 'in_transit' %}bg-blue-500
+                    {% elif status_category == 'arrived' %}bg-emerald-500
+                    {% elif status_category == 'open' %}bg-amber-500
+                    {% else %}bg-slate-400{% endif %}">
+                  </span>
+                  {{ status_raw or _('Unknown') }}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2 text-xs">
+                  <a href="{{ url_for('ops.vehicle_tracking', vehicle_id=v.id) }}" class="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 hover:border-primary hover:text-primary transition">
+                    <i class="fa-solid fa-route"></i>
+                    {{ _('Timeline') }}
+                  </a>
+                  <a href="{{ url_for('ops.cars_list') }}?focus={{ v.id }}" class="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 hover:border-primary hover:text-primary transition">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    {{ _('View') }}
+                  </a>
+                </div>
+              </td>
+            </tr>
           {% endfor %}
           {% if not recent %}
-          <tr><td colspan="4" class="text-center text-gray-500 py-3">{{ _('لا توجد بيانات حالياً') }}</td></tr>
+            <tr>
+              <td colspan="6" class="px-4 py-6 text-center text-sm text-muted">
+                {{ _('No vehicles were added recently.') }}
+              </td>
+            </tr>
           {% endif %}
         </tbody>
       </table>
     </div>
-  </div>
-</div>
+  </section>
+</section>
+
+<style>
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid rgb(226 232 240);
+    background-color: #fff;
+    border-radius: 999px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: rgb(100 116 139);
+    transition: all 0.2s ease;
+  }
+  .status-chip:hover {
+    border-color: #4B2E83;
+    color: #4B2E83;
+  }
+  .status-chip.active {
+    border-color: #4B2E83;
+    background-color: #4B2E83;
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(75, 46, 131, 0.15);
+  }
+  .status-chip .chip-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.65rem;
+  }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% set months = chart.months | default([]) %}
+{% set shipped = chart.shipped | default([]) %}
 <script>
-  const ctx = document.getElementById('shippedChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: {{ chart.months | default([]) | tojson }},
-      datasets: [{
-        label: '{{ _("Shipped Cars") }}',
-        data: {{ chart.shipped | default([]) | tojson }},
-        borderColor: '#1E2BA0',
-        backgroundColor: 'rgba(30,43,160,0.1)',
-        fill: true,
-        tension: 0.35,
-        borderWidth: 2
-      }]
-    },
-    options: {
-      scales: {
-        y: { beginAtZero: true, ticks: { precision: 0 } },
-        x: { grid: { display: false } }
-      },
-      plugins: { legend: { display: false } },
+  document.addEventListener('DOMContentLoaded', function () {
+    // Chart
+    const ctx = document.getElementById('shippedChart');
+    if (ctx) {
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: {{ months | tojson }},
+          datasets: [{
+            label: '{{ _("Shipped vehicles") }}',
+            data: {{ shipped | tojson }},
+            borderColor: '#4B2E83',
+            backgroundColor: 'rgba(75, 46, 131, 0.15)',
+            pointBackgroundColor: '#FFB800',
+            tension: 0.35,
+            borderWidth: 2,
+            fill: true,
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // Status filter chips
+    const chips = Array.from(document.querySelectorAll('.status-chip'));
+    const tableRows = Array.from(document.querySelectorAll('#recentVehiclesBody tr'));
+    const dropdown = document.getElementById('statusFilter');
+
+    function applyFilter(filter) {
+      tableRows.forEach(row => {
+        if (!row.dataset.statusCategory) {
+          row.hidden = filter !== 'all';
+          return;
+        }
+        row.hidden = !(filter === 'all' || row.dataset.statusCategory === filter);
+      });
+      if (dropdown) dropdown.value = filter;
+    }
+
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const filter = chip.dataset.statusFilter;
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        applyFilter(filter);
+      });
+    });
+
+    if (dropdown) {
+      dropdown.addEventListener('change', (event) => {
+        const selected = event.target.value;
+        chips.forEach(chip => {
+          chip.classList.toggle('active', chip.dataset.statusFilter === selected);
+        });
+        if (!chips.some(chip => chip.dataset.statusFilter === selected && chip.classList.contains('active'))) {
+          chips.forEach(chip => {
+            if (chip.dataset.statusFilter === selected) {
+              chip.classList.add('active');
+            } else {
+              chip.classList.remove('active');
+            }
+          });
+        }
+        applyFilter(selected);
+      });
     }
   });
 </script>
-
 {% endblock %}

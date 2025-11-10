@@ -24,6 +24,7 @@ from ...models import (
     Document,
 )
 from ...utils_pdf import render_invoice_pdf
+from decimal import Decimal
 import os
 import secrets
 
@@ -32,8 +33,149 @@ cust_bp = Blueprint("cust", __name__, template_folder="templates/customer")
 @cust_bp.route("/dashboard")
 @login_required
 def dashboard():
-    """Customer home page with quick actions."""
-    return render_template("customer/home.html")
+    """Customer home page with personalized insights and quick actions."""
+    cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
+
+    counts = {
+        "total": 0,
+        "in_transit": 0,
+        "delivered": 0,
+        "awaiting": 0,
+        "open_invoices": 0,
+    }
+    vehicle_cards: list[dict] = []
+    invoices_summary: list[dict] = []
+
+    outstanding_total = Decimal("0")
+
+    if cust:
+        vehicles = (
+            db.session.query(Vehicle)
+            .filter(Vehicle.owner_customer_id == cust.id)
+            .order_by(Vehicle.created_at.desc())
+            .limit(6)
+            .all()
+        )
+        counts["total"] = len(vehicles)
+
+        shipments_by_vehicle: dict[int, Shipment] = {}
+        if vehicles:
+            vehicle_ids = [v.id for v in vehicles]
+            shipment_rows = (
+                db.session.query(Shipment, VehicleShipment.vehicle_id)
+                .join(VehicleShipment, Shipment.id == VehicleShipment.shipment_id)
+                .filter(VehicleShipment.vehicle_id.in_(vehicle_ids))
+                .order_by(Shipment.created_at.desc())
+                .all()
+            )
+
+            def shipment_sort_key(s: Shipment | None):
+                if not s:
+                    return None
+                return (
+                    s.arrival_date
+                    or s.departure_date
+                    or s.created_at
+                )
+
+            for shipment, vehicle_id in shipment_rows:
+                existing = shipments_by_vehicle.get(vehicle_id)
+                if existing is None:
+                    shipments_by_vehicle[vehicle_id] = shipment
+                else:
+                    current_key = shipment_sort_key(existing)
+                    new_key = shipment_sort_key(shipment)
+                    if new_key and (current_key is None or new_key > current_key):
+                        shipments_by_vehicle[vehicle_id] = shipment
+
+        for vehicle in vehicles:
+            shipment = shipments_by_vehicle.get(vehicle.id)
+            status_text = (vehicle.status or "").strip()
+            status_lower = status_text.lower()
+
+            stage = "awaiting"
+            if shipment and shipment.arrival_date:
+                stage = "delivered"
+            elif shipment and shipment.departure_date:
+                stage = "in_transit"
+            elif status_lower in {"delivered", "arrived"}:
+                stage = "delivered"
+            elif status_lower in {"in transit", "shipping", "shipped", "posted"}:
+                stage = "in_transit"
+
+            if stage == "in_transit":
+                counts["in_transit"] += 1
+            elif stage == "delivered":
+                counts["delivered"] += 1
+            else:
+                counts["awaiting"] += 1
+
+            vehicle_cards.append(
+                {
+                    "id": vehicle.id,
+                    "vin": (vehicle.vin or "").strip(),
+                    "title": " ".join(filter(None, [vehicle.make, vehicle.model, str(vehicle.year or "").strip()])),
+                    "status": status_text or "-",
+                    "stage": stage,
+                    "container": (
+                        (shipment.container_number if shipment and shipment.container_number else None)
+                        or getattr(vehicle, "container_number", None)
+                    ),
+                    "origin": shipment.origin_port if shipment else None,
+                    "destination": shipment.destination_port if shipment else None,
+                    "departed": shipment.departure_date if shipment else None,
+                    "eta": shipment.arrival_date if shipment else None,
+                    "timeline_url": url_for("tracking_page", vin=vehicle.vin) if vehicle.vin else None,
+                    "details_url": url_for("cust.my_cars") + f"?focus={vehicle.id}",
+                }
+            )
+
+        invoice_rows = (
+            db.session.query(Invoice)
+            .filter(Invoice.customer_id == cust.id)
+            .order_by(Invoice.created_at.desc())
+            .limit(5)
+            .all()
+        )
+
+        for invoice in invoice_rows:
+            status_norm = (invoice.status or "").strip().lower()
+            total_amount = Decimal(str(invoice.total_omr or 0))
+            try:
+                paid_amount = invoice.paid_total()
+            except Exception:
+                paid_amount = Decimal("0")
+
+            outstanding_amount = total_amount - paid_amount
+            if outstanding_amount < Decimal("0"):
+                outstanding_amount = Decimal("0")
+
+            is_open = status_norm not in {"paid", "cancelled"}
+            if is_open:
+                counts["open_invoices"] += 1
+                outstanding_total += outstanding_amount
+
+            invoices_summary.append(
+                {
+                    "id": invoice.id,
+                    "number": invoice.invoice_number or f"INV-{invoice.id}",
+                    "status": status_norm or "unknown",
+                    "total": total_amount,
+                    "outstanding": outstanding_amount,
+                    "created_at": invoice.created_at,
+                    "detail_url": url_for("cust.invoice_detail", invoice_id=invoice.id),
+                    "is_open": is_open,
+                }
+            )
+
+    return render_template(
+        "customer/home.html",
+        customer=cust,
+        counts=counts,
+        vehicles=vehicle_cards,
+        invoices=invoices_summary,
+        outstanding_total=outstanding_total,
+    )
 
 
 @cust_bp.route("/cars")
@@ -260,29 +402,37 @@ def disable_share_vehicle(vehicle_id: int):
 
 
 @cust_bp.route("/track")
-@login_required
 def track():
-    """VIN entry and redirect to the public tracking timeline.
+    """Public entry point for shipment tracking.
 
-    If a VIN is provided (via vin= or q=), redirect to /tracking/<vin>.
-    Otherwise, try to use the latest vehicle of the current customer.
-    If none, show a simple VIN input form.
+    Accepts VIN or Lot inputs (via vin=, lot=, or q=) and redirects to /tracking/<identifier>.
+    For authenticated customers, falls back to their most recent vehicle VIN.
     """
-    vin_param = (request.args.get("vin") or request.args.get("q") or "").strip()
-    if vin_param:
-        return redirect(url_for("tracking_page", vin=vin_param))
+    identifier = (
+        request.args.get("vin")
+        or request.args.get("lot")
+        or request.args.get("q")
+        or ""
+    ).strip()
+    if identifier:
+        return redirect(url_for("tracking_page", vin=identifier))
 
-    # Pick latest vehicle for convenience
-    cust = db.session.query(Customer).filter(Customer.user_id == current_user.id).first()
-    if cust:
-        v = (
-            db.session.query(Vehicle)
-            .filter(Vehicle.owner_customer_id == cust.id)
-            .order_by(Vehicle.created_at.desc())
+    # For signed-in customers, fall back to most recent vehicle VIN if available.
+    if current_user.is_authenticated:
+        cust = (
+            db.session.query(Customer)
+            .filter(Customer.user_id == current_user.id)
             .first()
         )
-        if v and v.vin:
-            return redirect(url_for("tracking_page", vin=v.vin))
+        if cust:
+            v = (
+                db.session.query(Vehicle)
+                .filter(Vehicle.owner_customer_id == cust.id)
+                .order_by(Vehicle.created_at.desc())
+                .first()
+            )
+            if v and v.vin:
+                return redirect(url_for("tracking_page", vin=v.vin))
 
     return render_template("customer/track.html")
 

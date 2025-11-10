@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+{% block title %}{{ _('Request Pricing') }}{% endblock %}
+
+{% block content %}
+<section class="py-16">
+  <div class="max-w-4xl mx-auto">
+    <div class="bg-white shadow-soft border rounded-3xl p-8 md:p-12 text-left">
+      <h1 class="text-3xl md:text-4xl font-extrabold text-neutral mb-3">{{ _('Request a custom shipping quote') }}</h1>
+      <p class="text-muted mb-8 leading-relaxed">
+        {{ _('Share a few details about the vehicle or shipment you want to move. Our pricing team will review and contact you with the best available options.') }}
+      </p>
+
+      <form method="post" action="{{ url_for('pricing_request') }}" class="grid gap-6">
+        <div class="grid md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-semibold mb-1" for="name">{{ _('Full name') }}</label>
+            <input id="name" name="name" type="text" required class="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" placeholder="{{ _('Enter your full name') }}">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-1" for="company">{{ _('Company (optional)') }}</label>
+            <input id="company" name="company" type="text" class="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" placeholder="{{ _('Company or organization') }}">
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-semibold mb-1" for="email">{{ _('Email') }}</label>
+            <input id="email" name="email" type="email" class="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" placeholder="{{ _('you@example.com') }}">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-1" for="phone">{{ _('Phone number') }}</label>
+            <input id="phone" name="phone" type="text" class="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" placeholder="{{ _('Include country code if possible') }}">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-1" for="shipment_type">{{ _('Shipment type') }}</label>
+          <input id="shipment_type" name="shipment_type" type="text" class="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" placeholder="{{ _('Example: 1 car from USA to Oman, 40ft container, etc.') }}">
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-1" for="details">{{ _('Additional details') }}</label>
+          <textarea id="details" name="details" rows="5" class="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" placeholder="{{ _('Share pickup location, destination, and any special requests.') }}"></textarea>
+        </div>
+
+        <p class="text-xs text-muted">
+          {{ _('We use your information only to prepare accurate pricing and follow-up with you. A member of the team will respond within one business day.') }}
+        </p>
+
+        <div>
+          <button type="submit" class="inline-flex items-center justify-center px-6 py-3 rounded-full bg-primary text-white font-semibold hover:shadow-soft transition">
+            {{ _('Send pricing request') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

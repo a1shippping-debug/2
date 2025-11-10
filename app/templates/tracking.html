@@ -1,16 +1,17 @@
 {% extends "layout.html" %}
-{% block title %}{{ _('تتبع السيارة') }}{% endblock %}
+{% block title %}{{ _('Track Shipment') }}{% endblock %}
 
 {% block content %}
 <section class="bg-[#F5F7FA] min-h-screen py-10">
 
   <div class="text-center mb-8">
     <h1 class="text-3xl md:text-5xl font-bold text-[#004C97] animate-slideUp">
-      {{ _('تتبع حالة السيارة') }}
+      {{ _('Track Your Shipment') }}
     </h1>
-    <p class="text-gray-600 mt-2">{{ _('تابع كل المراحل الخاصة بطلبك') }}</p>
-    <div class="mt-1 text-gray-500">
-      VIN: <strong>{{ vin }}</strong> | Lot: <strong>{{ lot_number }}</strong>
+    <p class="text-gray-600 mt-2">{{ _('Enter the VIN (chassis) or Lot number to view public shipment updates.') }}</p>
+    <p class="text-gray-500 text-sm">{{ _('Pricing and financial information is hidden on this public page.') }}</p>
+    <div class="mt-2 text-gray-500">
+      {{ _('VIN / Reference') }}: <strong>{{ vin }}</strong> | {{ _('Lot') }}: <strong>{{ lot_number }}</strong>
     </div>
   </div>
 
@@ -20,21 +21,17 @@
 
       {% for s in stages %}
       <div class="flex flex-col items-center flex-1 animate-fadeIn delay-{{ loop.index0 * 100 }}">
-        <!-- أيقونة المرحلة -->
         <img src="{{ url_for('static', filename='tracking-icons/' ~ loop.index ~ '.png') }}" class="w-12 h-12 mb-2" alt="{{ s.name }}">
-        
-        <!-- حالة المرحلة -->
+
         <div class="w-8 h-8 rounded-full flex items-center justify-center text-white
           {% if s.completed %}bg-[#004C97]{% else %}bg-gray-300{% endif %}">
-          {% if s.completed %}✔{% else %}✖{% endif %}
+          {% if s.completed %}&#10003;{% else %}&#8226;{% endif %}
         </div>
 
-        <!-- اسم المرحلة -->
         <p class="text-[#004C97] font-semibold mt-2 text-center">{{ s.name }}</p>
       </div>
 
       {% if not loop.last %}
-        <!-- الخط بين المراحل -->
         <div class="flex-0.5 h-1 mt-7
           {% if s.completed %}bg-[#004C97]{% else %}bg-gray-300{% endif %}">
         </div>
@@ -44,28 +41,22 @@
     </div>
   </div>
 
-  <!-- Summary cards: Container, Arrival, Total Cost -->
+  <!-- Summary cards: Container, Arrival, Status -->
   <div class="max-w-6xl mx-auto px-2 mt-8">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="bg-white rounded-2xl shadow-lg p-4 border border-slate-200">
-        <div class="text-gray-500 text-sm">{{ _('رقم الحاوية') }}</div>
+        <div class="text-gray-500 text-sm">{{ _('Container Number') }}</div>
         <div class="text-xl font-semibold text-[#004C97]">{{ container_number or '-' }}</div>
-        <div class="mt-3 text-gray-500 text-sm">{{ _('رقم الحجز') }}</div>
+        <div class="mt-3 text-gray-500 text-sm">{{ _('Booking Number') }}</div>
         <div class="text-lg font-semibold text-[#004C97]">{{ booking_number or '-' }}</div>
       </div>
       <div class="bg-white rounded-2xl shadow-lg p-4 border border-slate-200">
-        <div class="text-gray-500 text-sm">{{ _('تاريخ الوصول') }}</div>
+        <div class="text-gray-500 text-sm">{{ _('Estimated Arrival') }}</div>
         <div class="text-xl font-semibold text-[#004C97]">{{ arrival_date or '-' }}</div>
       </div>
       <div class="bg-white rounded-2xl shadow-lg p-4 border border-slate-200">
-        <div class="text-gray-500 text-sm">{{ _('التكلفة الإجمالية (ر.ع)') }}</div>
-        <div class="text-xl font-semibold text-[#004C97]">
-          {% if total_cost_omr is defined and total_cost_omr is not none %}
-            {{ '%.3f'|format(total_cost_omr) }}
-          {% else %}
-            -
-          {% endif %}
-        </div>
+        <div class="text-gray-500 text-sm">{{ _('Current Status') }}</div>
+        <div class="text-xl font-semibold text-[#004C97]">{{ vehicle.status if vehicle and vehicle.status else '-' }}</div>
       </div>
     </div>
   </div>

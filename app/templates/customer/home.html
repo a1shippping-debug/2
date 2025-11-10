@@ -1,141 +1,274 @@
 {% extends "layout.html" %}
-{% block title %}{{ _('لوحة العميل') }}{% endblock %}
+{% block title %}{{ _('Customer Portal') }}{% endblock %}
 {% block content %}
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+<section class="space-y-10">
+  <div class="rounded-3xl bg-gradient-to-br from-primary to-indigo-700 text-white p-8 lg:p-12 shadow-soft">
+    <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <div class="space-y-4">
+        <p class="text-sm uppercase tracking-[0.3em] text-white/70">{{ _('Welcome back') }}</p>
+        <h1 class="text-3xl lg:text-4xl font-extrabold leading-tight">
+          {{ _('Your shipping hub is ready') }}
+        </h1>
+        <p class="text-sm lg:text-base text-white/80 max-w-2xl">
+          {{ _('Track shipments, review documents, and handle invoices in one place. We keep every vehicle update within reach, so you stay in control.') }}
+        </p>
+        {% if outstanding_total and outstanding_total > 0 %}
+          <div class="inline-flex items-center gap-3 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
+            <span class="inline-flex h-2 w-2 rounded-full bg-amber-300 animate-pulse"></span>
+            {{ _('Outstanding balance:') }}
+            <span>{{ '%.3f'|format(outstanding_total) }} {{ _('OMR') }}</span>
+          </div>
+        {% endif %}
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <a href="{{ url_for('cust.my_cars') }}" class="inline-flex items-center gap-3 rounded-2xl bg-white/10 px-5 py-4 text-sm font-semibold shadow-sm hover:bg-white/20 transition">
+          <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20"><i class="fa-solid fa-car"></i></span>
+          <span>{{ _('My vehicles') }}</span>
+        </a>
+        <a href="{{ url_for('cust.track') }}" class="inline-flex items-center gap-3 rounded-2xl bg-white/10 px-5 py-4 text-sm font-semibold shadow-sm hover:bg-white/20 transition">
+          <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20"><i class="fa-solid fa-location-arrow"></i></span>
+          <span>{{ _('Track shipment') }}</span>
+        </a>
+        <a href="{{ url_for('cust.invoices_list') }}" class="inline-flex items-center gap-3 rounded-2xl bg-white/10 px-5 py-4 text-sm font-semibold shadow-sm hover:bg-white/20 transition">
+          <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20"><i class="fa-solid fa-file-invoice-dollar"></i></span>
+          <span>{{ _('Invoices') }}</span>
+        </a>
+        <a href="{{ url_for('pricing_request') }}" class="inline-flex items-center gap-3 rounded-2xl bg-white/10 px-5 py-4 text-sm font-semibold shadow-sm hover:bg-white/20 transition">
+          <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20"><i class="fa-solid fa-headset"></i></span>
+          <span>{{ _('Support request') }}</span>
+        </a>
+      </div>
+    </div>
 
-  body {
-    font-family: 'Cairo', sans-serif;
-    background-color: #ffffff;
-    color: #1E2BA0;
-  }
-
-  .dashboard-container {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 4rem 1rem;
-  }
-
-  .dashboard-header {
-    text-align: center;
-    margin-bottom: 3rem;
-  }
-
-  .dashboard-header img {
-    width: 120px;
-    height: auto;
-    margin: 0 auto 1rem;
-  }
-
-  .dashboard-header h1 {
-    font-size: 2.2rem;
-    font-weight: 700;
-    color: #1E2BA0;
-    margin-bottom: 0.5rem;
-  }
-
-  .dashboard-header p {
-    color: #64748b;
-    font-size: 1rem;
-  }
-
-  .card-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-    width: 100%;
-    max-width: 850px;
-  }
-
-  @media (min-width: 768px) {
-    .card-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  .dashboard-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 1rem;
-    padding: 2rem;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
-    transition: all 0.3s ease;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .dashboard-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(30, 43, 160, 0.1);
-  }
-
-  .dashboard-card h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-  }
-
-  .dashboard-card p {
-    color: #475569;
-    font-size: 0.95rem;
-  }
-
-  .dashboard-card .icon {
-    font-size: 2rem;
-    position: absolute;
-    top: 1.5rem;
-    right: 1.5rem;
-    color: #1E2BA0;
-    opacity: 0.15;
-  }
-
-  .action {
-    margin-top: 1.25rem;
-    font-weight: 600;
-    color: #1E2BA0;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-
-  .action span {
-    transition: transform 0.3s;
-  }
-
-  .dashboard-card:hover .action span {
-    transform: translateX(4px);
-  }
-</style>
-
-<div class="dashboard-container">
-  <!-- رأس الصفحة -->
-  <div class="dashboard-header">
-    <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo">
-    <h1>{{ _('لوحة العميل') }}</h1>
-    <p>{{ _('اختر أحد الخيارات التالية للوصول إلى خدماتك') }}</p>
+    <form method="get" action="{{ url_for('cust.track') }}" class="mt-10 grid gap-3 sm:grid-cols-[1fr_auto]">
+      <input name="vin" required placeholder="{{ _('Enter VIN or Lot number to jump to tracking') }}" class="w-full rounded-2xl border border-white/20 bg-white/20 px-4 py-3 text-sm backdrop-blur focus:border-white focus:outline-none focus:ring-2 focus:ring-white/60" />
+      <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-primary hover:bg-slate-100 transition">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        {{ _('Search tracking') }}
+      </button>
+    </form>
   </div>
 
-  <!-- بطاقات -->
-  <div class="card-grid">
-    <!-- سياراتي -->
-    <a href="{{ url_for('cust.my_cars') }}" class="dashboard-card">
-      <div class="icon">🚗</div>
-      <h2>{{ _('سياراتي') }}</h2>
-      <p>{{ _('عرض جميع المركبات المرتبطة بحسابك وتتبع حالتها الحالية.') }}</p>
-      <div class="action">{{ _('الدخول') }} <span>→</span></div>
-    </a>
-
-    <!-- تتبع السيارات -->
-    <a href="{{ url_for('cust.track') }}" class="dashboard-card">
-      <div class="icon">📍</div>
-      <h2>{{ _('تتبع السيارات') }}</h2>
-      <p>{{ _('أدخل رقم الشاصي (VIN) لمعرفة موقع الشحنة الحالية ومراحلها.') }}</p>
-      <div class="action">{{ _('ابدأ التتبع') }} <span>→</span></div>
-    </a>
+  <!-- KPI cards -->
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    <article class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
+      <p class="text-xs uppercase tracking-widest text-muted">{{ _('Total vehicles') }}</p>
+      <p class="mt-3 text-3xl font-bold text-neutral">{{ counts.total }}</p>
+    </article>
+    <article class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
+      <p class="text-xs uppercase tracking-widest text-blue-600">{{ _('In transit') }}</p>
+      <p class="mt-3 text-3xl font-bold text-blue-600">{{ counts.in_transit }}</p>
+    </article>
+    <article class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
+      <p class="text-xs uppercase tracking-widest text-emerald-600">{{ _('Arrived / delivered') }}</p>
+      <p class="mt-3 text-3xl font-bold text-emerald-600">{{ counts.delivered }}</p>
+    </article>
+    <article class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
+      <p class="text-xs uppercase tracking-widest text-amber-600">{{ _('Awaiting pickup') }}</p>
+      <p class="mt-3 text-3xl font-bold text-amber-600">{{ counts.awaiting }}</p>
+    </article>
+    <article class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
+      <p class="text-xs uppercase tracking-widest text-primary">{{ _('Open invoices') }}</p>
+      <p class="mt-3 text-3xl font-bold text-primary">{{ counts.open_invoices }}</p>
+    </article>
   </div>
-</div>
+
+  <div class="grid gap-6 xl:grid-cols-3">
+    <section class="xl:col-span-2 rounded-2xl bg-white p-6 shadow-soft border border-slate-100">
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h2 class="text-lg font-semibold text-neutral">{{ _('Recent vehicles') }}</h2>
+          <p class="text-sm text-muted">{{ _('We highlight the latest vehicles you added or purchased. Use the actions to see full details.') }}</p>
+        </div>
+        <a href="{{ url_for('cust.my_cars') }}" class="text-xs font-semibold uppercase tracking-widest text-primary hover:text-primary/80">
+          {{ _('View all') }} <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i>
+        </a>
+      </div>
+
+      {% if vehicles %}
+        <div class="mt-6 space-y-4">
+          {% for vehicle in vehicles %}
+            <article class="rounded-2xl border border-slate-100 p-5 shadow-soft hover:shadow-lg transition">
+              <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div class="space-y-2">
+                  <p class="text-xs uppercase tracking-widest text-muted">{{ _('VIN') }}</p>
+                  <p class="font-mono text-sm text-neutral">{{ vehicle.vin or '-' }}</p>
+                  <h3 class="text-lg font-semibold text-neutral">{{ vehicle.title or _('Unnamed vehicle') }}</h3>
+                  <p class="text-sm text-muted">{{ _('Current status:') }} <span class="font-semibold text-neutral">{{ vehicle.status }}</span></p>
+                  <dl class="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                    <div class="flex items-center gap-2">
+                      <dt class="text-muted">{{ _('Container') }}</dt>
+                      <dd class="font-semibold text-neutral">{{ vehicle.container or '-' }}</dd>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <dt class="text-muted">{{ _('Route') }}</dt>
+                      <dd class="font-semibold text-neutral">
+                        {% if vehicle.origin or vehicle.destination %}
+                          {{ vehicle.origin or '—' }} → {{ vehicle.destination or '—' }}
+                        {% else %}
+                          {{ _('Pending assignment') }}
+                        {% endif %}
+                      </dd>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <dt class="text-muted">{{ _('Departed') }}</dt>
+                      <dd class="font-semibold text-neutral">
+                        {% if vehicle.departed %}{{ vehicle.departed.strftime('%d %b %Y') }}{% else %}{{ _('Waiting') }}{% endif %}
+                      </dd>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <dt class="text-muted">{{ _('ETA') }}</dt>
+                      <dd class="font-semibold text-neutral">
+                        {% if vehicle.eta %}{{ vehicle.eta.strftime('%d %b %Y') }}{% else %}{{ _('Awaiting update') }}{% endif %}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+                <div class="flex flex-col items-start gap-3 min-w-[160px]">
+                  <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold
+                    {% if vehicle.stage == 'in_transit' %}
+                      bg-blue-100 text-blue-700
+                    {% elif vehicle.stage == 'delivered' %}
+                      bg-emerald-100 text-emerald-700
+                    {% else %}
+                      bg-amber-100 text-amber-700
+                    {% endif %}">
+                    <span class="inline-flex h-2 w-2 rounded-full
+                      {% if vehicle.stage == 'in_transit' %}
+                        bg-blue-500
+                      {% elif vehicle.stage == 'delivered' %}
+                        bg-emerald-500
+                      {% else %}
+                        bg-amber-500
+                      {% endif %}">
+                    </span>
+                    {% if vehicle.stage == 'in_transit' %}
+                      {{ _('In transit') }}
+                    {% elif vehicle.stage == 'delivered' %}
+                      {{ _('Delivered') }}
+                    {% else %}
+                      {{ _('Waiting to ship') }}
+                    {% endif %}
+                  </span>
+                  <a href="{{ vehicle.timeline_url or url_for('cust.track') }}{% if vehicle.timeline_url %}{% else %}?vin={{ vehicle.vin }}{% endif %}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold hover:border-primary hover:text-primary transition">
+                    <i class="fa-solid fa-route"></i>
+                    {{ _('Track timeline') }}
+                  </a>
+                  <a href="{{ vehicle.details_url }}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold hover:border-primary hover:text-primary transition">
+                    <i class="fa-solid fa-file-lines"></i>
+                    {{ _('Vehicle details') }}
+                  </a>
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="mt-6 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-muted">
+          {{ _('No vehicles found yet. Add your first car or contact support for help importing vehicles into the portal.') }}
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="rounded-2xl bg-white p-6 shadow-soft border border-slate-100">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold text-neutral">{{ _('Invoices & billing') }}</h2>
+          <p class="text-sm text-muted">{{ _('See the latest invoices and stay ahead of any outstanding balances.') }}</p>
+        </div>
+        <a href="{{ url_for('cust.invoices_list') }}" class="text-xs font-semibold uppercase tracking-widest text-primary hover:text-primary/80">
+          {{ _('Manage invoices') }}
+        </a>
+      </div>
+
+      {% if invoices %}
+        <ul class="mt-6 space-y-4">
+          {% for invoice in invoices %}
+            <li class="rounded-2xl border border-slate-100 p-4 shadow-soft">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase tracking-widest text-muted">{{ _('Invoice') }} {{ invoice.number }}</p>
+                  <p class="mt-1 text-sm text-neutral">
+                    {% if invoice.created_at %}{{ invoice.created_at.strftime('%d %b %Y') }}{% endif %}
+                  </p>
+                  <p class="mt-2 text-sm text-muted">
+                    {{ _('Total:') }}
+                    <span class="font-semibold text-neutral">{{ '%.3f'|format(invoice.total) }} {{ _('OMR') }}</span>
+                  </p>
+                  {% if invoice.is_open %}
+                    <p class="text-sm text-amber-600 font-semibold mt-1">
+                      {{ _('Outstanding:') }} {{ '%.3f'|format(invoice.outstanding) }} {{ _('OMR') }}
+                    </p>
+                  {% else %}
+                    <p class="text-sm text-emerald-600 font-semibold mt-1">{{ _('Paid in full') }}</p>
+                  {% endif %}
+                </div>
+                <div class="flex flex-col items-end gap-2">
+                  <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold
+                    {% if invoice.is_open %}
+                      bg-amber-100 text-amber-700
+                    {% else %}
+                      bg-emerald-100 text-emerald-700
+                    {% endif %}">
+                    <span class="inline-flex h-2 w-2 rounded-full
+                      {% if invoice.is_open %}
+                        bg-amber-500
+                      {% else %}
+                        bg-emerald-500
+                      {% endif %}">
+                    </span>
+                    {% if invoice.is_open %}
+                      {{ _('Open') }}
+                    {% else %}
+                      {{ _('Paid') }}
+                    {% endif %}
+                  </span>
+                  <a href="{{ invoice.detail_url }}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold hover:border-primary hover:text-primary transition">
+                    <i class="fa-solid fa-file-lines"></i>
+                    {{ _('View invoice') }}
+                  </a>
+                </div>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="mt-6 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-muted">
+          {{ _('Invoices will appear here once issued. Reach out if you believe one is missing.') }}
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <section class="rounded-3xl bg-white p-6 shadow-soft border border-slate-100">
+    <div class="grid gap-6 md:grid-cols-3">
+      <div class="space-y-3">
+        <h3 class="text-lg font-semibold text-neutral">{{ _('Need assistance?') }}</h3>
+        <p class="text-sm text-muted">
+          {{ _('Our operations team can help with shipping updates, port releases, and invoice clarifications. Choose the option that suits you best:') }}
+        </p>
+      </div>
+      <div class="flex flex-col gap-3">
+        <a href="mailto:{{ customer.email if customer else 'support@example.com' }}" class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition">
+          <i class="fa-solid fa-envelope"></i>
+          {{ _('Email us') }}
+        </a>
+        <a href="tel:{{ customer.phone if customer and customer.phone else '+96800000000' }}" class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition">
+          <i class="fa-solid fa-phone"></i>
+          {{ _('Call support') }}
+        </a>
+      </div>
+      <div class="flex flex-col gap-3">
+        <a href="{{ url_for('pricing_request') }}" class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition">
+          <i class="fa-solid fa-clipboard-list"></i>
+          {{ _('Request new shipment quote') }}
+        </a>
+        <a href="{{ url_for('cust.track') }}" class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition">
+          <i class="fa-solid fa-map-location-dot"></i>
+          {{ _('Track another vehicle') }}
+        </a>
+      </div>
+    </div>
+  </section>
+</section>
 {% endblock %}
