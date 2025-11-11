@@ -59,13 +59,15 @@
   </style>
 </head>
 
-<body class="bg-background text-neutral font-sans text-center">
+<body class="bg-background text-neutral font-sans">
+
 
   <!-- Header -->
   {% include 'components/header.html' %}
 
   <!-- محتوى الصفحة -->
-  <main class="pt-24 container mx-auto px-4">
+<main class="pt-20 container mx-auto px-4 text-right">
+
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for cat, msg in messages %}
