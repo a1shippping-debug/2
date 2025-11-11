@@ -489,3 +489,9 @@ body.menu-open {
     inset-inline: 12px;
   }
 }
+
+/* Force header layout isolation */
+.main-header, .main-header * {
+  text-align: initial !important;
+  box-sizing: border-box;
+}
