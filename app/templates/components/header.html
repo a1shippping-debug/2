@@ -99,7 +99,8 @@
   </div>
 </header>
 
-<div class="main-header__overlay" id="menuOverlay"></div>
+<div class="main-header__overlay" id="menuOverlay" style="display:none;"></div>
+
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -146,4 +147,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+    // 🩵 Fix: remove stuck menu state after reload or navigation
+  window.addEventListener("pageshow", () => {
+    document.body.classList.remove("menu-open");
+    const header = document.getElementById("site-header");
+    if (header) header.classList.remove("main-header--open");
+  });
+
 </script>
