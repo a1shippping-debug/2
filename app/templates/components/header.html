@@ -1,6 +1,5 @@
 <header class="main-header is-rtl" id="site-header">
   <div class="main-header__inner">
-
     <!-- ✅ Logo -->
     <div class="main-header__left">
       <div class="main-header__logo">
@@ -24,11 +23,15 @@
 
     <!-- ✅ Actions -->
     <div class="main-header__actions">
-
       <!-- Search -->
       <div class="main-header__search">
         <form id="vehicle-search-form">
-          <input type="text" class="main-header__input" id="vehicle-search-input" placeholder="رقم VIN">
+          <input
+            type="text"
+            class="main-header__input"
+            id="vehicle-search-input"
+            placeholder="رقم VIN"
+          />
           <button type="submit" class="main-header__search-btn">
             <i class="fa-solid fa-magnifying-glass"></i>
           </button>
@@ -68,7 +71,7 @@
     <!-- ✅ Mobile Menu -->
     <div class="main-header__mobile" id="mobileMenu">
       <div class="main-header__mobile-search">
-        <input type="text" placeholder="رقم VIN">
+        <input type="text" placeholder="رقم VIN" />
         <button type="button"><i class="fa-solid fa-magnifying-glass"></i></button>
       </div>
 
@@ -96,7 +99,6 @@
   </div>
 </header>
 
-<!-- ✅ Overlay -->
 <div class="main-header__overlay" id="menuOverlay"></div>
 
 <script>
@@ -116,7 +118,6 @@ document.addEventListener("DOMContentLoaded", () => {
     body.classList.toggle("menu-open", isOpen);
   });
 
-  // Overlay click closes menu
   overlay.addEventListener("click", () => {
     header.classList.remove("main-header--open");
     body.classList.remove("menu-open");
@@ -134,13 +135,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // VIN Search redirect
-  const searchForm = document.getElementById("vehicle-search-form");
-  const searchInput = document.getElementById("vehicle-search-input");
-  if (searchForm) {
-    searchForm.addEventListener("submit", (e) => {
+  // VIN search
+  const form = document.getElementById("vehicle-search-form");
+  const input = document.getElementById("vehicle-search-input");
+  if (form) {
+    form.addEventListener("submit", (e) => {
       e.preventDefault();
-      const vin = searchInput.value.trim();
+      const vin = input.value.trim();
       if (vin) window.location.href = "/tracking/" + encodeURIComponent(vin);
     });
   }
