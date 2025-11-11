@@ -112,19 +112,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const userBtn = document.getElementById("userMenuBtn");
   const userMenu = document.getElementById("userMenu");
 
-  // Mobile toggle
+  // ✅ Mobile toggle
   toggle.addEventListener("click", () => {
     const isOpen = header.classList.toggle("main-header--open");
     toggle.setAttribute("aria-expanded", isOpen);
     body.classList.toggle("menu-open", isOpen);
+    overlay.style.display = isOpen ? "block" : "none";
   });
 
+  // ✅ Overlay click closes menu
   overlay.addEventListener("click", () => {
     header.classList.remove("main-header--open");
     body.classList.remove("menu-open");
+    overlay.style.display = "none";
   });
 
-  // User dropdown
+  // ✅ User dropdown
   userBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     userMenu.classList.toggle("open");
@@ -136,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // VIN search
+  // ✅ VIN search redirect
   const form = document.getElementById("vehicle-search-form");
   const input = document.getElementById("vehicle-search-input");
   if (form) {
@@ -147,11 +150,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-    // 🩵 Fix: remove stuck menu state after reload or navigation
-  window.addEventListener("pageshow", () => {
-    document.body.classList.remove("menu-open");
-    const header = document.getElementById("site-header");
-    if (header) header.classList.remove("main-header--open");
-  });
 
+// ✅ إصلاح تعليق الشاشة بعد تسجيل الدخول أو تحميل صفحة جديدة
+window.addEventListener("load", () => {
+  document.body.classList.remove("menu-open");
+  const header = document.getElementById("site-header");
+  const overlay = document.getElementById("menuOverlay");
+  if (header) header.classList.remove("main-header--open");
+  if (overlay) overlay.style.display = "none";
+});
+
+window.addEventListener("pageshow", () => {
+  document.body.classList.remove("menu-open");
+  const header = document.getElementById("site-header");
+  const overlay = document.getElementById("menuOverlay");
+  if (header) header.classList.remove("main-header--open");
+  if (overlay) overlay.style.display = "none";
+});
 </script>
+
