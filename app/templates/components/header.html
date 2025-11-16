@@ -13,12 +13,14 @@
   'admin': [
     {'label': _('Admin Dashboard'), 'url': url_for('admin.dashboard')},
     {'label': _('Operations Dashboard'), 'url': url_for('ops.dashboard')},
+    {'label': _('Warehouses'), 'url': url_for('ops.warehouses_view')},
     {'label': _('Vehicles'), 'url': url_for('ops.cars_list')},
     {'label': _('Customers'), 'url': url_for('ops.customers_list')},
     {'label': _('Bill of Lading'), 'url': url_for('acct.bol_list')}
   ],
   'employee': [
     {'label': _('Operations Dashboard'), 'url': url_for('ops.dashboard')},
+    {'label': _('Warehouses'), 'url': url_for('ops.warehouses_view')},
     {'label': _('Vehicles'), 'url': url_for('ops.cars_list')},
     {'label': _('Shipments'), 'url': url_for('ops.shipments_list')},
     {'label': _('Customers'), 'url': url_for('ops.customers_list')},
