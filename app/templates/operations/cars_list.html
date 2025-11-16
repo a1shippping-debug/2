@@ -155,6 +155,12 @@
       <option value="{{c.id}}" {% if request.args.get('client_id')==(c.id|string) %}selected{% endif %}>{{ c.display_name }}</option>
     {% endfor %}
   </select>
+  <select name="warehouse_id">
+    <option value="">{{ _('Warehouse') }}</option>
+    {% for w in warehouses %}
+      <option value="{{ w.id }}" {% if request.args.get('warehouse_id')==(w.id|string) %}selected{% endif %}>{{ w.name }}</option>
+    {% endfor %}
+  </select>
   <button>{{ _('Filter') }}</button>
 </form>
 
@@ -167,9 +173,11 @@
         <th>{{ _('Model') }}</th>
         <th>{{ _('Lot') }}</th>
         <th>{{ _('Location') }}</th>
+        <th>{{ _('Warehouse') }}</th>
         <th>{{ _('Client') }}</th>
         <th>{{ _('Buyer #') }}</th>
         <th>{{ _('Status') }}</th>
+        <th>{{ _('Title') }}</th>
         <th>{{ _('Auction') }}</th>
         <th>{{ _('Tracking') }}</th>
         <th>{{ _('Actions') }}</th>
@@ -183,9 +191,17 @@
         <td>{{ v.model }}</td>
         <td>{{ v.auction.lot_number if v.auction else '-' }}</td>
         <td>{{ v.current_location or (v.auction.location if v.auction else '-') }}</td>
+        <td>{{ v.warehouse.name if v.warehouse else '-' }}</td>
         <td>{{ v.owner.display_name if v.owner else '-' }}</td>
         <td>{% if v.auction and v.auction.buyer %}{{ v.auction.buyer.buyer_number or '-' }}{% else %}-{% endif %}</td>
         <td>{{ v.status }}</td>
+        <td>
+          {% if v.has_title %}
+          <span class="badge bg-green-100 text-green-800">{{ _('Has title') }}</span>
+          {% else %}
+          <span class="badge bg-orange-100 text-orange-800">{{ _('No title') }}</span>
+          {% endif %}
+        </td>
         <td>
           {% if v.auction and v.auction.auction_url %}
             <a href="{{ v.auction.auction_url }}" target="_blank" class="link-blue">{{ _('Link') }}</a>
