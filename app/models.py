@@ -71,6 +71,21 @@ class Customer(db.Model):
             return "-"
 
 
+class Warehouse(db.Model):
+    __tablename__ = "warehouses"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), unique=True, nullable=False)
+    location = db.Column(db.String(255))
+    contact_name = db.Column(db.String(150))
+    contact_phone = db.Column(db.String(80))
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"<Warehouse {self.name!r}>"
+
+
 class ClientAccountStructure(db.Model):
     __tablename__ = "client_account_structures"
 
@@ -148,12 +163,15 @@ class Vehicle(db.Model):
     purchase_price_usd = db.Column(db.Numeric(12,2))
     purchase_date = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    warehouse_id = db.Column(db.Integer, db.ForeignKey("warehouses.id"), index=True)
+    has_title = db.Column(db.Boolean, default=False, nullable=False)
     # Public sharing fields
     share_token: Optional[str] = db.Column(db.String(64), unique=True, index=True)
     share_enabled: bool = db.Column(db.Boolean, default=False, nullable=False)
 
     auction = db.relationship("Auction")
     owner = db.relationship("Customer")
+    warehouse = db.relationship("Warehouse", backref="vehicles")
     cost_items = db.relationship("CostItem", backref="vehicle")
 
 class Shipment(db.Model):
@@ -171,6 +189,8 @@ class Shipment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     shipping_company = db.Column(db.String(200))
     container_number = db.Column(db.String(100))
+    origin_warehouse_id = db.Column(db.Integer, db.ForeignKey("warehouses.id"), index=True)
+    origin_warehouse = db.relationship("Warehouse", backref="shipments_origin", foreign_keys=[origin_warehouse_id])
 
 class VehicleShipment(db.Model):
     __tablename__ = "vehicle_shipments"
