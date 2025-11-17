@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="{{ current_language or 'ar' }}" dir="{{ 'rtl' if (current_language or 'ar') == 'ar' else 'ltr' }}">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -105,32 +105,33 @@
       font-weight:600;
       color:#475569;
     }
+#hero {
+  position: relative;
+  min-height: 70vh;
+  padding: 80px 0 160px;
 
-    #hero {
-      position: relative;
-      min-height: 70vh;
-      padding: 80px 0 160px;
-      /* خلفية الخريطة */
-      background: url("{{ url_for('static', filename='images/map.png') }}") no-repeat center center;
-      background-size: cover;
-    }
+  /* خلفية الخريطة */
+  background: url("{{ url_for('static', filename='images/map.png') }}") no-repeat center center;
+  background-size: cover;
+}
 
-    /* طبقة غامقة خفيفة لتحسين وضوح النص */
-    #hero::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      z-index: 0;
-    }
+/* طبقة غامقة خفيفة لتحسين وضوح النص */
+#hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 0;
+}
 
-    /* خلي النصوص فوق الخلفية */
-    #hero .container,
-    #hero .left,
-    #hero .right {
-      position: relative;
-      z-index: 2;
-    }
+/* خلي النصوص فوق الخلفية */
+#hero .container,
+#hero .left,
+#hero .right {
+  position: relative;
+  z-index: 2;
+}
+
 
     /* Animated BG Gradients */
     #animated-bg{
@@ -263,7 +264,6 @@
       font-size:13px;
       color:rgba(255,255,255,0.85);
     }
-
     .copart-actions {
       display:flex;
       align-items:center;
@@ -272,7 +272,7 @@
       gap:12px;
     }
 
-    /* زر رئيسي (ذهبي) */
+/* زر رئيسي (ذهبي) */
     .primary-btn {
       background:var(--copart-gold);
       color:#000 !important;
@@ -283,7 +283,7 @@
       box-shadow:0 4px 14px rgba(255, 184, 56, 0.25);
       text-decoration:none;
       font-size:14px;
-      transition:0.25s.ease;
+      transition:0.25s ease;
       display:inline-flex;
       align-items:center;
       justify-content:center;
@@ -291,12 +291,12 @@
       line-height:1.3;
     }
 
-    .primary-btn:hover {
-      filter: brightness(1.05);
-      transform: translateY(-2px);
-    }
+.primary-btn:hover {
+  filter: brightness(1.05);
+  transform: translateY(-2px);
+}
 
-    /* أزرار عادية */
+/* أزرار عادية */
     .nav-btn {
       padding:10px 18px;
       border-radius:14px;
@@ -315,28 +315,28 @@
       line-height:1.3;
     }
 
-    .nav-btn:hover {
-      background: rgba(255,255,255,0.20);
-      transform: translateY(-2px);
-    }
+.nav-btn:hover {
+  background: rgba(255,255,255,0.20);
+  transform: translateY(-2px);
+}
 
-    /* زر اللغة */
-    .lang-btn {
-      padding: 8px 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.3);
-      background: rgba(255,255,255,0.12);
-      color: #fff !important;
-      font-weight: 700;
-      font-size: 13px;
-      text-decoration: none;
-      transition: 0.25s ease;
-    }
+/* زر اللغة */
+.lang-btn {
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.12);
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+  transition: 0.25s ease;
+}
 
-    .lang-btn:hover {
-      background: rgba(255,255,255,0.25);
-      transform: translateY(-2px);
-    }
+.lang-btn:hover {
+  background: rgba(255,255,255,0.25);
+  transform: translateY(-2px);
+}
 
     #hero h1{
       font-size:clamp(26px,4.5vw,44px);
@@ -523,245 +523,279 @@
       border:1px solid rgba(255,255,255,0.08);
     }
 
-    /* ============================= */
-    /*  PREMIUM A1 SHIPPING CARDS    */
-    /* ============================= */
+/* ============================= */
+/*  PREMIUM A1 SHIPPING CARDS    */
+/* ============================= */
+/* ======================================= */
+/*       A1 SHIPPING - PREMIUM CARDS       */
+/* ======================================= */
 
-    .card {
-      background: #ffffff;
-      border-radius: 20px;
-      padding: 24px;
-      border: 1px solid rgba(0,0,0,0.04);
-      box-shadow: 0 8px 30px rgba(0,0,0,0.06);
-      transition: 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
+.card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+  transition: 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
 
-    .card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 14px 45px rgba(0,0,0,0.12);
-    }
+/* تأثير جميل عند التحويم */
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 45px rgba(0,0,0,0.12);
+}
 
-    .card h3,
-    .card h4 {
-      margin: 0 0 8px;
-      font-weight: 800;
-      font-size: 20px;
-      color: #0B1E3F;
-    }
+/* عنوان البطاقة */
+.card h3,
+.card h4 {
+  margin: 0 0 8px;
+  font-weight: 800;
+  font-size: 20px;
+  color: #0B1E3F; /* الكوبارتي */
+}
 
-    .card p {
-      margin: 0;
-      color: #4b5563;
-      line-height: 1.6;
-      font-size: 15px;
-    }
+/* النص */
+.card p {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.6;
+  font-size: 15px;
+}
 
-    .card .emoji {
-      font-size: 42px;
-      margin-bottom: 12px;
-    }
+/* الإيموجي */
+.card .emoji {
+  font-size: 42px;
+  margin-bottom: 12px;
+}
 
-    .project-img {
-      width: 100%;
-      height: 170px;
-      object-fit: cover;
-      border-radius: 16px;
-      margin-bottom: 12px;
-      box-shadow: 0 6px 24px rgba(0,0,0,0.08);
-    }
 
-    .project-title {
-      font-weight: 700;
-      font-size: 18px;
-      color: #0B1E3F;
-      margin-bottom: 6px;
-    }
+/* ======================================= */
+/*               PROJECT CARDS             */
+/* ======================================= */
 
-    .project-text {
-      color: #4b5563;
-    }
+.project-img {
+  width: 100%;
+  height: 170px;
+  object-fit: cover;
+  border-radius: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+}
 
-    .stat-card {
-      background: #ffffff;
-      border-radius: 20px;
-      border: 1px solid rgba(0,0,0,0.04);
-      padding: 28px 20px;
-      text-align: center;
-      transition: 0.3s ease;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.06);
-    }
+/* العنوان */
+.project-title {
+  font-weight: 700;
+  font-size: 18px;
+  color: #0B1E3F;
+  margin-bottom: 6px;
+}
 
-    .stat-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 14px 45px rgba(0,0,0,0.12);
-    }
+.project-text {
+  color: #4b5563;
+}
 
-    .stat-card .num {
-      font-size: 40px;
-      font-weight: 900;
-      color: #0B1E3F;
-    }
 
-    .stat-label {
-      margin-top: 6px;
-      font-size: 14px;
-      color: #6b7280;
-    }
+/* ======================================= */
+/*              STATS CARDS                */
+/* ======================================= */
 
-    .car-card {
-      min-width: 260px;
-      background: #ffffff;
-      border-radius: 20px;
-      padding: 16px;
-      border: 1px solid rgba(0,0,0,0.04);
-      box-shadow: 0 8px 30px rgba(0,0,0,0.06);
-      transition: 0.3s ease;
-    }
+.stat-card {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid rgba(0,0,0,0.04);
+  padding: 28px 20px;
+  text-align: center;
+  transition: 0.3s ease;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+}
 
-    .car-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 14px 45px rgba(0,0,0,0.12);
-    }
+.stat-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 45px rgba(0,0,0,0.12);
+}
 
-    .car-card .img {
-      height: 170px;
-      border-radius: 16px;
-      overflow: hidden;
-      background: #e5e7eb;
-    }
+.stat-card .num {
+  font-size: 40px;
+  font-weight: 900;
+  color: #0B1E3F;
+}
 
-    .car-card .img img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+.stat-label {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #6b7280;
+}
 
-    .car-card .no-img{
-      height:100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      color:#6b7280;
-      font-weight:600;
-    }
 
-    .car-title {
-      margin-top: 12px;
-      font-weight: 700;
-      color: #0B1E3F;
-    }
+/* ======================================= */
+/*                CAR CARDS                */
+/* ======================================= */
 
-    .car-vin {
-      font-size: 13px;
-      color: #6b7280;
-    }
+.car-card {
+  min-width: 260px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 16px;
+  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+  transition: 0.3s ease;
+}
 
-    .car-footer {
-      margin-top: 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+.car-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 45px rgba(0,0,0,0.12);
+}
 
-    .car-price {
-      font-weight: 800;
-      color: #0B1E3F;
-    }
+.car-card .img {
+  height: 170px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #e5e7eb;
+}
 
-    .car-btn {
-      padding: 7px 14px;
-      border-radius: 999px;
-      border: 1px solid #d4d4d4;
-      font-size: 13px;
-      font-weight: 600;
-      color: #0B1E3F;
-      text-decoration: none;
-      transition: 0.25s ease;
-    }
+.car-card .img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-    .car-btn:hover {
-      background: #0B1E3F;
-      color: white;
-    }
+.car-card .no-img{
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#6b7280;
+  font-weight:600;
+}
 
-    #contact .form,
-    #contact .card {
-      background: #ffffff;
-      border-radius: 20px;
-      padding: 24px;
-      border: 1px solid rgba(0,0,0,0.04);
-      box-shadow: 0 8px 30px rgba(0,0,0,0.06);
-      transition: 0.3s ease;
-    }
+.car-title {
+  margin-top: 12px;
+  font-weight: 700;
+  color: #0B1E3F;
+}
 
-    #contact .form:hover,
-    #contact .card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 14px 45px rgba(0,0,0,0.12);
-    }
+.car-vin {
+  font-size: 13px;
+  color: #6b7280;
+}
 
-    /* MAKE LOGO ALWAYS ON LEFT */
-    .copart-nav-inner {
-      direction: ltr !important;
-    }
+.car-footer {
+  margin-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-    .copart-left {
-      direction: rtl !important;
-    }
+.car-price {
+  font-weight: 800;
+  color: #0B1E3F;
+}
 
-    .copart-actions {
-      direction: rtl !important;
-    }
+.car-btn {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid #d4d4d4;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0B1E3F;
+  text-decoration: none;
+  transition: 0.25s ease;
+}
 
-    .copart-links {
-      direction: rtl !important;
-    }
+.car-btn:hover {
+  background: #0B1E3F;
+  color: white;
+}
 
-    #contact .form input,
-    #contact .form textarea {
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      border: 1px solid #e5e7eb;
-      margin-bottom: 12px;
-      font-family: "Tajawal";
-      font-size: 14px;
-      background: #f8fafc;
-      transition: 0.25s;
-    }
 
-    #contact .form input:focus,
-    #contact .form textarea:focus {
-      border-color: #0B1E3F;
-      box-shadow: 0 0 0 3px rgba(11,30,63,0.12);
-      background: white;
-      outline: none;
-    }
+/* ================================ */
+/*       CONTACT SECTION FIX        */
+/* ================================ */
 
-    #contact .contact-title {
-      margin-bottom: 10px;
-      color: #0B1E3F;
-      font-weight: 800;
-      font-size: 20px;
-    }
+#contact .form,
+#contact .card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+  transition: 0.3s ease;
+}
 
-    #contact .contact-text {
-      color: #4b5563;
-      margin-bottom: 6px;
-      font-size: 15px;
-    }
+#contact .form:hover,
+#contact .card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 45px rgba(0,0,0,0.12);
+}
+/* ============================== */
+/*   MAKE LOGO ALWAYS ON LEFT     */
+/* ============================== */
 
-    #contact .grid-2 {
-      gap: 26px;
-    }
+.copart-nav-inner {
+  direction: ltr !important;
+}
 
-    #contact .btn-cta {
-      width: 100%;
-      padding: 12px;
-      font-size: 15px;
-    }
+.copart-left {
+  direction: rtl !important;
+}
+
+.copart-actions {
+  direction: rtl !important;
+}
+
+.copart-links {
+  direction: rtl !important;
+}
+
+/* ------- FORM INPUTS ------- */
+#contact .form input,
+#contact .form textarea {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 12px;
+  font-family: "Tajawal";
+  font-size: 14px;
+  background: #f8fafc;
+  transition: 0.25s;
+}
+
+#contact .form input:focus,
+#contact .form textarea:focus {
+  border-color: #0B1E3F;
+  box-shadow: 0 0 0 3px rgba(11,30,63,0.12);
+  background: white;
+  outline: none;
+}
+
+/* ------- CONTACT CARD ------- */
+#contact .contact-title {
+  margin-bottom: 10px;
+  color: #0B1E3F;
+  font-weight: 800;
+  font-size: 20px;
+}
+
+#contact .contact-text {
+  color: #4b5563;
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+/* ------- GRID FIX ------- */
+#contact .grid-2 {
+  gap: 26px;
+}
+
+/* ------- BUTTON FIX ------- */
+#contact .btn-cta {
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+}
 
     /* Responsive Tweaks */
     @media (max-width:1200px){
@@ -917,94 +951,113 @@
       }
     }
 
-    @media (max-width: 600px) {
-      .copart-left {
-        display: flex;
-        align-items: center;
-      }
+@media (max-width: 600px) {
+  .copart-left {
+    display: flex;
+    align-items: center;
+  }
 
-      .copart-logo {
-        height: 52px;
-        width: auto;
-        object-fit: contain;
-      }
-    }
+  .copart-logo {
+    height: 52px;
+    width: auto;
+    object-fit: contain;
+}
 
-    @media (max-width: 600px){
-      .copart-nav-inner{
-        gap: 8px !important;
-        padding: 0 12px !important;
-      }
-    }
+}
+@media (max-width: 600px){
+  .copart-nav-inner{
+    gap: 8px !important;
+    padding: 0 12px !important;
+  }
+}
 
-    @media (max-width: 600px) {
-      .copart-left {
-        flex: 1;
-      }
-      .copart-menu-toggle {
-        flex-shrink: 0;
-      }
-    }
 
-    @media (max-width: 600px) {
-      .copart-nav {
-        border-bottom-left-radius: 40px !important;
-        border-bottom-right-radius: 40px !important;
-        padding: 8px 0 !important;
-      }
-    }
+@media (max-width: 600px) {
+  .copart-left {
+    flex: 1;
+  }
+  .copart-menu-toggle {
+    flex-shrink: 0;
+  }
+}
 
-    /* FIX LOGO ON MOBILE — FINAL FIX */
-    @media (max-width: 600px) {
 
-      .copart-nav {
-        padding: 12px 0 !important;
-        border-bottom-left-radius: 50px !important;
-        border-bottom-right-radius: 50px !important;
-      }
+@media (max-width: 600px) {
+  .copart-nav {
+    border-bottom-left-radius: 40px !important;
+    border-bottom-right-radius: 40px !important;
+    padding: 8px 0 !important;
+  }
+}
 
-      .copart-nav-inner {
-        display: flex;
-        align-items: center;
-        justify-content: space-between !important;
-        padding: 0 18px !important;
-      }
+/* ===================================== */
+/*     FIX LOGO ON MOBILE — FINAL FIX     */
+/* ===================================== */
 
-      .copart-logo {
-        height: 50px !important;
-        width: auto !important;
-        object-fit: contain !important;
-        display: block !important;
-      }
+@media (max-width: 600px) {
 
-      .copart-left {
-        display: flex !important;
-        align-items: center !important;
-        flex-shrink: 0 !important;
-      }
+  .copart-nav {
+    padding: 12px 0 !important;
+    border-bottom-left-radius: 50px !important;
+    border-bottom-right-radius: 50px !important;
+  }
 
-      .copart-menu-toggle {
-        flex-shrink: 0 !important;
-        margin-left: auto !important;
-      }
-    }
+  /* خلي اليسار واليمين يصطفّون صح */
+  .copart-nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between !important;
+    padding: 0 18px !important;
+  }
 
-    @media (max-width: 900px) {
-      .copart-nav-inner {
-        direction: ltr !important;
-      }
-      .copart-left {
-        justify-content: flex-start !important;
-      }
-      .copart-logo {
-        margin-left: 0 !important;
-        margin-right: auto !important;
-      }
-      .copart-menu-toggle {
-        margin-left: auto !important;
-        margin-right: 0 !important;
-      }
-    }
+  /* خلي اللوجو ياخذ حجم ثابت */
+  .copart-logo {
+    height: 50px !important;
+    width: auto !important;
+    object-fit: contain !important;
+    display: block !important;
+  }
+
+  /* ألغي أي ضغط عليه من flex */
+  .copart-left {
+    display: flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* خلي زر القائمة على اليمين بدون ما يدف اللوجو */
+  .copart-menu-toggle {
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+  }
+}
+
+@media (max-width: 900px) {
+
+  /* نجبر اتجاه شريط التنقل LTR */
+  .copart-nav-inner {
+    direction: ltr !important;
+  }
+
+  /* نعيد copart-left ليكون جهة اليسار دائمًا */
+  .copart-left {
+    justify-content: flex-start !important;
+  }
+
+  /* نثبت اللوجو في أقصى يسار */
+  .copart-logo {
+    margin-left: 0 !important;
+    margin-right: auto !important;
+  }
+
+  /* زر القائمة يذهب لأقصى اليمين */
+  .copart-menu-toggle {
+    margin-left: auto !important;
+    margin-right: 0 !important;
+  }
+}
+
+
 
   </style>
 </head>
@@ -1014,33 +1067,36 @@
   <div id="animated-bg"></div>
   <div id="bg-overlay"></div>
 
-  <!-- COPART NEW NAVBAR -->
+
+  <!-- ======================= -->
+  <!--    COPART NEW NAVBAR    -->
+  <!-- ======================= -->
   <nav class="copart-nav">
     <div class="copart-nav-inner">
 
       <!-- LOGO -->
       <div class="copart-left">
-        <img src="{{ url_for('static', filename='logo.jpeg') }}" class="copart-logo">
+<img src="{{ url_for('static', filename='logo.jpeg') }}" class="copart-logo">
       </div>
 
       <!-- LINKS -->
       <ul class="copart-links">
-        <li><a href="#hero">{{ _('الرئيسية') }}</a></li>
+        <li><a href="#hero">الرئيسية</a></li>
         <li class="divider" aria-hidden="true"></li>
 
-        <li><a href="#about">{{ _('من نحن') }}</a></li>
+        <li><a href="#about">من نحن</a></li>
         <li class="divider" aria-hidden="true"></li>
 
-        <li><a href="#services">{{ _('الخدمات') }}</a></li>
+        <li><a href="#services">الخدمات</a></li>
         <li class="divider" aria-hidden="true"></li>
 
-        <li><a href="#cars">{{ _('المركبات') }}</a></li>
+        <li><a href="#cars">المركبات</a></li>
         <li class="divider" aria-hidden="true"></li>
 
-        <li><a href="#projects">{{ _('مشاريعنا') }}</a></li>
+        <li><a href="#projects">مشاريعنا</a></li>
         <li class="divider" aria-hidden="true"></li>
 
-        <li><a href="#contact">{{ _('تواصل') }}</a></li>
+        <li><a href="#contact">تواصل</a></li>
       </ul>
 
       <!-- ACTION BUTTONS -->
@@ -1048,49 +1104,57 @@
 
         <!-- تتبع الشحنة -->
         <a href="{{ url_for('cust.track') }}" class="nav-btn primary-btn">
-          <i class="fa-solid fa-map-location-dot"></i> {{ _('تتبع الشحنة') }}
+          <i class="fa-solid fa-map-location-dot"></i> تتبع الشحنة
         </a>
 
         <!-- تسجيل الدخول -->
         <a href="{{ url_for('auth.login') }}" class="nav-btn">
-          <i class="fa-solid fa-user"></i> {{ _('تسجيل الدخول') }}
+          <i class="fa-solid fa-user"></i> تسجيل الدخول
         </a>
 
-        <!-- تغيير اللغة -->
-        <a href="{{ language_switch_url }}" class="nav-btn">
-          {{ language_switch_label }}
-        </a>
+ <!-- تغيير اللغة -->
+<a href="{{ language_switch_url }}" class="nav-btn">
+  {{ language_switch_label }}
+</a>
+
 
       </div>
 
-      <button class="copart-menu-toggle" type="button" aria-label="{{ _('عرض القائمة') }}" aria-expanded="false">
+      <button class="copart-menu-toggle" type="button" aria-label="عرض القائمة" aria-expanded="false">
         <i class="fa-solid fa-bars"></i>
       </button>
     </div>
 
     <div class="copart-mobile-menu" aria-hidden="true">
-      <a href="#hero">{{ _('الرئيسية') }}</a>
-      <a href="#about">{{ _('من نحن') }}</a>
-      <a href="#services">{{ _('الخدمات') }}</a>
-      <a href="#cars">{{ _('المركبات') }}</a>
-      <a href="#projects">{{ _('مشاريعنا') }}</a>
-      <a href="#contact">{{ _('تواصل معنا') }}</a>
+      <a href="#hero">الرئيسية</a>
+      <a href="#about">من نحن</a>
+      <a href="#services">الخدمات</a>
+      <a href="#cars">المركبات</a>
+      <a href="#projects">مشاريعنا</a>
+      <a href="#contact">تواصل معنا</a>
       <a href="{{ url_for('cust.track') }}" class="nav-btn primary-btn">
-        <i class="fa-solid fa-map-location-dot"></i> {{ _('تتبع الشحنة') }}
+        <i class="fa-solid fa-map-location-dot"></i> تتبع الشحنة
       </a>
       <a href="{{ url_for('auth.login') }}" class="nav-btn">
-        <i class="fa-solid fa-user"></i> {{ _('تسجيل الدخول') }}
+        <i class="fa-solid fa-user"></i> تسجيل الدخول
       </a>
-      <a href="{{ language_switch_url }}" class="lang-btn">
-        {{ language_switch_label }}
-      </a>
+<a href="{{ language_switch_url }}" class="lang-btn">
+  {{ language_switch_label }}
+</a>
     </div>
   </nav>
 
-  <!-- MAIN CONTENT -->
+
+
+  <!-- ======================= -->
+  <!--      MAIN CONTENT       -->
+  <!-- ======================= -->
   <main id="main">
 
-    <!-- HERO -->
+
+    <!-- ======================= -->
+    <!--          HERO           -->
+    <!-- ======================= -->
     <section id="hero">
       <div class="container hero-wrapper">
 
@@ -1098,23 +1162,20 @@
         <div class="hero-left">
           <img src="{{ url_for('static', filename='images/logo.png') }}" alt="A1 Shipping" class="hero-logo" onerror="this.style.display='none'">
 
-          <h1 class="reveal">
-            A1 SHIPPING
-            <span style="color:var(--copart-gold)">— {{ _('شريكك اللوجستي العالمي') }}</span>
-          </h1>
+          <h1 class="reveal">A1 SHIPPING <span style="color:var(--copart-gold)">— شريكك اللوجستي العالمي</span></h1>
 
           <p class="reveal">
-            {{ _('نقدم حلول شحن بحري وبري احترافية مع تتبع فوري وتأمين وتخليص جمركي — تجربة شفافة من المزاد حتى باب العميل.') }}
+            نقدم حلول شحن بحري وبري احترافية مع تتبع فوري وتأمين وتخليص جمركي — تجربة شفافة من المزاد حتى باب العميل.
           </p>
 
           <!-- CTA Row -->
           <div class="hero-actions reveal">
             <button class="btn-cta" type="button" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">
-              {{ _('اطلب عرض سعر') }}
+              اطلب عرض سعر
             </button>
 
             <a href="#cars" class="hero-secondary">
-              {{ _('تصفح المركبات') }}
+              تصفح المركبات
             </a>
           </div>
 
@@ -1122,21 +1183,22 @@
           <div class="hero-stats reveal">
             <div class="hero-stat">
               <div class="num-inline" data-target="5200">0</div>
-              <span>{{ _('شحنة ناجحة') }}</span>
+              <span>شحنة ناجحة</span>
             </div>
 
             <div class="hero-stat">
               <div class="num-inline" data-target="45">0</div>
-              <span>{{ _('شريك عالمي') }}</span>
+              <span>شريك عالمي</span>
             </div>
 
             <div class="hero-stat">
               <div class="num-inline" data-target="98">0</div>
-<span>{{ _('رضا العملاء (٪)') }}</span>
+              <span>رضا العملاء (%)</span>
             </div>
           </div>
 
         </div>
+
 
         <!-- RIGHT SIDE -->
         <div class="hero-right">
@@ -1144,6 +1206,7 @@
         </div>
 
       </div>
+
 
       <!-- WAVE SHAPES -->
       <div style="position:absolute; left:0; right:0; bottom:-2px; height:140px;">
@@ -1164,98 +1227,109 @@
       </div>
 
     </section>
-
-    <!-- ABOUT US -->
+    <!-- ======================= -->
+    <!--        ABOUT US         -->
+    <!-- ======================= -->
     <section id="about" class="section-white reveal">
       <div class="container">
-        <h2 class="section-title">{{ _('من نحن') }}</h2>
+        <h2 class="section-title">من نحن</h2>
         <p class="section-subtitle">
-          {{ _('شركة A1 SHIPPING — نقدم حلول متكاملة للنقل البحري والبري وخدمات المناولة اللوجستية باحترافية عالية. من المزاد إلى باب العميل، نبني تجربة سلسة وآمنة بشفافية كاملة.') }}
+          شركة A1 SHIPPING — نقدم حلول متكاملة للنقل البحري والبري وخدمات المناولة اللوجستية باحترافية عالية.
+          من المزاد إلى باب العميل، نبني تجربة سلسة وآمنة بشفافية كاملة.
         </p>
 
         <div class="grid-3">
           <div class="card reveal">
             <div class="emoji">⚓</div>
-            <h3>{{ _('الشحن البحري') }}</h3>
-            <p>{{ _('نقل آمن من الموانئ الأمريكية ووصول سريع إلى الخليج.') }}</p>
+            <h3>الشحن البحري</h3>
+            <p>نقل آمن من الموانئ الأمريكية ووصول سريع إلى الخليج.</p>
           </div>
           <div class="card reveal">
             <div class="emoji">🚚</div>
-            <h3>{{ _('الشحن البري') }}</h3>
-            <p>{{ _('خدمات نقل برّي آمنة وسلسة حتى باب العميل.') }}</p>
+            <h3>الشحن البري</h3>
+            <p>خدمات نقل برّي آمنة وسلسة حتى باب العميل.</p>
           </div>
           <div class="card reveal">
             <div class="emoji">🧾</div>
-            <h3>{{ _('التخليص والجمارك') }}</h3>
-            <p>{{ _('فريق متخصص لتسريع المعاملات الجمركية وتقليل وقت الانتظار.') }}</p>
+            <h3>التخليص والجمارك</h3>
+            <p>فريق متخصص لتسريع المعاملات الجمركية وتقليل وقت الانتظار.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- SERVICES -->
+
+    <!-- ======================= -->
+    <!--        SERVICES         -->
+    <!-- ======================= -->
     <section id="services" class="section-white reveal">
       <div class="container">
-        <h2 class="section-title">{{ _('خدماتنا') }}</h2>
+        <h2 class="section-title">خدماتنا</h2>
         <p class="section-subtitle">
-          {{ _('من شحن السيارات وحتى إدارة الوثائق والتخليص، نقدم باقة متكاملة لتسهيل أعمالك.') }}
+          من شحن السيارات وحتى إدارة الوثائق والتخليص، نقدم باقة متكاملة لتسهيل أعمالك.
         </p>
 
         <div class="grid-3">
           <div class="card reveal">
             <div class="emoji">📦</div>
-            <h3>{{ _('خدمات لوجستية مخصصة') }}</h3>
-            <p>{{ _('حلول مصممة لحجم الشحنة واحتياجات العميل.') }}</p>
+            <h3>خدمات لوجستية مخصصة</h3>
+            <p>حلول مصممة لحجم الشحنة واحتياجات العميل.</p>
           </div>
           <div class="card reveal">
             <div class="emoji">🔒</div>
-            <h3>{{ _('تأمين الشحنات') }}</h3>
-            <p>{{ _('تغطية تأمينية كاملة للاطمئنان خلال النقل.') }}</p>
+            <h3>تأمين الشحنات</h3>
+            <p>تغطية تأمينية كاملة للاطمئنان خلال النقل.</p>
           </div>
           <div class="card reveal">
             <div class="emoji">⚙️</div>
-            <h3>{{ _('خدمات المناولة') }}</h3>
-            <p>{{ _('معدات حديثة وفِرق مدربة لتحميل وتفريغ آمن.') }}</p>
+            <h3>خدمات المناولة</h3>
+            <p>معدات حديثة وفِرق مدربة لتحميل وتفريغ آمن.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- STATS -->
+
+    <!-- ======================= -->
+    <!--          STATS          -->
+    <!-- ======================= -->
     <section id="stats" class="section-white reveal">
       <div class="container">
-        <h2 class="section-title">{{ _('إحصائياتنا') }}</h2>
+        <h2 class="section-title">إحصائياتنا</h2>
 
         <div class="stats-grid">
           <div class="stat-card reveal">
             <div class="num" data-target="5200">0</div>
-            <div class="stat-label">{{ _('شحنة ناجحة') }}</div>
+            <div class="stat-label">شحنة ناجحة</div>
           </div>
           <div class="stat-card reveal">
             <div class="num" data-target="1200">0</div>
-            <div class="stat-label">{{ _('مركبة مباعة') }}</div>
+            <div class="stat-label">مركبة مباعة</div>
           </div>
           <div class="stat-card reveal">
             <div class="num" data-target="45">0</div>
-            <div class="stat-label">{{ _('شريك عالمي') }}</div>
+            <div class="stat-label">شريك عالمي</div>
           </div>
           <div class="stat-card reveal">
             <div class="num" data-target="98">0</div>
-            <div class="stat-label">{{ _('رضا العملاء (%)') }}</div>
+            <div class="stat-label">رضا العملاء (%)</div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- CARS -->
+
+    <!-- ======================= -->
+    <!--          CARS           -->
+    <!-- ======================= -->
     <section id="cars" class="section-white reveal">
       <div class="container">
         <div class="section-header">
           <div>
-            <h2 class="section-title">{{ _('مركبات للبيع') }}</h2>
-            <p class="section-subtitle">{{ _('تعرض هنا المركبات الموافق عليها للبيع.') }}</p>
+            <h2 class="section-title">مركبات للبيع</h2>
+            <p class="section-subtitle">تعرض هنا المركبات الموافق عليها للبيع.</p>
           </div>
-          <a href="#" class="section-link">{{ _('عرض الكل') }} →</a>
+          <a href="#" class="section-link">عرض الكل →</a>
         </div>
 
         {% if cars_for_sale and cars_for_sale|length > 0 %}
@@ -1270,7 +1344,7 @@
               {% if v.primary_image_url %}
                 <img loading="lazy" src="{{ v.primary_image_url }}" alt="{{ title }}">
               {% else %}
-                <div class="no-img">{{ _('لا توجد صورة') }}</div>
+                <div class="no-img">لا توجد صورة</div>
               {% endif %}
             </div>
             <h4 class="car-title">{{ title }}</h4>
@@ -1283,100 +1357,115 @@
                   {{ ("$%.2f" % price_value) if price_value else '-' }}
                 {% endif %}
               </div>
-              <a href="{{ url_for('vehicle_detail_page', vin=v.vin) }}" class="car-btn">{{ _('تفاصيل') }}</a>
+              <a href="{{ url_for('vehicle_detail_page', vin=v.vin) }}" class="car-btn">تفاصيل</a>
             </div>
           </div>
           {% endfor %}
         </div>
         {% else %}
-          <div class="card empty-card">{{ _('لا توجد مركبات للبيع حاليًا.') }}</div>
+          <div class="card empty-card">لا توجد مركبات للبيع حاليًا.</div>
         {% endif %}
       </div>
     </section>
 
-    <!-- PROJECTS -->
+
+    <!-- ======================= -->
+    <!--         PROJECTS        -->
+    <!-- ======================= -->
     <section id="projects" class="section-white reveal">
       <div class="container">
-        <h2 class="section-title">{{ _('مشاريعنا') }}</h2>
+        <h2 class="section-title">مشاريعنا</h2>
 
         <div class="grid-3">
           <div class="card reveal">
             <img src="{{ url_for('static', filename='images/project1.jpg') }}" alt="p1"
                  class="project-img"
                  onerror="this.style.display='none'">
-            <h4 class="project-title">{{ _('شحن سيارات إلى سلطنة عمان') }}</h4>
-            <p class="project-text">{{ _('تفريغ سريع وتخليص جمركي خلال 48 ساعة.') }}</p>
+            <h4 class="project-title">شحن سيارات إلى سلطنة عمان</h4>
+            <p class="project-text">تفريغ سريع وتخليص جمركي خلال 48 ساعة.</p>
           </div>
 
           <div class="card reveal">
             <img src="{{ url_for('static', filename='images/project2.jpg') }}" alt="p2"
                  class="project-img"
                  onerror="this.style.display='none'">
-            <h4 class="project-title">{{ _('شحن كل انواع المركبات إلى سلطنة عمان') }}</h4>
-            <p class="project-text">{{ _('تتبع رقمي وموعد تسليم مضمون.') }}</p>
+            <h4 class="project-title">شحن كل انواع المركبات إلى سلطنة عمان</h4>
+            <p class="project-text">تتبع رقمي وموعد تسليم مضمون.</p>
           </div>
 
           <div class="card reveal">
             <img src="{{ url_for('static', filename='images/project3.jpg') }}" alt="p3"
                  class="project-img"
                  onerror="this.style.display='none'">
-            <h4 class="project-title">{{ _('خدمة من الباب إلى الباب') }}</h4>
-            <p class="project-text">{{ _('حلول لوجستية متقدمة للشحنات الكبيرة.') }}</p>
+            <h4 class="project-title">خدمة من الباب إلى الباب</h4>
+            <p class="project-text">حلول لوجستية متقدمة للشحنات الكبيرة.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- CONTACT -->
+
+    <!-- ======================= -->
+    <!--         CONTACT         -->
+    <!-- ======================= -->
     <section id="contact" class="section-white reveal">
       <div class="container">
-        <h2 class="section-title">{{ _('تواصل معنا') }}</h2>
-        <p class="section-subtitle">{{ _('نسعد باستقبال استفساراتك — سنرد خلال ساعات العمل.') }}</p>
+        <h2 class="section-title">تواصل معنا</h2>
+        <p class="section-subtitle">نسعد باستقبال استفساراتك — سنرد خلال ساعات العمل.</p>
 
         <div class="grid-2">
           <form class="form reveal" method="post" action="{{ url_for('contact_page') }}">
             <input type="hidden" name="from_page" value="landing">
 
-            <input name="name" placeholder="{{ _('الاسم') }}" required>
-            <input name="email" placeholder="{{ _('البريد الإلكتروني') }}">
-            <input name="phone" placeholder="{{ _('رقم الجوال') }}">
-            <textarea name="message" placeholder="{{ _('رسالتك') }}" required></textarea>
+            <input name="name" placeholder="الاسم" required>
+            <input name="email" placeholder="البريد الإلكتروني">
+            <input name="phone" placeholder="رقم الجوال">
+            <textarea name="message" placeholder="رسالتك" required></textarea>
 
-            <button type="submit" class="btn-cta" style="width:100%;">{{ _('أرسل') }}</button>
+            <button type="submit" class="btn-cta" style="width:100%;">أرسل</button>
           </form>
 
           <div class="card reveal">
-            <h4 class="contact-title">{{ _('معلومات الاتصال') }}</h4>
-            <p class="contact-text">{{ _('المقر الرئيسي: مسقط، سلطنة عمان') }}</p>
-            <p class="contact-text">{{ _('البريد: info@a1shipping.example') }}</p>
-            <p class="contact-text">{{ _('هاتف: +968 1234 5678') }}</p>
+            <h4 class="contact-title">معلومات الاتصال</h4>
+            <p class="contact-text">المقر الرئيسي: مسقط، سلطنة عمان</p>
+            <p class="contact-text">البريد: info@a1shipping.example</p>
+            <p class="contact-text">هاتف: +968 1234 5678</p>
           </div>
         </div>
       </div>
     </section>
-
-    <!-- FOOTER -->
+    <!-- ======================= -->
+    <!--         FOOTER         -->
+    <!-- ======================= -->
     <footer class="footer">
       <div class="container" style="display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap">
         <div style="color:#475569">
-          A1 SHIPPING — {{ _('جميع الحقوق محفوظة') }} © <span id="year"></span>
+          A1 SHIPPING — جميع الحقوق محفوظة © <span id="year"></span>
         </div>
         <div style="color:#94a3b8">
-          {{ _('تصميم مستوحى من Copart-style') }}
+          تصميم مستوحى من Copart-style
         </div>
       </div>
     </footer>
 
   </main>
 
-  <!-- SCRIPTS -->
+
+  <!-- ========================================================= -->
+  <!-- =======================   SCRIPTS   ====================== -->
+  <!-- ========================================================= -->
   <script>
     (function(){
+      // =============================
+      //     YEAR IN FOOTER
+      // =============================
       var yearEl = document.getElementById("year");
       if (yearEl) {
         yearEl.textContent = new Date().getFullYear();
       }
 
+
+      // Basic GSAP + ScrollTrigger initialization
       var gsapInstance = window.gsap || null;
       var scrollTriggerInstance = window.ScrollTrigger || null;
 
@@ -1384,6 +1473,10 @@
         gsapInstance.registerPlugin(scrollTriggerInstance);
       }
 
+
+      // =============================
+      //     BACKGROUND ANIMATION
+      // =============================
       if (gsapInstance) {
         gsapInstance.to("#animated-bg", {
           backgroundPosition: "0% 80%",
@@ -1394,25 +1487,33 @@
         });
       }
 
+
+      // =============================
+      //     WAVES ANIMATION
+      // =============================
       if (gsapInstance) {
-        gsapInstance.to("#wave1", {
-          x: -160,
-          duration: 8,
+        gsapInstance.to("#wave1", { 
+          x: -160, 
+          duration: 8, 
           ease: "sine.inOut",
-          repeat: -1,
-          yoyo: true
+          repeat: -1, 
+          yoyo: true 
         });
 
-        gsapInstance.to("#wave2", {
-          x: 120,
-          duration: 10,
+        gsapInstance.to("#wave2", { 
+          x: 120, 
+          duration: 10, 
           ease: "sine.inOut",
-          repeat: -1,
+          repeat: -1, 
           yoyo: true,
-          delay: .5
+          delay: .5 
         });
       }
 
+
+      // =============================
+      //     SHIP FLOAT ANIMATION
+      // =============================
       var ship = document.getElementById("ship");
       if (gsapInstance && ship) {
         gsapInstance.to(ship, {
@@ -1424,12 +1525,16 @@
         });
       }
 
+
+      // =============================
+      //     REVEAL ANIMATION
+      // =============================
       var revealItems = document.querySelectorAll(".reveal");
       if (gsapInstance && scrollTriggerInstance) {
         revealItems.forEach(function(el){
-          gsapInstance.fromTo(el,
-            { opacity: 0, y: 20 },
-            {
+          gsapInstance.fromTo(el, 
+            { opacity: 0, y: 20 }, 
+            { 
               opacity: 1,
               y: 0,
               duration: 0.9,
@@ -1442,12 +1547,17 @@
           );
         });
       } else {
+        // fallback
         revealItems.forEach(el => {
           el.style.opacity = 1;
           el.style.transform = "none";
         });
       }
 
+
+      // =============================
+      //     COUNTERS ANIMATION
+      // =============================
       function animateCounter(el, target) {
         if (!gsapInstance) {
           el.textContent = target;
@@ -1488,6 +1598,10 @@
         });
       }
 
+
+      // =============================
+      //   SMOOTH SCROLL LINKS (#)
+      // =============================
       document.querySelectorAll('a[href^="#"]').forEach(function(a){
         a.addEventListener("click", function(e){
           var targetId = this.getAttribute("href");
