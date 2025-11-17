@@ -10,3 +10,9 @@ login_manager = LoginManager()
 login_manager.login_view = "auth.login"
 babel = Babel()
 mail = Mail()
+
+
+def init_extensions(app):
+    """Initialize core Flask extensions."""
+    db.init_app(app)
+    migrate.init_app(app, db)

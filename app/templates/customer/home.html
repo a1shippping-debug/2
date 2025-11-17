@@ -1,50 +1,50 @@
 {% extends "layout.html" %}
-{% block title %}{{ _('Customer Portal') }}{% endblock %}
+{% block title %}{{ _('customer_portal_title') }}{% endblock %}
 {% block content %}
 <section class="space-y-10">
   <div class="rounded-3xl bg-gradient-to-br from-primary to-indigo-700 text-white p-8 lg:p-12 shadow-soft">
     <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
       <div class="space-y-4">
-        <p class="text-sm uppercase tracking-[0.3em] text-white/70">{{ _('Welcome back') }}</p>
+        <p class="text-sm uppercase tracking-[0.3em] text-white/70">{{ _('welcome_back') }}</p>
         <h1 class="text-3xl lg:text-4xl font-extrabold leading-tight">
-          {{ _('Your shipping hub is ready') }}
+          {{ _('shipping_hub_ready') }}
         </h1>
         <p class="text-sm lg:text-base text-white/80 max-w-2xl">
-          {{ _('Track shipments, review documents, and handle invoices in one place. We keep every vehicle update within reach, so you stay in control.') }}
+          {{ _('track_shipments_paragraph') }}
         </p>
         {% if outstanding_total and outstanding_total > 0 %}
           <div class="inline-flex items-center gap-3 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
             <span class="inline-flex h-2 w-2 rounded-full bg-amber-300 animate-pulse"></span>
-            {{ _('Outstanding balance:') }}
-            <span>{{ '%.3f'|format(outstanding_total) }} {{ _('OMR') }}</span>
+            {{ _('outstanding_balance_label') }}
+            <span>{{ '%.3f'|format(outstanding_total) }} {{ _('currency_omr') }}</span>
           </div>
         {% endif %}
       </div>
       <div class="grid gap-3 sm:grid-cols-2">
         <a href="{{ url_for('cust.my_cars') }}" class="inline-flex items-center gap-3 rounded-2xl bg-white/10 px-5 py-4 text-sm font-semibold shadow-sm hover:bg-white/20 transition">
           <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20"><i class="fa-solid fa-car"></i></span>
-          <span>{{ _('My vehicles') }}</span>
+          <span>{{ _('my_vehicles') }}</span>
         </a>
         <a href="{{ url_for('cust.track') }}" class="inline-flex items-center gap-3 rounded-2xl bg-white/10 px-5 py-4 text-sm font-semibold shadow-sm hover:bg-white/20 transition">
           <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20"><i class="fa-solid fa-location-arrow"></i></span>
-          <span>{{ _('Track shipment') }}</span>
+          <span>{{ _('track_shipment') }}</span>
         </a>
         <a href="{{ url_for('cust.invoices_list') }}" class="inline-flex items-center gap-3 rounded-2xl bg-white/10 px-5 py-4 text-sm font-semibold shadow-sm hover:bg-white/20 transition">
           <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20"><i class="fa-solid fa-file-invoice-dollar"></i></span>
-          <span>{{ _('Invoices') }}</span>
+          <span>{{ _('invoices') }}</span>
         </a>
         <a href="{{ url_for('pricing_request') }}" class="inline-flex items-center gap-3 rounded-2xl bg-white/10 px-5 py-4 text-sm font-semibold shadow-sm hover:bg-white/20 transition">
           <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20"><i class="fa-solid fa-headset"></i></span>
-          <span>{{ _('Support request') }}</span>
+          <span>{{ _('support_request') }}</span>
         </a>
       </div>
     </div>
 
     <form method="get" action="{{ url_for('cust.track') }}" class="mt-10 grid gap-3 sm:grid-cols-[1fr_auto]">
-      <input name="vin" required placeholder="{{ _('Enter VIN or Lot number to jump to tracking') }}" class="w-full rounded-2xl border border-white/20 bg-white/20 px-4 py-3 text-sm backdrop-blur focus:border-white focus:outline-none focus:ring-2 focus:ring-white/60" />
+      <input name="vin" required placeholder="{{ _('enter_vin_placeholder') }}" class="w-full rounded-2xl border border-white/20 bg-white/20 px-4 py-3 text-sm backdrop-blur focus:border-white focus:outline-none focus:ring-2 focus:ring-white/60" />
       <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-primary hover:bg-slate-100 transition">
         <i class="fa-solid fa-magnifying-glass"></i>
-        {{ _('Search tracking') }}
+        {{ _('search_tracking') }}
       </button>
     </form>
   </div>
@@ -52,19 +52,19 @@
   <!-- KPI cards -->
   <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
     <article class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
-      <p class="text-xs uppercase tracking-widest text-muted">{{ _('Total vehicles') }}</p>
+      <p class="text-xs uppercase tracking-widest text-muted">{{ _('total_vehicles') }}</p>
       <p class="mt-3 text-3xl font-bold text-neutral">{{ counts.total }}</p>
     </article>
     <article class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
-      <p class="text-xs uppercase tracking-widest text-blue-600">{{ _('In transit') }}</p>
+      <p class="text-xs uppercase tracking-widest text-blue-600">{{ _('in_transit') }}</p>
       <p class="mt-3 text-3xl font-bold text-blue-600">{{ counts.in_transit }}</p>
     </article>
     <article class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
-      <p class="text-xs uppercase tracking-widest text-emerald-600">{{ _('Arrived / delivered') }}</p>
+      <p class="text-xs uppercase tracking-widest text-emerald-600">{{ _('arrived_delivered') }}</p>
       <p class="mt-3 text-3xl font-bold text-emerald-600">{{ counts.delivered }}</p>
     </article>
     <article class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
-      <p class="text-xs uppercase tracking-widest text-amber-600">{{ _('Awaiting pickup') }}</p>
+      <p class="text-xs uppercase tracking-widest text-amber-600">{{ _('awaiting_pickup') }}</p>
       <p class="mt-3 text-3xl font-bold text-amber-600">{{ counts.awaiting }}</p>
     </article>
     <article class="rounded-2xl bg-white p-5 shadow-soft border border-slate-100">
@@ -119,7 +119,7 @@
                     <div class="flex items-center gap-2">
                       <dt class="text-muted">{{ _('ETA') }}</dt>
                       <dd class="font-semibold text-neutral">
-                        {% if vehicle.eta %}{{ vehicle.eta.strftime('%d %b %Y') }}{% else %}{{ _('Awaiting update') }}{% endif %}
+                        {% if vehicle.eta %}{{ vehicle.eta.strftime('%d %b %Y') }}{% else %}{{ _('awaiting_update') }}{% endif %}
                       </dd>
                     </div>
                   </dl>
@@ -143,20 +143,20 @@
                       {% endif %}">
                     </span>
                     {% if vehicle.stage == 'in_transit' %}
-                      {{ _('In transit') }}
+                      {{ _('in_transit') }}
                     {% elif vehicle.stage == 'delivered' %}
-                      {{ _('Delivered') }}
+                      {{ _('delivered') }}
                     {% else %}
-                      {{ _('Waiting to ship') }}
+                      {{ _('waiting_to_ship') }}
                     {% endif %}
                   </span>
                   <a href="{{ vehicle.timeline_url or url_for('cust.track') }}{% if vehicle.timeline_url %}{% else %}?vin={{ vehicle.vin }}{% endif %}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold hover:border-primary hover:text-primary transition">
                     <i class="fa-solid fa-route"></i>
-                    {{ _('Track timeline') }}
+                    {{ _('track_timeline') }}
                   </a>
                   <a href="{{ vehicle.details_url }}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold hover:border-primary hover:text-primary transition">
                     <i class="fa-solid fa-file-lines"></i>
-                    {{ _('Vehicle details') }}
+                    {{ _('vehicle_details') }}
                   </a>
                 </div>
               </div>
@@ -165,7 +165,7 @@
         </div>
       {% else %}
         <div class="mt-6 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-muted">
-          {{ _('No vehicles found yet. Add your first car or contact support for help importing vehicles into the portal.') }}
+          {{ _('no_vehicles_message') }}
         </div>
       {% endif %}
     </section>
@@ -173,11 +173,11 @@
     <section class="rounded-2xl bg-white p-6 shadow-soft border border-slate-100">
       <div class="flex items-start justify-between gap-3">
         <div>
-          <h2 class="text-lg font-semibold text-neutral">{{ _('Invoices & billing') }}</h2>
-          <p class="text-sm text-muted">{{ _('See the latest invoices and stay ahead of any outstanding balances.') }}</p>
+          <h2 class="text-lg font-semibold text-neutral">{{ _('invoices_billing') }}</h2>
+          <p class="text-sm text-muted">{{ _('invoices_intro') }}</p>
         </div>
         <a href="{{ url_for('cust.invoices_list') }}" class="text-xs font-semibold uppercase tracking-widest text-primary hover:text-primary/80">
-          {{ _('Manage invoices') }}
+          {{ _('manage_invoices') }}
         </a>
       </div>
 
@@ -187,20 +187,20 @@
             <li class="rounded-2xl border border-slate-100 p-4 shadow-soft">
               <div class="flex items-start justify-between gap-4">
                 <div>
-                  <p class="text-xs uppercase tracking-widest text-muted">{{ _('Invoice') }} {{ invoice.number }}</p>
+                  <p class="text-xs uppercase tracking-widest text-muted">{{ _('invoice_label') }} {{ invoice.number }}</p>
                   <p class="mt-1 text-sm text-neutral">
                     {% if invoice.created_at %}{{ invoice.created_at.strftime('%d %b %Y') }}{% endif %}
                   </p>
                   <p class="mt-2 text-sm text-muted">
-                    {{ _('Total:') }}
-                    <span class="font-semibold text-neutral">{{ '%.3f'|format(invoice.total) }} {{ _('OMR') }}</span>
+                    {{ _('total_label') }}
+                    <span class="font-semibold text-neutral">{{ '%.3f'|format(invoice.total) }} {{ _('currency_omr') }}</span>
                   </p>
                   {% if invoice.is_open %}
                     <p class="text-sm text-amber-600 font-semibold mt-1">
-                      {{ _('Outstanding:') }} {{ '%.3f'|format(invoice.outstanding) }} {{ _('OMR') }}
+                      {{ _('outstanding_label') }} {{ '%.3f'|format(invoice.outstanding) }} {{ _('currency_omr') }}
                     </p>
                   {% else %}
-                    <p class="text-sm text-emerald-600 font-semibold mt-1">{{ _('Paid in full') }}</p>
+                    <p class="text-sm text-emerald-600 font-semibold mt-1">{{ _('paid_in_full') }}</p>
                   {% endif %}
                 </div>
                 <div class="flex flex-col items-end gap-2">
@@ -218,14 +218,14 @@
                       {% endif %}">
                     </span>
                     {% if invoice.is_open %}
-                      {{ _('Open') }}
+                      {{ _('open_status') }}
                     {% else %}
-                      {{ _('Paid') }}
+                      {{ _('paid_status') }}
                     {% endif %}
                   </span>
                   <a href="{{ invoice.detail_url }}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold hover:border-primary hover:text-primary transition">
                     <i class="fa-solid fa-file-lines"></i>
-                    {{ _('View invoice') }}
+                    {{ _('view_invoice') }}
                   </a>
                 </div>
               </div>
@@ -234,7 +234,7 @@
         </ul>
       {% else %}
         <div class="mt-6 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-muted">
-          {{ _('Invoices will appear here once issued. Reach out if you believe one is missing.') }}
+          {{ _('invoices_empty_message') }}
         </div>
       {% endif %}
     </section>
@@ -243,29 +243,29 @@
   <section class="rounded-3xl bg-white p-6 shadow-soft border border-slate-100">
     <div class="grid gap-6 md:grid-cols-3">
       <div class="space-y-3">
-        <h3 class="text-lg font-semibold text-neutral">{{ _('Need assistance?') }}</h3>
+        <h3 class="text-lg font-semibold text-neutral">{{ _('need_assistance') }}</h3>
         <p class="text-sm text-muted">
-          {{ _('Our operations team can help with shipping updates, port releases, and invoice clarifications. Choose the option that suits you best:') }}
+          {{ _('assistance_description') }}
         </p>
       </div>
       <div class="flex flex-col gap-3">
         <a href="mailto:{{ customer.email if customer else 'support@example.com' }}" class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition">
           <i class="fa-solid fa-envelope"></i>
-          {{ _('Email us') }}
+          {{ _('email_us') }}
         </a>
         <a href="tel:{{ customer.phone if customer and customer.phone else '+96800000000' }}" class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition">
           <i class="fa-solid fa-phone"></i>
-          {{ _('Call support') }}
+          {{ _('call_support') }}
         </a>
       </div>
       <div class="flex flex-col gap-3">
         <a href="{{ url_for('pricing_request') }}" class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition">
           <i class="fa-solid fa-clipboard-list"></i>
-          {{ _('Request new shipment quote') }}
+          {{ _('request_shipment_quote') }}
         </a>
         <a href="{{ url_for('cust.track') }}" class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold hover:border-primary hover:text-primary transition">
           <i class="fa-solid fa-map-location-dot"></i>
-          {{ _('Track another vehicle') }}
+          {{ _('track_another_vehicle') }}
         </a>
       </div>
     </div>

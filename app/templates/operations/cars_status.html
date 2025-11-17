@@ -46,10 +46,11 @@
                 <option value="{{s}}" {% if v.status==s %}selected{% endif %}>{{ s }}</option>
               {% endfor %}
             </select>
-            {% set show_shipping_fields = v.status in ['Shipping','Port','On way','Arrived','Delivered'] or v.container_number or v.booking_number %}
-            <div class="mt-2 space-y-2 shipping-extra" data-fields-for="{{ v.id }}" data-has-values="{{ 'yes' if (v.container_number or v.booking_number) else 'no' }}" style="{% if show_shipping_fields %}display:block{% else %}display:none{% endif %};">
+            {% set show_shipping_fields = v.status in ['Shipping','Port','On way','Arrived','Delivered'] or v.container_number or v.booking_number or v.shipping_tracking_url %}
+            <div class="mt-2 space-y-2 shipping-extra" data-fields-for="{{ v.id }}" data-has-values="{{ 'yes' if (v.container_number or v.booking_number or v.shipping_tracking_url) else 'no' }}" style="{% if show_shipping_fields %}display:block{% else %}display:none{% endif %};">
               <input name="container_{{ v.id }}" value="{{ v.container_number or '' }}" placeholder="{{ _('Container Number') }}" class="border p-2 rounded w-full">
               <input name="booking_{{ v.id }}" value="{{ v.booking_number or '' }}" placeholder="{{ _('Booking Number') }}" class="border p-2 rounded w-full">
+              <input name="tracking_{{ v.id }}" value="{{ v.shipping_tracking_url or '' }}" placeholder="{{ _('Shipping tracking link (https://...)') }}" class="border p-2 rounded w-full">
               <p class="text-xs text-slate-500">{{ _('Required when status is Shipping or later') }}</p>
             </div>
           </td>

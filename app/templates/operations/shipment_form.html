@@ -99,6 +99,12 @@
   </select>
 
   <input name="shipping_company" placeholder="{{ _('شركة الشحن') }}" value="{{ shipment.shipping_company if shipment else '' }}" class="border p-2 rounded">
+  <select name="origin_warehouse_id" class="border p-2 rounded">
+    <option value="">{{ _('Origin warehouse (optional)') }}</option>
+    {% for w in warehouses or [] %}
+      <option value="{{ w.id }}" {% if shipment and shipment.origin_warehouse_id==w.id %}selected{% endif %}>{{ w.name }}</option>
+    {% endfor %}
+  </select>
 
   <input name="origin_port" placeholder="{{ _('من ميناء') }}" value="{{ shipment.origin_port if shipment else '' }}" class="border p-2 rounded">
   <input name="destination_port" placeholder="{{ _('إلى ميناء') }}" value="{{ shipment.destination_port if shipment else '' }}" class="border p-2 rounded">
@@ -143,3 +149,4 @@
   <div class="success-box">{{ _('تم حفظ الشحنة بنجاح.') }}</div>
 {% endif %}
 {% endblock %}
+

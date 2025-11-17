@@ -68,6 +68,12 @@ msgstr "2025 CarTrade. All rights reserved"
 msgid "لوحة العميل"
 msgstr "Customer Portal"
 
+#: app/templates/landing.html
+msgid "رضا العملاء (٪)"
+msgstr "Customer Satisfaction (٪)"
+
+
+
 #: app/templates/customer/home.html
 msgid "اختر أحد الخيارات التالية للوصول إلى خدماتك"
 msgstr "Choose one of the options below to access your services"
@@ -646,6 +652,124 @@ msgstr "VAT"
 #: app/templates/admin/settings.html
 msgid "Shipping Fee (OMR)"
 msgstr "Shipping Fee (OMR)"
+
+# Customer portal unified keys
+msgid "customer_portal_title"
+msgstr "Customer Portal"
+
+msgid "welcome_back"
+msgstr "Welcome back"
+
+msgid "shipping_hub_ready"
+msgstr "Your shipping hub is ready"
+
+msgid "track_shipments_paragraph"
+msgstr "Track shipments, review documents, and handle invoices from one place. We keep you in control of every vehicle update."
+
+msgid "outstanding_balance_label"
+msgstr "Outstanding balance:"
+
+msgid "currency_omr"
+msgstr "OMR"
+
+msgid "my_vehicles"
+msgstr "My vehicles"
+
+msgid "track_shipment"
+msgstr "Track shipment"
+
+msgid "invoices"
+msgstr "Invoices"
+
+msgid "support_request"
+msgstr "Support request"
+
+msgid "enter_vin_placeholder"
+msgstr "Enter VIN or Lot number to jump to tracking"
+
+msgid "search_tracking"
+msgstr "Search tracking"
+
+msgid "total_vehicles"
+msgstr "Total vehicles"
+
+msgid "in_transit"
+msgstr "In transit"
+
+msgid "arrived_delivered"
+msgstr "Arrived / delivered"
+
+msgid "awaiting_pickup"
+msgstr "Awaiting pickup"
+
+msgid "awaiting_update"
+msgstr "Awaiting update"
+
+msgid "delivered"
+msgstr "Delivered"
+
+msgid "waiting_to_ship"
+msgstr "Waiting to ship"
+
+msgid "track_timeline"
+msgstr "Track timeline"
+
+msgid "vehicle_details"
+msgstr "Vehicle details"
+
+msgid "no_vehicles_message"
+msgstr "No vehicles found yet. Add your first car or contact support to import vehicles into the portal."
+
+msgid "invoices_billing"
+msgstr "Invoices & billing"
+
+msgid "invoices_intro"
+msgstr "See the latest invoices and stay ahead of any outstanding balances."
+
+msgid "manage_invoices"
+msgstr "Manage invoices"
+
+msgid "invoice_label"
+msgstr "Invoice"
+
+msgid "total_label"
+msgstr "Total:"
+
+msgid "outstanding_label"
+msgstr "Outstanding:"
+
+msgid "paid_in_full"
+msgstr "Paid in full"
+
+msgid "open_status"
+msgstr "Open"
+
+msgid "paid_status"
+msgstr "Paid"
+
+msgid "view_invoice"
+msgstr "View invoice"
+
+msgid "invoices_empty_message"
+msgstr "Invoices will appear here once issued. Reach out if you believe one is missing."
+
+msgid "need_assistance"
+msgstr "Need assistance?"
+
+msgid "assistance_description"
+msgstr "Our operations team can help with shipping updates, port releases, and invoice clarifications. Pick the option that suits you best:"
+
+msgid "email_us"
+msgstr "Email us"
+
+msgid "call_support"
+msgstr "Call support"
+
+msgid "request_shipment_quote"
+msgstr "Request new shipment quote"
+
+msgid "track_another_vehicle"
+msgstr "Track another vehicle"
 
 # New customer messages
 msgid "Please enter a Company Name or Full Name"

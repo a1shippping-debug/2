@@ -2,7 +2,6 @@ from flask import (
     Blueprint,
     render_template,
     request,
-    send_file,
     abort,
     redirect,
     url_for,
@@ -25,7 +24,6 @@ from ...models import (
 )
 from ...utils_pdf import render_invoice_pdf
 from decimal import Decimal
-import os
 import secrets
 
 cust_bp = Blueprint("cust", __name__, template_folder="templates/customer")
@@ -280,18 +278,17 @@ def car_detail(vehicle_id: int):
         .all()
     )
 
-    # Collect image URLs from static/uploads/<VIN>/
-    image_urls: list[str] = []
-    try:
-        vin = (v.vin or "").strip()
-        base_dir = os.path.join(current_app.static_folder, "uploads", vin)
-        if vin and os.path.isdir(base_dir):
-            for fname in sorted(os.listdir(base_dir)):
-                lower = fname.lower()
-                if any(lower.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]):
-                    image_urls.append(url_for("static", filename=f"uploads/{vin}/{fname}"))
-    except Exception:
-        image_urls = []
+    image_docs = (
+        db.session.query(Document)
+        .filter(
+            Document.vehicle_id == v.id,
+            Document.file_path.isnot(None),
+            Document.doc_type.ilike("%photo%"),
+        )
+        .order_by(Document.created_at.asc())
+        .all()
+    )
+    image_urls = [doc.file_path for doc in image_docs if doc.file_path]
 
     # Fetch approved sale price (OMR) if any
     sale_price_omr = None
@@ -505,11 +502,10 @@ def auction_invoice_download(doc_id: int):
     if not v or v.owner_customer_id != cust.id:
         abort(404)
     path = getattr(doc, "file_path", None)
-    if not path or not os.path.isfile(path):
+    if not path:
         flash("الملف غير متوفر للتحميل", "danger")
         return redirect(url_for("cust.invoices_list", filter="auction"))
-    fname = os.path.basename(path)
-    return send_file(path, as_attachment=True, download_name=fname)
+    return redirect(path)
 
 
 @cust_bp.route("/invoices/<int:invoice_id>")
@@ -533,19 +529,14 @@ def invoice_pdf(invoice_id: int):
         abort(404)
     items = db.session.query(InvoiceItem).filter_by(invoice_id=inv.id).all()
     path = inv.pdf_path
-    if not path or not os.path.isfile(path):
-        if path:
-            try:
-                current_app.logger.warning("Invoice PDF missing at %s; regenerating", path)
-            except Exception:
-                pass
+    if not path:
         path = render_invoice_pdf(inv, items)
         inv.pdf_path = path
         try:
             db.session.commit()
         except Exception:
             db.session.rollback()
-    if not os.path.isfile(path):
+    if not path:
         flash("Invoice PDF is not available.", "danger")
         return redirect(url_for("cust.invoice_detail", invoice_id=inv.id))
-    return send_file(path, as_attachment=True, download_name=f"{inv.invoice_number}.pdf")
+    return redirect(path)

@@ -3,18 +3,17 @@
 
 {% block content %}
 <style>
-  /* الخلفية العامة بروح كوبارت */
+  /* الخلفية */
   .login-background {
     position: relative;
     min-height: calc(100vh - 80px);
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #1E2BA0; /* أساس اللون */
+    background-color: #1E2BA0;
     overflow: hidden;
   }
 
-  /* التدرج يغطي كل الصفحة */
   .login-background::before {
     content: "";
     position: absolute;
@@ -23,25 +22,63 @@
     z-index: 0;
   }
 
-  /* اللوجو في الأسفل */
+  /* اللوجو في الخلفية */
   .login-background::after {
     content: "";
     position: absolute;
     bottom: -5%;
     left: 50%;
     transform: translateX(-50%);
-    width: 700px; /* حجم اللوجو */
+    width: 700px;
     height: 700px;
-background: url("{{ url_for('static', filename='logo.jpeg') }}") no-repeat center 110%;
+    background: url("{{ url_for('static', filename='logo.png') }}") no-repeat center 110%;
     background-size: contain;
-    opacity: 1; /* اللوجو واضح */
+    opacity: 0.18;  /* قليل عشان ما يغطي الصفحة */
     z-index: 1;
   }
 
-  /* الكرت */
-  .login-card {
+  /* --- النظام الرئيسي --- */
+  .login-layout {
+    width: 100%;
+    max-width: 1100px;
+    display: flex;
+    gap: 50px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2rem;
+    z-index: 3;
     position: relative;
-    z-index: 2; /* فوق اللوجو */
+  }
+
+  /* RTL */
+  .login-rtl {
+    flex-direction: row-reverse;
+    text-align: right;
+  }
+
+  /* LTR */
+  .login-ltr {
+    flex-direction: row;
+    text-align: left;
+  }
+
+  /* اللوجو الكبير */
+  .login-logo-box {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  .login-logo {
+    width: 240px;
+    height: auto;
+    opacity: 0.95;
+  }
+
+  /* بطاقة تسجيل الدخول */
+  .login-card {
+    flex: 1;
+    z-index: 2;
     opacity: 0;
     transform: translateY(-150px);
     animation: slideDown 1.2s ease forwards;
@@ -52,9 +89,8 @@ background: url("{{ url_for('static', filename='logo.jpeg') }}") no-repeat cente
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* محتوى البطاقة */
   .card-container {
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(6px);
     border-radius: 18px;
     box-shadow: 0 6px 30px rgba(0, 0, 0, 0.15);
@@ -111,35 +147,64 @@ background: url("{{ url_for('static', filename='logo.jpeg') }}") no-repeat cente
     color: #1E2BA0;
     text-decoration: underline;
   }
+
+  /* استجابة الموبايل */
+  @media (max-width: 780px) {
+    .login-layout {
+      flex-direction: column !important;
+      text-align: center !important;
+      gap: 20px;
+    }
+
+    .login-logo {
+      width: 180px;
+    }
+  }
+
 </style>
 
+
 <div class="login-background">
-  <div class="login-card">
-    <div class="card-container">
-      <h2 class="login-title">{{ _('Login') }}</h2>
 
-      <form method="post" class="space-y-4">
-        <div>
-          <label class="block text-gray-700 mb-1">{{ _('Email') }}</label>
-          <input name="email" type="email" required>
+  <div class="login-layout {% if g.lang_code == 'ar' %}login-rtl{% else %}login-ltr{% endif %}">
+
+    <!-- اللوجو -->
+    <div class="login-logo-box">
+      <img src="{{ url_for('static', filename='logo.jpeg') }}" class="login-logo" alt="logo">
+    </div>
+
+    <!-- نموذج تسجيل الدخول -->
+    <div class="login-card">
+      <div class="card-container">
+        <h2 class="login-title">{{ _('Login') }}</h2>
+
+        <form method="post" class="space-y-4">
+          <div>
+            <label class="block text-gray-700 mb-1">{{ _('Email') }}</label>
+            <input name="email" type="email" required>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 mb-1">{{ _('Password') }}</label>
+            <input name="password" type="password" required>
+          </div>
+
+          <button type="submit" class="btn-primary">
+            {{ _('Login') }}
+          </button>
+        </form>
+
+        <div class="login-info">
+          {{ _('Use') }} <strong>admin@example.com</strong> / <strong>admin123</strong><br>
+          {{ _('after visiting') }}
+          <a href="{{ url_for('auth.init_sample') }}">/auth/init</a>
         </div>
-
-        <div>
-          <label class="block text-gray-700 mb-1">{{ _('Password') }}</label>
-          <input name="password" type="password" required>
-        </div>
-
-        <button type="submit" class="btn-primary">
-          {{ _('Login') }}
-        </button>
-      </form>
-
-      <div class="login-info">
-        {{ _('Use') }} <strong>admin@example.com</strong> / <strong>admin123</strong><br>
-        {{ _('after visiting') }}
-        <a href="{{ url_for('auth.init_sample') }}">/auth/init</a>
       </div>
     </div>
+
   </div>
+
 </div>
+
 {% endblock %}
+  

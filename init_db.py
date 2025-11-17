@@ -7,8 +7,6 @@ from datetime import datetime, timedelta
 def seed():
     app = create_app()
     with app.app_context():
-        db.create_all()
-
         # Roles
         roles = {r.name: r for r in Role.query.all()}
         for name in ["admin", "staff", "accountant", "customer"]:

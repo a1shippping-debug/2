@@ -1,279 +1,147 @@
-{% set lang = g.get('lang_code', 'ar') %}
-{% set is_rtl = (lang == 'ar') %}
-{% set is_authenticated = current_user.is_authenticated %}
-{% set role_name = (current_user.role.name|lower) if (is_authenticated and current_user.role) else '' %}
+{% set role = (current_user.role.name|lower) if current_user.is_authenticated and current_user.role else 'guest' %}
+{% set role_map = {
+  'admin': 'admin',
+  'manager': 'admin',
+  'employee': 'employee',
+  'staff': 'employee',
+  'employees': 'employee',
+  'accountant': 'accountant',
+  'customer': 'customer'
+} %}
+{% set role_name = role_map.get(role, 'guest') %}
 
-{% set label_home = 'الرئيسية' if is_rtl else 'Home' %}
-{% set label_services = 'الخدمات' if is_rtl else 'Services' %}
-{% set label_track = 'تتبع الشحنة' if is_rtl else 'Track Shipment' %}
-{% set label_prices = '???? ???????' if is_rtl else 'Request Pricing' %}
-{% set label_about = 'عن الشركة' if is_rtl else 'About' %}
-{% set label_contact = 'اتصل بنا' if is_rtl else 'Contact' %}
-{% set label_login = 'تسجيل الدخول' if is_rtl else 'Login' %}
-{% set label_dashboard = 'لوحة التحكم' if is_rtl else 'Dashboard' %}
-{% set label_logout = 'تسجيل الخروج' if is_rtl else 'Logout' %}
-{% set label_search_placeholder = 'ابحث برقم الشاسي (VIN)' if is_rtl else 'Search VIN' %}
-{% set label_new = 'جديد' if is_rtl else 'New' %}
+{% set nav_by_role = {
+  'admin': [
+    {'label': _('Admin Dashboard'), 'url': url_for('admin.dashboard')},
+    {'label': _('Operations Dashboard'), 'url': url_for('ops.dashboard')},
+    {'label': _('Warehouses'), 'url': url_for('ops.warehouses_view')},
+    {'label': _('Vehicles'), 'url': url_for('ops.cars_list')},
+    {'label': _('Customers'), 'url': url_for('ops.customers_list')},
+    {'label': _('Bill of Lading'), 'url': url_for('acct.bol_list')}
+  ],
+  'employee': [
+    {'label': _('Operations Dashboard'), 'url': url_for('ops.dashboard')},
+    {'label': _('Warehouses'), 'url': url_for('ops.warehouses_view')},
+    {'label': _('Vehicles'), 'url': url_for('ops.cars_list')},
+    {'label': _('Shipments'), 'url': url_for('ops.shipments_list')},
+    {'label': _('Customers'), 'url': url_for('ops.customers_list')},
+    {'label': _('Sale Listings'), 'url': url_for('ops.sale_listings_list')}
+  ],
+  'accountant': [
+    {'label': _('Accounting Dashboard'), 'url': url_for('acct.dashboard')},
+    {'label': _('Invoices'), 'url': url_for('acct.invoices_list')},
+    {'label': _('Payments'), 'url': url_for('acct.payments_list')},
+    {'label': _('Bill of Lading'), 'url': url_for('acct.bol_list')}
+  ],
+  'customer': [
+    {'label': _('Customer Dashboard'), 'url': url_for('cust.dashboard')},
+    {'label': _('My Cars'), 'url': url_for('cust.my_cars')},
+    {'label': _('Track Shipment'), 'url': url_for('cust.track')},
+    {'label': _('My Invoices'), 'url': url_for('cust.invoices_list')}
+  ],
+  'guest': [
+    {'label': _('Home'), 'url': url_for('index')},
+    {'label': _('Track Shipment'), 'url': url_for('cust.track')},
+    {'label': _('Request Pricing'), 'url': url_for('pricing_request')},
+  ]
+} %}
 
-{% set nav_items = [] %}
-{% set search_enabled = false %}
-{% set cta_button = none %}
-{% set user_menu_links = [] %}
+{% set nav_links = nav_by_role.get(role_name, nav_by_role['guest']) %}
+{% set can_search = role_name in ['admin', 'employee', 'accountant'] %}
+{% set user_label = current_user.name if current_user.is_authenticated and current_user.name else role_name.capitalize() %}
 
-{% if is_authenticated %}
-  {% if role_name in ['admin', 'employee'] %}
-    {% set nav_items = [
-      {'href': url_for('ops.cars_list'), 'label': 'المركبات' if is_rtl else 'Cars'},
-      {'href': url_for('ops.customers_list'), 'label': 'العملاء' if is_rtl else 'Customers'},
-      {'href': url_for('acct.bol_list'), 'label': 'بوليصة الشحن' if is_rtl else 'BOL'},
-      {'href': url_for('ops.sale_listings_list'), 'label': 'إعلانات البيع' if is_rtl else 'Sale Listings'},
-      {'href': url_for('ops.dashboard') if role_name == 'employee' else url_for('admin.dashboard'), 'label': label_dashboard}
-    ] %}
-    {% set search_enabled = true %}
-    {% set user_menu_links = [
-      {'href': url_for('ops.dashboard') if role_name == 'employee' else url_for('admin.dashboard'), 'label': label_dashboard},
-      {'href': url_for('auth.logout'), 'label': label_logout, 'class': 'text-danger'}
-    ] %}
-  {% elif role_name == 'customer' %}
-    {% set nav_items = [
-      {'href': url_for('cust.my_cars'), 'label': 'مركباتي' if is_rtl else 'My Vehicles'},
-      {'href': url_for('cust.invoices_list'), 'label': 'الفواتير' if is_rtl else 'Invoices'},
-      {'href': url_for('cust.dashboard'), 'label': label_dashboard}
-    ] %}
-    {% set search_enabled = true %}
-    {% set user_menu_links = [
-      {'href': url_for('cust.dashboard'), 'label': label_dashboard},
-      {'href': url_for('auth.logout'), 'label': label_logout, 'class': 'text-danger'}
-    ] %}
-  {% else %}
-    {% set nav_items = [
-      {'href': '/', 'label': label_home},
-      {'href': '/#services', 'label': label_services},
-      {'href': url_for('cust.track'), 'label': label_track},
-      {'href': url_for('pricing_request'), 'label': label_prices},
-      {'href': '/#about', 'label': label_about},
-      {'href': '/#contact', 'label': label_contact}
-    ] %}
-    {% set user_menu_links = [
-      {'href': url_for('auth.logout'), 'label': label_logout, 'class': 'text-danger'}
-    ] %}
-  {% endif %}
-{% else %}
-  {% set nav_items = [
-    {'href': '/', 'label': label_home},
-    {'href': '/#services', 'label': label_services},
-    {'href': url_for('cust.track'), 'label': label_track},
-    {'href': url_for('pricing_request'), 'label': label_prices},
-    {'href': '/#about', 'label': label_about},
-    {'href': '/#contact', 'label': label_contact}
-  ] %}
-  {% set cta_button = {'href': url_for('auth.login'), 'label': label_login, 'badge': label_new} %}
-{% endif %}
+<!-- ========== NAVBAR ========== -->
+<nav class="fixed top-0 inset-x-0 z-50 bg-gradient-to-b from-[#0B1E3F] to-[#123055] text-white shadow-md">
 
-<header id="main-header" class="main-header{% if is_rtl %} is-rtl{% endif %}">
-  <div class="main-header__inner">
-    <div class="main-header__left">
-      <button id="main-header-toggle" class="main-header__toggle" type="button" aria-expanded="false" aria-controls="main-header-mobile">
-        <span aria-hidden="true">☰</span>
-        <span class="sr-only">{{ 'القائمة' if is_rtl else 'Menu' }}</span>
-      </button>
-      <div class="main-header__logo">
-        <a href="/">
-          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="A1 Shipping Logo" onerror="this.style.display='none'">
-          <span>A1 SHIPPING</span>
-        </a>
-      </div>
-    </div>
+  <div class="max-w-7xl mx-auto px-4"
+       x-data="{ open:false, menu:false }"
+       x-effect="document.body.style.overflow = open ? 'hidden' : ''">
 
-    <nav class="main-header__nav" aria-label="{{ 'التنقل الرئيسي' if is_rtl else 'Primary navigation' }}">
-      <ul class="main-header__nav-list">
-        {% for item in nav_items %}
-          <li>
-            <a href="{{ item.href }}" class="main-header__link{% if request.path == item.href %} is-active{% endif %}">{{ item.label }}</a>
-          </li>
+    <div class="h-16 flex items-center justify-between">
+
+      <!-- LOGO -->
+      <a href="/" class="flex items-center gap-2 text-lg font-bold hover:opacity-90">
+        <img src="{{ url_for('static', filename='logo.jpeg') }}" class="h-8 w-8 rounded-full object-cover">
+      </a>
+
+      <!-- DESKTOP MENU -->
+      <div class="hidden md:flex items-center gap-6 text-sm">
+
+        {% for item in nav_links %}
+        <a href="{{ item.url }}" class="hover:text-[#FFB838] transition">{{ item.label }}</a>
         {% endfor %}
-      </ul>
-    </nav>
 
-    <div class="main-header__actions">
-      {% if search_enabled %}
-        <form id="vehicle-search-form" class="main-header__search" role="search">
-          <label class="sr-only" for="vehicle-search-input">{{ label_search_placeholder }}</label>
-          <input id="vehicle-search-input" type="search" inputmode="latin" dir="ltr" class="main-header__input" placeholder="{{ label_search_placeholder }}">
-          <button type="submit" class="main-header__search-btn" aria-label="{{ 'ابحث' if is_rtl else 'Search' }}"><i class="fa-solid fa-magnifying-glass"></i></button>
-        </form>
-      {% endif %}
+        <a href="{{ language_switch_url }}" class="px-4 py-1.5 rounded-full border border-white/25 font-semibold hover:text-[#FFB838]">
+          {{ language_switch_label }}
+        </a>
 
-      <div class="main-header__languages">
-        <a href="{{ request.path }}?lang=en" class="{% if not is_rtl %}is-active{% endif %}">EN</a>
-        <a href="{{ request.path }}?lang=ar" class="{% if is_rtl %}is-active{% endif %}">AR</a>
-      </div>
-
-      {% if is_authenticated %}
-        <div class="main-header__user">
-          <button id="main-header-user-btn" class="main-header__user-btn" type="button" aria-haspopup="true" aria-expanded="false">
-            <i class="fa-regular fa-user"></i>
-            <span>{{ (current_user.name or current_user.email or label_dashboard)[:22] }}</span>
+        {% if can_search %}
+        <form id="vin-search" class="relative hidden lg:block">
+          <input type="search" id="vin-input" placeholder="VIN" dir="ltr"
+            class="w-52 rounded-full bg-white/10 placeholder-white/70 px-3 py-1.5 text-sm focus:bg-white/20 focus:ring-2 focus:ring-[#FFB838] outline-none">
+          <button class="absolute right-3 top-2 text-white/70" type="submit">
+            <i class="fa-solid fa-magnifying-glass"></i>
           </button>
-          <div id="main-header-user-menu" class="main-header__user-menu" role="menu">
-            <div class="main-header__user-name">{{ current_user.name or current_user.email }}</div>
-            {% for link in user_menu_links %}
-              <a href="{{ link.href }}" class="{{ link.class if link.class is defined else '' }}" role="menuitem">{{ link.label }}</a>
-            {% endfor %}
+        </form>
+        {% endif %}
+
+        <!-- USER AREA -->
+        {% if current_user.is_authenticated %}
+        <div class="relative" x-data="{menu:false}">
+          <button @click="menu=!menu" class="flex items-center gap-2 hover:text-[#FFB838]">
+            <i class="fa-regular fa-user text-lg"></i>
+            <span class="hidden lg:inline">{{ user_label }}</span>
+          </button>
+
+          <div x-show="menu" @click.outside="menu=false" x-transition
+            class="absolute right-0 mt-2 w-56 bg-white text-gray-800 rounded-md shadow-lg py-2 text-sm">
+
+            <div class="px-3 py-2">
+              {{ _('Signed in as') }} <strong>{{ user_label }}</strong><br>
+              <span class="text-xs text-gray-400">{{ role_name }}</span>
+            </div>
+
+            <a href="{{ url_for('auth.logout') }}"
+               class="block px-3 py-2 text-red-600 hover:bg-gray-100">{{ _('Logout') }}</a>
           </div>
         </div>
-      {% elif cta_button %}
-        <a href="{{ cta_button.href }}" class="main-header__cta">
-          {% if cta_button.badge %}<span>{{ cta_button.badge }}</span>{% endif %}
-          {{ cta_button.label }}
+
+        {% else %}
+
+        <a href="{{ url_for('auth.login') }}"
+           class="px-4 py-2 rounded-full bg-[#FFB838] text-neutral-900 font-semibold hover:opacity-90">
+          {{ _('Login') }}
         </a>
-      {% endif %}
-    </div>
-  </div>
 
-  <div id="main-header-mobile" class="main-header__mobile" aria-hidden="true">
-    {% if search_enabled %}
-      <form id="vehicle-search-form-mobile" class="main-header__mobile-search" role="search">
-        <label class="sr-only" for="vehicle-search-input-mobile">{{ label_search_placeholder }}</label>
-        <input id="vehicle-search-input-mobile" type="search" inputmode="latin" dir="ltr" placeholder="{{ label_search_placeholder }}">
-        <button type="submit" aria-label="{{ 'ابحث' if is_rtl else 'Search' }}"><i class="fa-solid fa-magnifying-glass"></i></button>
-      </form>
-    {% endif %}
-
-    <nav class="main-header__mobile-nav" role="menu">
-      {% for item in nav_items %}
-        <a href="{{ item.href }}" role="menuitem">{{ item.label }}</a>
-      {% endfor %}
-    </nav>
-
-    <div class="main-header__mobile-meta">
-      <div class="main-header__languages">
-        <a href="{{ request.path }}?lang=en" class="{% if not is_rtl %}is-active{% endif %}">EN</a>
-        <a href="{{ request.path }}?lang=ar" class="{% if is_rtl %}is-active{% endif %}">AR</a>
+        {% endif %}
       </div>
 
-      {% if not is_authenticated and cta_button %}
-        <a href="{{ cta_button.href }}" class="main-header__mobile-cta">
-          {% if cta_button.badge %}<span>{{ cta_button.badge }}</span>{% endif %}
-          {{ cta_button.label }}
-        </a>
-      {% elif is_authenticated %}
-        <div class="main-header__mobile-account">
-          {% for link in user_menu_links %}
-            <a href="{{ link.href }}" class="{{ link.class if link.class is defined else '' }}">{{ link.label }}</a>
-          {% endfor %}
-        </div>
+      <!-- MOBILE BUTTON -->
+      <button class="md:hidden p-2 rounded hover:bg-white/10"
+              @click="open=!open">
+        <i class="fa-solid fa-bars text-xl"></i>
+      </button>
+
+    </div>
+
+    <!-- MOBILE MENU -->
+    <div x-show="open" x-transition class="md:hidden py-3 bg-[#0B1E3F] border-t border-white/10 rounded-b-xl space-y-2 text-sm">
+
+      {% for item in nav_links %}
+      <a href="{{ item.url }}" class="block px-2 py-2 hover:text-[#FFB838]">{{ item.label }}</a>
+      {% endfor %}
+
+      <a href="{{ language_switch_url }}" class="block px-2 py-2 font-semibold hover:text-[#FFB838]">
+        {{ language_switch_label }}
+      </a>
+
+      {% if current_user.is_authenticated %}
+      <a href="{{ url_for('auth.logout') }}" class="block text-red-400 font-semibold mt-3 px-2">{{ _('Logout') }}</a>
+      {% else %}
+      <a href="{{ url_for('auth.login') }}" class="block font-semibold hover:text-[#FFB838] mt-3 px-2">{{ _('Login') }}</a>
       {% endif %}
     </div>
+
   </div>
-</header>
-<div id="main-header-overlay" class="main-header__overlay" hidden></div>
 
-<script>
-  (function(){
-    function bindSearch(formId, inputId){
-      var form = document.getElementById(formId);
-      var input = document.getElementById(inputId);
-      if(!form || !input){ return; }
-      form.addEventListener('submit', function(ev){
-        ev.preventDefault();
-        var vin = (input.value || '').trim();
-        if(!vin){
-          input.focus();
-          return;
-        }
-        window.location.href = '/tracking/' + encodeURIComponent(vin);
-      });
-    }
-    bindSearch('vehicle-search-form', 'vehicle-search-input');
-    bindSearch('vehicle-search-form-mobile', 'vehicle-search-input-mobile');
-
-    var body = document.body;
-    var header = document.getElementById('main-header');
-    var toggle = document.getElementById('main-header-toggle');
-    var mobile = document.getElementById('main-header-mobile');
-    var overlay = document.getElementById('main-header-overlay');
-
-    function setMobile(open){
-      if(!header){ return; }
-      header.classList.toggle('main-header--open', !!open);
-      if(mobile){
-        mobile.setAttribute('aria-hidden', open ? 'false' : 'true');
-      }
-      if(toggle){
-        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-      }
-      if(overlay){
-        overlay.hidden = !open;
-      }
-      body.classList.toggle('menu-open', !!open);
-      if(open){
-        var focusable = mobile ? mobile.querySelector('a, button, input, textarea') : null;
-        if(focusable){
-          try { focusable.focus({ preventScroll: true }); } catch (err) { focusable.focus(); }
-        }
-      } else if(toggle){
-        try { toggle.focus({ preventScroll: true }); } catch (err) { toggle.focus(); }
-      }
-    }
-
-    if(toggle){
-      toggle.addEventListener('click', function(ev){
-        ev.preventDefault();
-        var willOpen = !header.classList.contains('main-header--open');
-        setMobile(willOpen);
-      });
-    }
-
-    if(overlay){
-      overlay.addEventListener('click', function(){ setMobile(false); });
-    }
-
-    if(mobile){
-      mobile.addEventListener('click', function(ev){
-        var link = ev.target.closest('a');
-        if(link){
-          setMobile(false);
-        }
-      });
-    }
-
-    window.addEventListener('resize', function(){
-      if(window.innerWidth >= 901){
-        setMobile(false);
-      }
-    });
-
-    document.addEventListener('keydown', function(ev){
-      if(ev.key === 'Escape'){
-        setMobile(false);
-      }
-    });
-
-    var userBtn = document.getElementById('main-header-user-btn');
-    var userMenu = document.getElementById('main-header-user-menu');
-    if(userBtn && userMenu){
-      userBtn.addEventListener('click', function(ev){
-        ev.stopPropagation();
-        var willOpen = !userMenu.classList.contains('open');
-        userMenu.classList.toggle('open', willOpen);
-        userBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-      });
-
-      document.addEventListener('click', function(ev){
-        if(userMenu.classList.contains('open') && !userMenu.contains(ev.target) && !userBtn.contains(ev.target)){
-          userMenu.classList.remove('open');
-          userBtn.setAttribute('aria-expanded', 'false');
-        }
-      });
-
-      document.addEventListener('keydown', function(ev){
-        if(ev.key === 'Escape' && userMenu.classList.contains('open')){
-          userMenu.classList.remove('open');
-          userBtn.setAttribute('aria-expanded', 'false');
-          try { userBtn.focus({ preventScroll: true }); } catch (err) { userBtn.focus(); }
-        }
-      });
-    }
-  })();
-</script>
+</nav>

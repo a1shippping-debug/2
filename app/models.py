@@ -71,6 +71,21 @@ class Customer(db.Model):
             return "-"
 
 
+class Warehouse(db.Model):
+    __tablename__ = "warehouses"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), unique=True, nullable=False)
+    location = db.Column(db.String(255))
+    contact_name = db.Column(db.String(150))
+    contact_phone = db.Column(db.String(80))
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"<Warehouse {self.name!r}>"
+
+
 class ClientAccountStructure(db.Model):
     __tablename__ = "client_account_structures"
 
@@ -148,12 +163,22 @@ class Vehicle(db.Model):
     purchase_price_usd = db.Column(db.Numeric(12,2))
     purchase_date = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    warehouse_id = db.Column(db.Integer, db.ForeignKey("warehouses.id"), index=True)
+    has_title = db.Column(db.Boolean, default=False, nullable=False)
+    warehouse_arrived_at = db.Column(db.DateTime)
+    warehouse_has_keys = db.Column(db.Boolean, default=False, nullable=False)
+    warehouse_key_count = db.Column(db.Integer)
+    warehouse_title_received = db.Column(db.Boolean, default=False, nullable=False)
+    warehouse_title_received_at = db.Column(db.DateTime)
+    shipping_tracking_url = db.Column(db.Text)
+    title_tracking_number = db.Column(db.String(120))
     # Public sharing fields
     share_token: Optional[str] = db.Column(db.String(64), unique=True, index=True)
     share_enabled: bool = db.Column(db.Boolean, default=False, nullable=False)
 
     auction = db.relationship("Auction")
     owner = db.relationship("Customer")
+    warehouse = db.relationship("Warehouse", backref="vehicles")
     cost_items = db.relationship("CostItem", backref="vehicle")
 
 class Shipment(db.Model):
@@ -171,6 +196,8 @@ class Shipment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     shipping_company = db.Column(db.String(200))
     container_number = db.Column(db.String(100))
+    origin_warehouse_id = db.Column(db.Integer, db.ForeignKey("warehouses.id"), index=True)
+    origin_warehouse = db.relationship("Warehouse", backref="shipments_origin", foreign_keys=[origin_warehouse_id])
 
 class VehicleShipment(db.Model):
     __tablename__ = "vehicle_shipments"
@@ -316,9 +343,14 @@ class Document(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey("vehicles.id"), nullable=True, index=True)
     shipment_id = db.Column(db.Integer, db.ForeignKey("shipments.id"), nullable=True, index=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=True, index=True)
     doc_type = db.Column(db.String(100))
     file_path = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    vehicle = db.relationship("Vehicle", backref="documents", foreign_keys=[vehicle_id])
+    shipment = db.relationship("Shipment", backref="documents", foreign_keys=[shipment_id])
+    customer = db.relationship("Customer", backref="documents", foreign_keys=[customer_id])
 
 
 class Notification(db.Model):

@@ -1,0 +1,292 @@
+{% extends "layout.html" %}
+{% block title %}{{ warehouse.name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <p class="text-sm text-slate-500">{{ _('Warehouse') }}</p>
+      <h1 class="text-3xl font-bold text-blue-900">{{ warehouse.name }}</h1>
+    </div>
+    <a href="{{ url_for('ops.warehouses_view') }}" class="text-sm text-blue-700 hover:underline">{{ _('Back to warehouses') }}</a>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-3">
+    <form method="post" class="lg:col-span-2 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow">
+      <h2 class="text-lg font-semibold text-blue-900">{{ _('Warehouse details') }}</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div>
+          <label class="text-sm font-medium text-slate-600">{{ _('Name') }}</label>
+          <input name="name" value="{{ warehouse.name }}" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-blue-500 focus:outline-none" required>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-600">{{ _('Location') }}</label>
+          <input name="location" value="{{ warehouse.location or '' }}" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-blue-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-600">{{ _('Contact name') }}</label>
+          <input name="contact_name" value="{{ warehouse.contact_name or '' }}" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-blue-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-600">{{ _('Contact phone') }}</label>
+          <input name="contact_phone" value="{{ warehouse.contact_phone or '' }}" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-blue-500 focus:outline-none">
+        </div>
+      </div>
+      <div>
+        <label class="text-sm font-medium text-slate-600">{{ _('Notes') }}</label>
+        <textarea name="notes" rows="3" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-blue-500 focus:outline-none">{{ warehouse.notes or '' }}</textarea>
+      </div>
+      <div class="flex justify-end">
+        <button class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 transition">{{ _('Save changes') }}</button>
+      </div>
+    </form>
+
+    <div class="space-y-4">
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow">
+        <h2 class="text-lg font-semibold text-blue-900 mb-4">{{ _('Assign vehicle') }}</h2>
+        <form method="post" action="{{ url_for('ops.warehouse_assign_vehicle', warehouse_id=warehouse.id) }}" class="space-y-4" enctype="multipart/form-data">
+          <div>
+            <label class="text-sm font-medium text-slate-600">{{ _('VIN') }}</label>
+            <input name="vin" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-blue-500 focus:outline-none" placeholder="1HGCM82633A123456" required>
+          </div>
+          <div>
+            <label class="text-sm font-medium text-slate-600">{{ _('Warehouse arrival date') }}</label>
+            <input type="date" name="warehouse_arrived_at" value="{{ today_str }}" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="text-sm font-medium text-slate-600">{{ _('Keys') }}</label>
+            <div class="flex flex-col gap-2">
+              <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+                <input type="checkbox" name="warehouse_has_keys" value="1" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                <span>{{ _('Keys received in warehouse') }}</span>
+              </label>
+              <div>
+                <span class="text-xs text-slate-500 block mb-1">{{ _('Key count') }}</span>
+                <input type="number" min="0" name="warehouse_key_count" class="w-24 rounded-lg border border-slate-200 px-2 py-1 focus:border-blue-500 focus:outline-none">
+              </div>
+            </div>
+          </div>
+          <div>
+            <label class="text-sm font-medium text-slate-600">{{ _('Title documents') }}</label>
+            <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+              <input type="checkbox" name="warehouse_title_received" value="1" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+              <span>{{ _('Title documents received') }}</span>
+            </label>
+            <div class="mt-2">
+              <span class="text-xs text-slate-500 block mb-1">{{ _('Title received date') }}</span>
+              <input type="date" name="warehouse_title_received_at" class="w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-blue-500 focus:outline-none">
+            </div>
+            <div class="mt-2">
+              <span class="text-xs text-slate-500 block mb-1">{{ _('Title tracking number') }}</span>
+              <input type="text" name="title_tracking_number" class="w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-blue-500 focus:outline-none" placeholder="مثال: DHL123456789">
+            </div>
+          </div>
+          <div>
+            <label class="text-sm font-medium text-slate-600">{{ _('Arrival photos') }}</label>
+            <input type="file" name="arrival_photos" accept="image/*" multiple class="mt-1 w-full rounded-lg border border-dashed border-slate-300 px-3 py-2 focus:border-blue-500 focus:outline-none">
+            <p class="text-xs text-slate-500 mt-1">{{ _('Upload photos documenting the vehicle arrival (multiple images allowed).') }}</p>
+          </div>
+          <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-600">
+            <input type="checkbox" name="has_title" value="1" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+            <span>{{ _('Title on hand') }}</span>
+          </label>
+          <button class="w-full rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 transition">{{ _('Assign to warehouse') }}</button>
+        </form>
+      </div>
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow text-sm text-slate-600">
+        <div class="flex items-center justify-between">
+          <div>{{ _('Vehicles stored') }}</div>
+          <div class="text-lg font-semibold text-blue-900">{{ vehicles_with_title|length + vehicles_without_title|length }}</div>
+        </div>
+        <div class="mt-2 grid grid-cols-2 gap-3 text-xs">
+          <div class="rounded-lg bg-green-50 p-3">
+            <div class="text-slate-500">{{ _('With title') }}</div>
+            <div class="text-xl font-semibold text-green-700">{{ vehicles_with_title|length }}</div>
+          </div>
+          <div class="rounded-lg bg-amber-50 p-3">
+            <div class="text-slate-500">{{ _('No title') }}</div>
+            <div class="text-xl font-semibold text-amber-700">{{ vehicles_without_title|length }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-2">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow">
+      <div class="border-b border-slate-100 px-6 py-4">
+        <h2 class="text-lg font-semibold text-blue-900">{{ _('Vehicles with title') }}</h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-blue-50 text-blue-900">
+            <tr>
+              <th class="px-4 py-2 text-left">{{ _('VIN') }}</th>
+              <th class="px-4 py-2 text-left">{{ _('Details') }}</th>
+              <th class="px-4 py-2 text-left">{{ _('Client') }}</th>
+              <th class="px-4 py-2 text-left">{{ _('Arrival') }}</th>
+              <th class="px-4 py-2 text-left">{{ _('Keys / Title') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for v in vehicles_with_title %}
+            <tr class="hover:bg-blue-50/50">
+              <td class="px-4 py-2 font-semibold text-blue-900">{{ v.vin }}</td>
+              <td class="px-4 py-2">{{ v.make }} {{ v.model }} {{ v.year or '' }}</td>
+              <td class="px-4 py-2">{{ v.owner.display_name if v.owner else '-' }}</td>
+              <td class="px-4 py-2">{{ v.warehouse_arrived_at.strftime('%Y-%m-%d') if v.warehouse_arrived_at else '-' }}</td>
+              <td class="px-4 py-2 text-sm">
+                <div>
+                  {% if v.warehouse_has_keys %}
+                  <span class="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">{{ _('Keys received') }}</span>
+                  {% if v.warehouse_key_count is not none %}
+                  <span class="ml-2 text-slate-500">{{ v.warehouse_key_count }}</span>
+                  {% endif %}
+                  {% else %}
+                  <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">{{ _('Keys missing') }}</span>
+                  {% endif %}
+                </div>
+                <div class="mt-1">
+                  {% if v.warehouse_title_received %}
+                  <span class="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">{{ _('Title received') }}</span>
+                  {% if v.warehouse_title_received_at %}
+                  <span class="ml-2 text-slate-500">{{ v.warehouse_title_received_at.strftime('%Y-%m-%d') }}</span>
+                  {% endif %}
+                  {% else %}
+                  <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">{{ _('Title pending') }}</span>
+                  {% endif %}
+                </div>
+                {% set arrival_photos = v.documents | selectattr('doc_type', 'equalto', 'Warehouse Arrival Photo') | list %}
+                <div class="mt-1 text-xs text-slate-500">
+                  {% if arrival_photos %}
+                    {{ _('Arrival photos') }}: {{ arrival_photos|length }}
+                  {% else %}
+                    {{ _('No arrival photos yet') }}
+                  {% endif %}
+                  {% if v.title_tracking_number %}
+                    <div>{{ _('Title tracking') }}: {{ v.title_tracking_number }}</div>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="px-4 py-4 text-center text-slate-400">{{ _('No vehicles yet.') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white shadow">
+      <div class="border-b border-slate-100 px-6 py-4">
+        <h2 class="text-lg font-semibold text-blue-900">{{ _('Vehicles without title') }}</h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-blue-50 text-blue-900">
+            <tr>
+              <th class="px-4 py-2 text-left">{{ _('VIN') }}</th>
+              <th class="px-4 py-2 text-left">{{ _('Details') }}</th>
+              <th class="px-4 py-2 text-left">{{ _('Client') }}</th>
+              <th class="px-4 py-2 text-left">{{ _('Arrival') }}</th>
+              <th class="px-4 py-2 text-left">{{ _('Keys / Title') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for v in vehicles_without_title %}
+            <tr class="hover:bg-blue-50/50">
+              <td class="px-4 py-2 font-semibold text-blue-900">{{ v.vin }}</td>
+              <td class="px-4 py-2">{{ v.make }} {{ v.model }} {{ v.year or '' }}</td>
+              <td class="px-4 py-2">{{ v.owner.display_name if v.owner else '-' }}</td>
+              <td class="px-4 py-2">{{ v.warehouse_arrived_at.strftime('%Y-%m-%d') if v.warehouse_arrived_at else '-' }}</td>
+              <td class="px-4 py-2 text-sm">
+                <div>
+                  {% if v.warehouse_has_keys %}
+                  <span class="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">{{ _('Keys received') }}</span>
+                  {% if v.warehouse_key_count is not none %}
+                  <span class="ml-2 text-slate-500">{{ v.warehouse_key_count }}</span>
+                  {% endif %}
+                  {% else %}
+                  <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">{{ _('Keys missing') }}</span>
+                  {% endif %}
+                </div>
+                <div class="mt-1">
+                  {% if v.warehouse_title_received %}
+                  <span class="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">{{ _('Title received') }}</span>
+                  {% if v.warehouse_title_received_at %}
+                  <span class="ml-2 text-slate-500">{{ v.warehouse_title_received_at.strftime('%Y-%m-%d') }}</span>
+                  {% endif %}
+                  {% else %}
+                  <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">{{ _('Title pending') }}</span>
+                  {% endif %}
+                </div>
+                {% set arrival_photos = v.documents | selectattr('doc_type', 'equalto', 'Warehouse Arrival Photo') | list %}
+                <div class="mt-1 text-xs text-slate-500">
+                  {% if arrival_photos %}
+                    {{ _('Arrival photos') }}: {{ arrival_photos|length }}
+                  {% else %}
+                    {{ _('No arrival photos yet') }}
+                  {% endif %}
+                  {% if v.title_tracking_number %}
+                    <div>{{ _('Title tracking') }}: {{ v.title_tracking_number }}</div>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="px-4 py-4 text-center text-slate-400">{{ _('No vehicles yet.') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="rounded-2xl border border-slate-200 bg-white shadow">
+    <div class="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-blue-900">{{ _('Vehicles shipped from this warehouse') }}</h2>
+      <span class="text-sm text-slate-500">{{ shipped_rows|length }} {{ _('records') }}</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="bg-blue-50 text-blue-900">
+          <tr>
+            <th class="px-4 py-2 text-left">{{ _('Shipment') }}</th>
+            <th class="px-4 py-2 text-left">{{ _('Departure') }}</th>
+            <th class="px-4 py-2 text-left">{{ _('Vehicle') }}</th>
+            <th class="px-4 py-2 text-left">{{ _('Title') }}</th>
+            <th class="px-4 py-2 text-left">{{ _('Status') }}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for shipment, vehicle in shipped_rows %}
+          <tr class="hover:bg-blue-50/40">
+            <td class="px-4 py-2 font-semibold text-blue-900">{{ shipment.shipment_number }}</td>
+            <td class="px-4 py-2">{{ shipment.departure_date.strftime('%Y-%m-%d') if shipment.departure_date else '-' }}</td>
+            <td class="px-4 py-2">
+              <div class="font-semibold">{{ vehicle.vin }}</div>
+              <div class="text-xs text-slate-500">{{ vehicle.make }} {{ vehicle.model }} {{ vehicle.year or '' }}</div>
+            </td>
+            <td class="px-4 py-2">
+              {% if vehicle.has_title %}
+              <span class="rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">{{ _('With title') }}</span>
+              {% else %}
+              <span class="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">{{ _('No title') }}</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-2">{{ shipment.status or '-' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="px-4 py-4 text-center text-slate-400">{{ _('No shipments yet.') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

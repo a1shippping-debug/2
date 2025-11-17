@@ -1015,3 +1015,121 @@ msgstr "ضريبة القيمة المضافة"
 #: app/templates/admin/settings.html
 msgid "Shipping Fee (OMR)"
 msgstr "رسوم الشحن (ر.ع)"
+
+# Customer portal unified keys
+msgid "customer_portal_title"
+msgstr "بوابة العميل"
+
+msgid "welcome_back"
+msgstr "مرحبًا بعودتك"
+
+msgid "shipping_hub_ready"
+msgstr "مركز شحنك جاهز الآن"
+
+msgid "track_shipments_paragraph"
+msgstr "تابع الشحنات واستعرض المستندات وتعامل مع الفواتير من مكان واحد. نبقيك على اطلاع بكل تحديث للمركبات."
+
+msgid "outstanding_balance_label"
+msgstr "الرصيد المستحق:"
+
+msgid "currency_omr"
+msgstr "ر.ع"
+
+msgid "my_vehicles"
+msgstr "سياراتي"
+
+msgid "track_shipment"
+msgstr "تتبع الشحنة"
+
+msgid "invoices"
+msgstr "الفواتير"
+
+msgid "support_request"
+msgstr "طلب دعم"
+
+msgid "enter_vin_placeholder"
+msgstr "أدخل رقم الشاصي أو اللوت للانتقال مباشرة إلى التتبع"
+
+msgid "search_tracking"
+msgstr "ابحث في التتبع"
+
+msgid "total_vehicles"
+msgstr "إجمالي المركبات"
+
+msgid "in_transit"
+msgstr "قيد الشحن"
+
+msgid "arrived_delivered"
+msgstr "وصلت / تم تسليمها"
+
+msgid "awaiting_pickup"
+msgstr "بانتظار الاستلام"
+
+msgid "awaiting_update"
+msgstr "بانتظار التحديث"
+
+msgid "delivered"
+msgstr "تم التسليم"
+
+msgid "waiting_to_ship"
+msgstr "بانتظار الشحن"
+
+msgid "track_timeline"
+msgstr "تتبع الخط الزمني"
+
+msgid "vehicle_details"
+msgstr "تفاصيل المركبة"
+
+msgid "no_vehicles_message"
+msgstr "لا توجد مركبات بعد. أضف مركبتك الأولى أو تواصل مع الدعم لمساعدتك."
+
+msgid "invoices_billing"
+msgstr "الفواتير والدفع"
+
+msgid "invoices_intro"
+msgstr "اطلع على أحدث الفواتير وابقَ على معرفة بأي مبالغ مستحقة."
+
+msgid "manage_invoices"
+msgstr "إدارة الفواتير"
+
+msgid "invoice_label"
+msgstr "فاتورة"
+
+msgid "total_label"
+msgstr "الإجمالي:"
+
+msgid "outstanding_label"
+msgstr "المتبقي:"
+
+msgid "paid_in_full"
+msgstr "مدفوعة بالكامل"
+
+msgid "open_status"
+msgstr "مفتوحة"
+
+msgid "paid_status"
+msgstr "مدفوعة"
+
+msgid "view_invoice"
+msgstr "عرض الفاتورة"
+
+msgid "invoices_empty_message"
+msgstr "ستظهر الفواتير هنا عند إصدارها. تواصل معنا إذا كانت فاتورة مفقودة."
+
+msgid "need_assistance"
+msgstr "هل تحتاج مساعدة؟"
+
+msgid "assistance_description"
+msgstr "فريق العمليات مستعد لمساعدتك في تحديثات الشحن، الإفراج من الميناء، وتوضيح الفواتير. اختر الطريقة الأنسب لك:"
+
+msgid "email_us"
+msgstr "راسلنا بالبريد"
+
+msgid "call_support"
+msgstr "اتصل بالدعم"
+
+msgid "request_shipment_quote"
+msgstr "اطلب عرض سعر لشحنة جديدة"
+
+msgid "track_another_vehicle"
+msgstr "تتبع مركبة أخرى"

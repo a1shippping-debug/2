@@ -25,10 +25,11 @@ from ...models import (
     Auction,
 )
 from ...utils_pdf import render_invoice_pdf, render_bol_pdf, render_vehicle_statement_pdf
-import os
+from ...utils.storage import save_file_to_storage
 from flask_mail import Message
 from datetime import datetime
 from decimal import Decimal
+import requests
 
 acct_bp = Blueprint("acct", __name__, template_folder="templates/accounting")
 
@@ -848,7 +849,7 @@ def invoices_export(invoice_id: int):
     path = render_invoice_pdf(inv, items)
     inv.pdf_path = path
     db.session.commit()
-    return send_file(path, as_attachment=True, download_name=f"{inv.invoice_number}.pdf")
+    return redirect(path)
 
 
 @acct_bp.route('/invoices/<int:invoice_id>/export.xlsx')
@@ -884,11 +885,7 @@ def invoices_email(invoice_id: int):
     # ensure pdf exists
     items = db.session.query(InvoiceItem).filter_by(invoice_id=inv.id).all()
     path = inv.pdf_path
-    if not path or not os.path.isfile(path):
-        try:
-            current_app.logger.warning("Invoice PDF missing at %s; regenerating", path)
-        except Exception:
-            pass
+    if not path:
         path = render_invoice_pdf(inv, items)
         inv.pdf_path = path
         try:
@@ -898,8 +895,9 @@ def invoices_email(invoice_id: int):
     try:
         msg = Message(subject=_('Invoice %(n)s', n=inv.invoice_number), recipients=[email])
         msg.body = _('Please find attached invoice %(n)s.', n=inv.invoice_number)
-        with open(path, 'rb') as f:
-            msg.attach(filename=f"{inv.invoice_number}.pdf", content_type='application/pdf', data=f.read())
+        resp = requests.get(path, timeout=30)
+        resp.raise_for_status()
+        msg.attach(filename=f"{inv.invoice_number}.pdf", content_type='application/pdf', data=resp.content)
         mail.send(msg)
         flash(_('Email sent'), 'success')
     except Exception:
@@ -1194,7 +1192,7 @@ def bol_export(bol_id: int):
     path = render_bol_pdf(bol, vehicles)
     bol.pdf_path = path
     db.session.commit()
-    return send_file(path, as_attachment=True, download_name=f"{bol.bol_number}.pdf")
+    return redirect(path)
 
 
 @acct_bp.route('/bol/<int:bol_id>/email', methods=['POST'])
@@ -1209,11 +1207,18 @@ def bol_email(bol_id: int):
     vehicles = db.session.query(Vehicle).join(VehicleShipment, Vehicle.id == VehicleShipment.vehicle_id).\
         filter(VehicleShipment.shipment_id == bol.shipment_id).all()
     path = bol.pdf_path or render_bol_pdf(bol, vehicles)
+    if bol.pdf_path != path:
+        bol.pdf_path = path
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
     try:
         msg = Message(subject=_('BOL %(n)s', n=bol.bol_number), recipients=[recipient])
         msg.body = _('Please find attached Bill of Lading %(n)s.', n=bol.bol_number)
-        with open(path, 'rb') as f:
-            msg.attach(filename=f"{bol.bol_number}.pdf", content_type='application/pdf', data=f.read())
+        resp = requests.get(path, timeout=30)
+        resp.raise_for_status()
+        msg.attach(filename=f"{bol.bol_number}.pdf", content_type='application/pdf', data=resp.content)
         mail.send(msg)
         flash(_('Email sent'), 'success')
     except Exception:
@@ -1230,12 +1235,7 @@ def bol_upload(bol_id: int):
     f = request.files.get('file')
     if not f:
         flash(_('No file uploaded'), 'danger'); return redirect(url_for('acct.bol_list'))
-    import os
-    outdir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'bols')
-    os.makedirs(outdir, exist_ok=True)
-    filename = f"{bol.bol_number}.pdf"
-    path = os.path.join(outdir, filename)
-    f.save(path)
+    path = save_file_to_storage(f, folder="bols")
     bol.pdf_path = path
     db.session.commit()
     flash(_('BOL uploaded'), 'success')
@@ -1831,7 +1831,7 @@ def vehicle_statement_pdf(vehicle_id: int):
     }
     totals['outstanding_balance_omr'] = statement[-1]['balance'] if statement else 0.0
     path = render_vehicle_statement_pdf(v, statement, totals)
-    return send_file(path, as_attachment=True, download_name=f"vehicle_statement_{v.vin or v.id}.pdf")
+    return redirect(path)
 
 
 # ---- API Endpoints ----

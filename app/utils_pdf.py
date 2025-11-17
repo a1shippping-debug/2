@@ -1,51 +1,38 @@
-from flask import render_template, current_app
-import os
+import io
+from flask import render_template
+from .utils.storage import save_file_to_storage
 
-def _write_pdf(outpath: str, html_string: str) -> None:
-    """Best-effort PDF writer using WeasyPrint if available; otherwise write HTML.
 
-    This keeps the app importable even if binary deps for WeasyPrint are missing.
-    """
+def _render_pdf_bytes(html_string: str) -> bytes:
     try:
         from weasyprint import HTML  # type: ignore
-        HTML(string=html_string).write_pdf(outpath)
+        return HTML(string=html_string).write_pdf()
     except Exception:
-        # Fallback: save the HTML so users still get a file; name remains .pdf
-        try:
-            with open(outpath, 'wb') as f:
-                f.write(html_string.encode('utf-8'))
-        except Exception:
-            # Last resort: ensure directory exists, but ignore write failures silently
-            try:
-                os.makedirs(os.path.dirname(outpath), exist_ok=True)
-            except Exception:
-                pass
+        return html_string.encode("utf-8")
 
-def render_invoice_pdf(invoice, items, template='pdf/invoice.html'):
+
+def _upload_pdf(filename: str, html_string: str) -> str:
+    pdf_bytes = _render_pdf_bytes(html_string)
+    buffer = io.BytesIO(pdf_bytes)
+    buffer.seek(0)
+    buffer.name = filename
+    buffer.filename = filename
+    return save_file_to_storage(buffer, folder="pdfs")
+
+
+def render_invoice_pdf(invoice, items, template="pdf/invoice.html"):
     html = render_template(template, invoice=invoice, items=items)
-    outdir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'pdfs')
-    os.makedirs(outdir, exist_ok=True)
     filename = f"invoice_{invoice.invoice_number}.pdf"
-    outpath = os.path.join(outdir, filename)
-    _write_pdf(outpath, html)
-    return outpath
+    return _upload_pdf(filename, html)
 
 
-def render_bol_pdf(bol, vehicles, template='pdf/bol.html'):
+def render_bol_pdf(bol, vehicles, template="pdf/bol.html"):
     html = render_template(template, bol=bol, vehicles=vehicles)
-    outdir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'pdfs')
-    os.makedirs(outdir, exist_ok=True)
     filename = f"bol_{bol.bol_number}.pdf"
-    outpath = os.path.join(outdir, filename)
-    _write_pdf(outpath, html)
-    return outpath
+    return _upload_pdf(filename, html)
 
 
-def render_vehicle_statement_pdf(vehicle, statement, totals, template='pdf/vehicle_statement.html'):
+def render_vehicle_statement_pdf(vehicle, statement, totals, template="pdf/vehicle_statement.html"):
     html = render_template(template, vehicle=vehicle, statement=statement, totals=totals)
-    outdir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'pdfs')
-    os.makedirs(outdir, exist_ok=True)
     filename = f"vehicle_statement_{vehicle.vin or vehicle.id}.pdf"
-    outpath = os.path.join(outdir, filename)
-    _write_pdf(outpath, html)
-    return outpath
+    return _upload_pdf(filename, html)

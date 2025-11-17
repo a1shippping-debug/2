@@ -1,7 +1,7 @@
 import os
 from flask import Flask, request, g, render_template, current_app, url_for, abort
-from .config import Config
-from .extensions import db, migrate, login_manager, babel, mail
+from flask_babel import gettext as _
+from .extensions import db, migrate, login_manager, babel, mail, init_extensions
 from .blueprints.auth.routes import auth_bp
 from .blueprints.admin.routes import admin_bp
 from .blueprints.operations.routes import ops_bp
@@ -10,19 +10,12 @@ from .blueprints.customer.routes import cust_bp
 
 def create_app():
     app = Flask(__name__, static_folder="static", template_folder="templates")
-    app.config.from_object(Config)
+    app.config.from_object("app.config.Config")
 
     # init extensions
-    db.init_app(app)
-    migrate.init_app(app, db)
+    init_extensions(app)
     # Try to auto-apply pending migrations at startup to avoid schema/runtime mismatches
-    try:
-        from flask_migrate import upgrade as _alembic_upgrade
-        with app.app_context():
-            _alembic_upgrade()
-    except Exception:
-        # If migrations aren't set up or upgrade fails, continue; save handlers will surface errors
-        pass
+  
     login_manager.init_app(app)
     @login_manager.user_loader
     def load_user(user_id):
@@ -83,6 +76,39 @@ def create_app():
             pass
         return response
 
+    @app.context_processor
+    def inject_language_switch():
+        current_language = getattr(g, "lang_code", app.config.get("BABEL_DEFAULT_LOCALE", "ar"))
+        target_language = "en" if current_language == "ar" else "ar"
+
+        def build_language_url(lang_code: str) -> str:
+            endpoint = request.endpoint or "index"
+            if endpoint.startswith("static"):
+                endpoint = "index"
+            params = {}
+            if request.view_args:
+                params.update(request.view_args)
+            try:
+                args_copy = request.args.to_dict()
+            except Exception:
+                args_copy = {}
+            args_copy.pop("lang", None)
+            params.update(args_copy)
+            params["lang"] = lang_code
+            try:
+                return url_for(endpoint, **params)
+            except Exception:
+                return url_for("index", lang=lang_code)
+
+        return {
+            "current_language": current_language,
+            "language_switch_label": "English" if current_language == "ar" else "العربية",
+            "language_switch_url": build_language_url(target_language),
+        }
+
+
+
+    
     @app.errorhandler(403)
     def forbidden(_e):
         return render_template("errors/403.html"), 403
@@ -119,20 +145,20 @@ def create_app():
 
         # Attach primary image URL for each vehicle card on the homepage
         try:
+            from .models import Document
+
             for v in cars_for_sale or []:
-                try:
-                    vin = (v.vin or "").strip()
-                    base_dir = os.path.join(current_app.static_folder, "uploads", vin)
-                    primary_url = None
-                    if vin and os.path.isdir(base_dir):
-                        for fname in sorted(os.listdir(base_dir)):
-                            lower = fname.lower()
-                            if lower.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif")):
-                                primary_url = url_for("static", filename=f"uploads/{vin}/{fname}")
-                                break
-                    setattr(v, "primary_image_url", primary_url)
-                except Exception:
-                    setattr(v, "primary_image_url", None)
+                photo = (
+                    db.session.query(Document)
+                    .filter(
+                        Document.vehicle_id == getattr(v, "id", None),
+                        Document.file_path.isnot(None),
+                        Document.doc_type.ilike("%photo%"),
+                    )
+                    .order_by(Document.created_at.asc())
+                    .first()
+                )
+                setattr(v, "primary_image_url", photo.file_path if photo else None)
         except Exception:
             # Fail-safe: don't block homepage if image probing fails
             pass
@@ -719,16 +745,20 @@ def create_app():
             .all()
         )
 
-        # Collect image URLs from static/uploads/<VIN>/
-        image_urls = []
         try:
-            vin2 = (vehicle.vin or "").strip()
-            base_dir = os.path.join(current_app.static_folder, "uploads", vin2)
-            if vin2 and os.path.isdir(base_dir):
-                for fname in sorted(os.listdir(base_dir)):
-                    lower = fname.lower()
-                    if any(lower.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]):
-                        image_urls.append(url_for("static", filename=f"uploads/{vin2}/{fname}"))
+            from .models import Document
+
+            docs = (
+                db.session.query(Document)
+                .filter(
+                    Document.vehicle_id == vehicle.id,
+                    Document.file_path.isnot(None),
+                    Document.doc_type.ilike("%photo%"),
+                )
+                .order_by(Document.created_at.asc())
+                .all()
+            )
+            image_urls = [doc.file_path for doc in docs if doc.file_path]
         except Exception:
             image_urls = []
 
@@ -791,16 +821,20 @@ def create_app():
             .all()
         )
 
-        # Collect image URLs from static/uploads/<VIN>/
-        image_urls = []
         try:
-            vin = (vehicle.vin or "").strip()
-            base_dir = os.path.join(current_app.static_folder, "uploads", vin)
-            if vin and os.path.isdir(base_dir):
-                for fname in sorted(os.listdir(base_dir)):
-                    lower = fname.lower()
-                    if any(lower.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]):
-                        image_urls.append(url_for("static", filename=f"uploads/{vin}/{fname}"))
+            from .models import Document
+
+            docs = (
+                db.session.query(Document)
+                .filter(
+                    Document.vehicle_id == vehicle.id,
+                    Document.file_path.isnot(None),
+                    Document.doc_type.ilike("%photo%"),
+                )
+                .order_by(Document.created_at.asc())
+                .all()
+            )
+            image_urls = [doc.file_path for doc in docs if doc.file_path]
         except Exception:
             # Fail silently; images are optional
             image_urls = []
@@ -833,7 +867,7 @@ def create_app():
 
     @app.shell_context_processor
     def make_shell_context():
-        from .models import User, Role, Customer, Vehicle, Auction, Shipment
-        return dict(db=db, User=User, Role=Role, Customer=Customer, Vehicle=Vehicle, Auction=Auction, Shipment=Shipment)
+        from .models import User, Role, Customer, Vehicle, Auction, Shipment, Warehouse
+        return dict(db=db, User=User, Role=Role, Customer=Customer, Vehicle=Vehicle, Auction=Auction, Shipment=Shipment, Warehouse=Warehouse)
 
     return app

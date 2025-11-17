@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for, flash
+from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for, flash, abort, send_file
 from flask_babel import gettext as _
 from flask_login import login_required
 from ...security import role_required
@@ -21,8 +21,11 @@ from ...models import (
     InternationalCost,
     Buyer,
     ClientAccountStructure,
+    Warehouse,
 )
 from datetime import datetime
+from collections import defaultdict
+from ...utils.storage import save_file_to_storage
 
 ops_bp = Blueprint("ops", __name__, template_folder="templates/operations")
 # Regions suggest endpoint for searchable dropdown (Operations UI)
@@ -316,22 +319,29 @@ def notify(message: str, target_type: str, target_id: int, level: str = "info") 
 
 
 def save_uploaded_file(subdir: str, file_obj, filename_hint: str | None = None) -> str | None:
-    import os, secrets
     if not file_obj:
         return None
-    base = current_app.config.get('UPLOAD_FOLDER') or os.path.join(current_app.root_path, 'static', 'uploads')
-    outdir = os.path.join(base, subdir)
-    os.makedirs(outdir, exist_ok=True)
-    ext = ''
-    if hasattr(file_obj, 'filename') and '.' in file_obj.filename:
-        ext = '.' + file_obj.filename.rsplit('.', 1)[-1].lower()
-    name = filename_hint or secrets.token_hex(8)
-    path = os.path.join(outdir, f"{name}{ext}")
+    return save_file_to_storage(file_obj, subdir)
+
+
+def parse_iso_datetime(value: str | None):
+    if not value:
+        return None
     try:
-        file_obj.save(path)
-        return path
+        return datetime.fromisoformat(value)
     except Exception:
         return None
+
+
+def attach_customer_document(customer, file_obj, doc_type: str, filename_hint: str) -> None:
+    """Persist an uploaded document for a customer if both inputs are valid."""
+    if not customer or not getattr(customer, 'id', None):
+        return
+    if not file_obj or not getattr(file_obj, 'filename', '').strip():
+        return
+    saved = save_uploaded_file(f'customer_{customer.id}', file_obj, filename_hint=filename_hint)
+    if saved:
+        db.session.add(Document(customer_id=customer.id, doc_type=doc_type, file_path=saved))
 
 
 # Cars Management
@@ -342,6 +352,7 @@ def cars_list():
     vin = (request.args.get('vin') or '').strip()
     status = (request.args.get('status') or '').strip()
     client_id = request.args.get('client_id')
+    warehouse_id = request.args.get('warehouse_id')
     if vin:
         q = q.filter(db.func.lower(Vehicle.vin).like(db.func.lower(f"%{vin}%")))
     if status:
@@ -349,6 +360,11 @@ def cars_list():
     if client_id:
         try:
             q = q.filter(Vehicle.owner_customer_id == int(client_id))
+        except Exception:
+            pass
+    if warehouse_id:
+        try:
+            q = q.filter(Vehicle.warehouse_id == int(warehouse_id))
         except Exception:
             pass
     cars = q.order_by(Vehicle.created_at.desc()).limit(200).all()
@@ -410,7 +426,206 @@ def cars_list():
             tracking_stage[v.id] = order[idx] if 0 <= idx < len(order) else "-"
 
     customers = db.session.query(Customer).order_by(Customer.company_name.asc()).all()
-    return render_template('operations/cars_list.html', cars=cars, customers=customers, tracking_stage=tracking_stage)
+    warehouses = db.session.query(Warehouse).order_by(Warehouse.name.asc()).all()
+    return render_template(
+        'operations/cars_list.html',
+        cars=cars,
+        customers=customers,
+        warehouses=warehouses,
+        tracking_stage=tracking_stage,
+    )
+
+
+@ops_bp.route('/warehouses', methods=['GET', 'POST'])
+@role_required('employee', 'admin')
+def warehouses_view():
+    """List warehouses and allow creating new ones."""
+    if request.method == 'POST':
+        name = (request.form.get('name') or '').strip()
+        location = (request.form.get('location') or '').strip()
+        contact_name = (request.form.get('contact_name') or '').strip()
+        contact_phone = (request.form.get('contact_phone') or '').strip()
+        notes = (request.form.get('notes') or '').strip()
+        if not name:
+            flash(_('Warehouse name is required.'), 'danger')
+        else:
+            exists = (
+                db.session.query(Warehouse)
+                .filter(db.func.lower(Warehouse.name) == name.lower())
+                .first()
+            )
+            if exists:
+                flash(_('A warehouse with this name already exists.'), 'warning')
+            else:
+                wh = Warehouse(
+                    name=name,
+                    location=location or None,
+                    contact_name=contact_name or None,
+                    contact_phone=contact_phone or None,
+                    notes=notes or None,
+                )
+                db.session.add(wh)
+                try:
+                    db.session.commit()
+                    flash(_('Warehouse created successfully.'), 'success')
+                    return redirect(url_for('ops.warehouses_view'))
+                except Exception:
+                    db.session.rollback()
+                    flash(_('Failed to create warehouse, please try again.'), 'danger')
+    warehouses = db.session.query(Warehouse).order_by(Warehouse.name.asc()).all()
+    warehouse_ids = [w.id for w in warehouses if w.id]
+    vehicles_by = defaultdict(list)
+    if warehouse_ids:
+        rows = (
+            db.session.query(Vehicle)
+            .filter(Vehicle.warehouse_id.in_(warehouse_ids))
+            .all()
+        )
+        for v in rows:
+            vehicles_by[v.warehouse_id].append(v)
+    shipment_counts = {}
+    if warehouse_ids:
+        shipment_counts = {
+            wid: count
+            for wid, count in db.session.query(
+                Shipment.origin_warehouse_id,
+                db.func.count(Shipment.id)
+            )
+            .filter(Shipment.origin_warehouse_id.in_(warehouse_ids))
+            .group_by(Shipment.origin_warehouse_id)
+            .all()
+        }
+    cards = []
+    for wh in warehouses:
+        vehicles_here = vehicles_by.get(wh.id, [])
+        with_title = sum(1 for v in vehicles_here if v.has_title)
+        without_title = len(vehicles_here) - with_title
+        cards.append(
+            {
+                "warehouse": wh,
+                "current_total": len(vehicles_here),
+                "with_title": with_title,
+                "without_title": without_title,
+                "shipment_count": shipment_counts.get(wh.id, 0),
+            }
+        )
+    total_current = sum(card["current_total"] for card in cards)
+    return render_template(
+        'operations/warehouses.html',
+        warehouses=warehouses,
+        cards=cards,
+        total_current=total_current,
+    )
+
+
+@ops_bp.route('/warehouses/<int:warehouse_id>', methods=['GET', 'POST'])
+@role_required('employee', 'admin')
+def warehouse_detail(warehouse_id: int):
+    warehouse = db.session.get(Warehouse, warehouse_id)
+    if not warehouse:
+        abort(404)
+    if request.method == 'POST':
+        warehouse.name = (request.form.get('name') or warehouse.name or '').strip() or warehouse.name
+        warehouse.location = (request.form.get('location') or '').strip() or None
+        warehouse.contact_name = (request.form.get('contact_name') or '').strip() or None
+        warehouse.contact_phone = (request.form.get('contact_phone') or '').strip() or None
+        warehouse.notes = (request.form.get('notes') or '').strip() or None
+        try:
+            db.session.commit()
+            flash(_('Warehouse details updated.'), 'success')
+            return redirect(url_for('ops.warehouse_detail', warehouse_id=warehouse.id))
+        except Exception:
+            db.session.rollback()
+            flash(_('Failed to update warehouse.'), 'danger')
+    current_vehicles = (
+        db.session.query(Vehicle)
+        .filter(Vehicle.warehouse_id == warehouse.id)
+        .order_by(Vehicle.created_at.desc())
+        .all()
+    )
+    vehicles_with_title = [v for v in current_vehicles if v.has_title]
+    vehicles_without_title = [v for v in current_vehicles if not v.has_title]
+    shipped_rows = (
+        db.session.query(Shipment, Vehicle)
+        .join(VehicleShipment, Shipment.id == VehicleShipment.shipment_id)
+        .join(Vehicle, Vehicle.id == VehicleShipment.vehicle_id)
+        .filter(Shipment.origin_warehouse_id == warehouse.id)
+        .order_by(db.desc(Shipment.departure_date), Shipment.shipment_number.desc())
+        .all()
+    )
+    return render_template(
+        'operations/warehouse_detail.html',
+        warehouse=warehouse,
+        vehicles_with_title=vehicles_with_title,
+        vehicles_without_title=vehicles_without_title,
+        shipped_rows=shipped_rows,
+        today_str=datetime.utcnow().strftime('%Y-%m-%d'),
+    )
+
+
+@ops_bp.post('/warehouses/<int:warehouse_id>/assign')
+@role_required('employee', 'admin')
+def warehouse_assign_vehicle(warehouse_id: int):
+    warehouse = db.session.get(Warehouse, warehouse_id)
+    if not warehouse:
+        abort(404)
+    vin = (request.form.get('vin') or '').strip().upper()
+    has_title_flag = bool(request.form.get('has_title'))
+    arrival_date_raw = request.form.get('warehouse_arrived_at')
+    has_keys_flag = bool(request.form.get('warehouse_has_keys'))
+    key_count_raw = request.form.get('warehouse_key_count')
+    title_received_flag = bool(request.form.get('warehouse_title_received'))
+    title_received_at_raw = request.form.get('warehouse_title_received_at')
+    arrival_photos = request.files.getlist('arrival_photos') or []
+    title_tracking_number = (request.form.get('title_tracking_number') or '').strip()
+    if not vin:
+        flash(_('VIN is required to assign a vehicle.'), 'danger')
+        return redirect(url_for('ops.warehouse_detail', warehouse_id=warehouse.id))
+    vehicle = (
+        db.session.query(Vehicle)
+        .filter(db.func.upper(Vehicle.vin) == vin)
+        .first()
+    )
+    if not vehicle:
+        flash(_('Vehicle not found.'), 'danger')
+        return redirect(url_for('ops.warehouse_detail', warehouse_id=warehouse.id))
+    vehicle.warehouse_id = warehouse.id
+    parsed_arrival = parse_iso_datetime(arrival_date_raw)
+    if parsed_arrival:
+        vehicle.warehouse_arrived_at = parsed_arrival
+    elif not vehicle.warehouse_arrived_at:
+        vehicle.warehouse_arrived_at = datetime.utcnow()
+    vehicle.warehouse_has_keys = has_keys_flag
+    if key_count_raw:
+        try:
+            vehicle.warehouse_key_count = int(key_count_raw)
+        except Exception:
+            vehicle.warehouse_key_count = None
+    else:
+        vehicle.warehouse_key_count = None
+    vehicle.warehouse_title_received = title_received_flag
+    parsed_title = parse_iso_datetime(title_received_at_raw)
+    if parsed_title:
+        vehicle.warehouse_title_received_at = parsed_title
+    elif title_received_flag and not vehicle.warehouse_title_received_at:
+        vehicle.warehouse_title_received_at = datetime.utcnow()
+    if title_tracking_number:
+        vehicle.title_tracking_number = title_tracking_number
+    elif not title_received_flag:
+        vehicle.title_tracking_number = None
+    vehicle.has_title = has_title_flag or title_received_flag or vehicle.has_title
+    for idx, photo in enumerate(arrival_photos):
+        timestamp = int(datetime.utcnow().timestamp())
+        saved = save_uploaded_file(vehicle.vin or f"vehicle_{vehicle.id}", photo, filename_hint=f"warehouse_arrival_{warehouse.id}_{timestamp}_{idx}")
+        if saved:
+            db.session.add(Document(vehicle_id=vehicle.id, doc_type='Warehouse Arrival Photo', file_path=saved))
+    try:
+        db.session.commit()
+        flash(_('Vehicle assigned to warehouse.'), 'success')
+    except Exception:
+        db.session.rollback()
+        flash(_('Failed to assign vehicle.'), 'danger')
+    return redirect(url_for('ops.warehouse_detail', warehouse_id=warehouse.id))
 
 
 # Sale Listings: list and approve/reject
@@ -485,6 +700,7 @@ def cars_new():
         .all()
     )
     regions = db.session.query(ShippingRegionPrice).order_by(ShippingRegionPrice.region_code.asc()).all()
+    warehouses = db.session.query(Warehouse).order_by(Warehouse.name.asc()).all()
     if request.method == 'POST':
         vin = (request.form.get('vin') or '').strip().upper()
         make = (request.form.get('make') or '').strip()
@@ -507,6 +723,19 @@ def cars_new():
         status_val = request.form.get('status') or 'New car'
         container_number = (request.form.get('container_number') or '').strip()
         booking_number = (request.form.get('booking_number') or '').strip()
+        warehouse_id = request.form.get('warehouse_id')
+        has_title_flag = bool(request.form.get('has_title'))
+        warehouse_arrived_at_raw = request.form.get('warehouse_arrived_at')
+        warehouse_has_keys = bool(request.form.get('warehouse_has_keys'))
+        warehouse_key_count_raw = request.form.get('warehouse_key_count')
+        warehouse_title_received = bool(request.form.get('warehouse_title_received'))
+        warehouse_title_received_at_raw = request.form.get('warehouse_title_received_at')
+        shipping_tracking_url = (request.form.get('shipping_tracking_url') or '').strip()
+        title_tracking_number = (request.form.get('title_tracking_number') or '').strip()
+        try:
+            warehouse_fk = int(warehouse_id) if warehouse_id else None
+        except Exception:
+            warehouse_fk = None
 
         # ensure auction record
         auc = None
@@ -533,6 +762,11 @@ def cars_new():
                 if not getattr(auc, 'customer_id', None) and getattr(b, 'customer_id', None):
                     auc.customer_id = b.customer_id
 
+        try:
+            warehouse_key_count = int(warehouse_key_count_raw) if warehouse_key_count_raw else None
+        except Exception:
+            warehouse_key_count = None
+
         v = Vehicle(
             vin=vin or None,
             make=make or None,
@@ -544,7 +778,18 @@ def cars_new():
             current_location=current_location or None,
             container_number=container_number or None,
             booking_number=booking_number or None,
+            warehouse_id=warehouse_fk,
+            has_title=has_title_flag,
+            warehouse_arrived_at=parse_iso_datetime(warehouse_arrived_at_raw),
+            warehouse_has_keys=warehouse_has_keys,
+            warehouse_key_count=warehouse_key_count,
+            warehouse_title_received=warehouse_title_received,
+            warehouse_title_received_at=parse_iso_datetime(warehouse_title_received_at_raw),
+            shipping_tracking_url=shipping_tracking_url or None,
+            title_tracking_number=title_tracking_number or None,
         )
+        if warehouse_title_received:
+            v.has_title = True
         # Set purchase price (USD) from combined total if provided; otherwise sum legacy fields
         total_usd_val = None
         try:
@@ -654,7 +899,7 @@ def cars_new():
             return render_template('operations/cars_success.html', vehicle=v)
         except Exception:
             db.session.rollback()
-    return render_template('operations/car_form.html', customers=customers, regions=regions, buyers=buyers)
+    return render_template('operations/car_form.html', customers=customers, regions=regions, buyers=buyers, warehouses=warehouses)
 
 
 @ops_bp.route('/cars/<int:vehicle_id>/edit', methods=['GET', 'POST'])
@@ -670,6 +915,7 @@ def cars_edit(vehicle_id: int):
         .all()
     )
     regions = db.session.query(ShippingRegionPrice).order_by(ShippingRegionPrice.region_code.asc()).all()
+    warehouses = db.session.query(Warehouse).order_by(Warehouse.name.asc()).all()
     if request.method == 'POST':
         v.make = (request.form.get('make') or '').strip() or v.make
         v.model = (request.form.get('model') or '').strip() or v.model
@@ -691,6 +937,39 @@ def cars_edit(vehicle_id: int):
         client_id = request.form.get('client_id')
         buyer_id = request.form.get('buyer_id')
         v.owner_customer_id = int(client_id) if client_id else None
+        wh_form_val = request.form.get('warehouse_id')
+        try:
+            v.warehouse_id = int(wh_form_val) if wh_form_val else None
+        except Exception:
+            v.warehouse_id = None
+        v.has_title = bool(request.form.get('has_title'))
+        arr_raw = request.form.get('warehouse_arrived_at')
+        if arr_raw is not None:
+            parsed_arr = parse_iso_datetime(arr_raw)
+            v.warehouse_arrived_at = parsed_arr
+        v.warehouse_has_keys = bool(request.form.get('warehouse_has_keys'))
+        key_raw = request.form.get('warehouse_key_count')
+        if key_raw:
+            try:
+                v.warehouse_key_count = int(key_raw)
+            except Exception:
+                v.warehouse_key_count = None
+        else:
+            v.warehouse_key_count = None
+        v.warehouse_title_received = bool(request.form.get('warehouse_title_received'))
+        title_raw = request.form.get('warehouse_title_received_at')
+        if title_raw is not None:
+            parsed_title = parse_iso_datetime(title_raw)
+            v.warehouse_title_received_at = parsed_title
+        if v.warehouse_title_received:
+            v.has_title = True
+        tracking_url_val = request.form.get('shipping_tracking_url')
+        if tracking_url_val is not None:
+            val = tracking_url_val.strip()
+            v.shipping_tracking_url = val or None
+        title_tracking_number_val = request.form.get('title_tracking_number')
+        if title_tracking_number_val is not None:
+            v.title_tracking_number = title_tracking_number_val.strip() or None
         # update auction fields if vehicle has auction
         auc_type = (request.form.get('auction_type') or '').strip()
         lot_number = (request.form.get('lot_number') or '').strip()
@@ -725,7 +1004,7 @@ def cars_edit(vehicle_id: int):
             db.session.commit()
         except Exception:
             db.session.rollback()
-    return render_template('operations/car_form.html', vehicle=v, customers=customers, regions=regions, buyers=buyers)
+    return render_template('operations/car_form.html', vehicle=v, customers=customers, regions=regions, buyers=buyers, warehouses=warehouses)
 
 
 @ops_bp.route('/cars/<int:vehicle_id>/delete', methods=['POST'])
@@ -796,6 +1075,7 @@ def shipments_list():
 @role_required('employee', 'admin')
 def shipments_new():
     vehicles = db.session.query(Vehicle).order_by(Vehicle.created_at.desc()).limit(200).all()
+    warehouses = db.session.query(Warehouse).order_by(Warehouse.name.asc()).all()
     if request.method == 'POST':
         s = Shipment(
             shipment_number=(request.form.get('shipment_number') or f"SHP-{int(datetime.utcnow().timestamp())}"),
@@ -806,6 +1086,12 @@ def shipments_new():
             container_number=request.form.get('container_number') or None,
             status=request.form.get('status') or 'Open',
         )
+        wh_val = request.form.get('origin_warehouse_id')
+        if wh_val:
+            try:
+                s.origin_warehouse_id = int(wh_val)
+            except Exception:
+                s.origin_warehouse_id = None
         # dates
         for fld in ('departure_date','arrival_date'):
             val = request.form.get(fld)
@@ -843,11 +1129,11 @@ def shipments_new():
 
         try:
             db.session.commit(); notify(f"Shipment {s.shipment_number} created", 'Shipment', s.id)
-            return render_template('operations/shipment_form.html', shipment=s, vehicles=vehicles, saved=True)
+            return render_template('operations/shipment_form.html', shipment=s, vehicles=vehicles, warehouses=warehouses, saved=True)
         except Exception:
             db.session.rollback()
 
-    return render_template('operations/shipment_form.html', vehicles=vehicles)
+    return render_template('operations/shipment_form.html', vehicles=vehicles, warehouses=warehouses)
 
 
 @ops_bp.route('/shipments/<int:shipment_id>/edit', methods=['GET','POST'])
@@ -857,11 +1143,18 @@ def shipments_edit(shipment_id: int):
     if not s:
         return ("Not found", 404)
     vehicles = db.session.query(Vehicle).order_by(Vehicle.created_at.desc()).limit(200).all()
+    warehouses = db.session.query(Warehouse).order_by(Warehouse.name.asc()).all()
     if request.method == 'POST':
         for fld in ('type','origin_port','destination_port','shipping_company','container_number','status'):
             val = request.form.get(fld)
             if val is not None:
                 setattr(s, fld, val)
+        wh_val = request.form.get('origin_warehouse_id')
+        if wh_val is not None:
+            try:
+                s.origin_warehouse_id = int(wh_val) if wh_val else None
+            except Exception:
+                s.origin_warehouse_id = None
         for fld in ('departure_date','arrival_date'):
             val = request.form.get(fld)
             if val:
@@ -889,7 +1182,7 @@ def shipments_edit(shipment_id: int):
             db.session.commit(); notify(f"Shipment {s.shipment_number} updated", 'Shipment', s.id)
         except Exception:
             db.session.rollback()
-    return render_template('operations/shipment_form.html', shipment=s, vehicles=vehicles)
+    return render_template('operations/shipment_form.html', shipment=s, vehicles=vehicles, warehouses=warehouses)
 
 
 @ops_bp.route('/shipments/<int:shipment_id>/status', methods=['POST'])
@@ -988,6 +1281,8 @@ def customers_new():
         password = (request.form.get('password') or '').strip()
         password_confirm = (request.form.get('password_confirm') or '').strip()
         price_category = (request.form.get('price_category') or 'normal').strip().lower()
+        id_card_file = request.files.get('id_card')
+        contract_file = request.files.get('contract')
         if price_category not in {"normal","container","vip","vvip"}:
             price_category = 'normal'
 
@@ -1026,7 +1321,7 @@ def customers_new():
         if password and password_confirm and password != password_confirm:
             flash(_('????? ???? ?????? ??? ?????'), 'danger')
         if not (has_name and has_phone and has_country and has_card and has_email and has_password and (password == password_confirm)):
-            return render_template('operations/customer_form.html', customer=c)
+            return render_template('operations/customer_form.html', customer=c, documents=[])
 
         # Ensure user email is unique for login
         try:
@@ -1039,7 +1334,7 @@ def customers_new():
             existing = None
         if existing:
             flash(_('??? ?????? ?????????? ?????? ??????'), 'danger')
-            return render_template('operations/customer_form.html', customer=c)
+            return render_template('operations/customer_form.html', customer=c, documents=[])
 
         # Create a login user for this customer and set provided password
 
@@ -1065,6 +1360,7 @@ def customers_new():
         # Link customer to the created user
         c.user_id = user.id
         db.session.add(c)
+        db.session.flush()
         # Ensure per-client sub-ledger exists
         try:
             # Lazy import to avoid circulars
@@ -1073,6 +1369,9 @@ def customers_new():
         except Exception:
             # Non-blocking
             pass
+
+        attach_customer_document(c, id_card_file, 'Customer ID', 'id_card')
+        attach_customer_document(c, contract_file, 'Customer Contract', 'contract')
 
         try:
             db.session.commit()
@@ -1098,8 +1397,8 @@ def customers_new():
                 else:
                     message = _('Account number already exists')
             flash(message, 'danger')
-            return render_template('operations/customer_form.html', customer=c)
-    return render_template('operations/customer_form.html')
+            return render_template('operations/customer_form.html', customer=c, documents=[])
+    return render_template('operations/customer_form.html', documents=[])
 
 
 @ops_bp.route('/customers/<int:customer_id>/edit', methods=['GET','POST'])
@@ -1108,6 +1407,14 @@ def customers_edit(customer_id: int):
     c = db.session.get(Customer, customer_id)
     if not c:
         return ("Not found", 404)
+    def _load_documents():
+        return (
+            db.session.query(Document)
+            .filter(Document.customer_id == c.id)
+            .order_by(Document.created_at.desc())
+            .all()
+        )
+    documents = _load_documents()
     if request.method == 'POST':
         for fld in ('company_name','full_name','email','phone','country','address','account_number'):
             val = request.form.get(fld)
@@ -1121,13 +1428,16 @@ def customers_edit(customer_id: int):
             if pc_norm in {"normal","container","vip","vvip"}:
                 c.price_category = pc_norm or c.price_category
 
+        id_card_file = request.files.get('id_card')
+        contract_file = request.files.get('contract')
+
         # Optional password change for linked user
         new_password = (request.form.get('password') or '').strip()
         new_password_confirm = (request.form.get('password_confirm') or '').strip()
         if new_password or new_password_confirm:
             if not (new_password and new_password_confirm and new_password == new_password_confirm):
                 flash(_('????? ???? ?????? ??? ?????'), 'danger')
-                return render_template('operations/customer_form.html', customer=c)
+                return render_template('operations/customer_form.html', customer=c, documents=documents)
             # Ensure customer has a linked user; if not, create one minimally
             user = None
             try:
@@ -1159,14 +1469,32 @@ def customers_edit(customer_id: int):
             _ensure_client_accounts(c)
         except Exception:
             pass
+
+        attach_customer_document(c, id_card_file, 'Customer ID', 'id_card')
+        attach_customer_document(c, contract_file, 'Customer Contract', 'contract')
         try:
             db.session.commit(); notify(f"Customer {c.company_name or c.full_name} updated", 'Customer', c.id)
             flash(_('Customer updated'), 'success')
+            documents = _load_documents()
         except Exception as e:
             current_app.logger.exception('Failed to update customer')
             db.session.rollback()
             flash(_('Failed to update customer'), 'danger')
-    return render_template('operations/customer_form.html', customer=c)
+            documents = _load_documents()
+    return render_template('operations/customer_form.html', customer=c, documents=documents)
+
+
+@ops_bp.route('/customers/<int:customer_id>/documents/<int:doc_id>/download')
+@role_required('employee', 'admin')
+def customers_document_download(customer_id: int, doc_id: int):
+    doc = db.session.get(Document, doc_id)
+    if not doc or doc.customer_id != customer_id:
+        abort(404)
+    path = getattr(doc, 'file_path', None)
+    if not path:
+        flash(_('Document file is missing or no longer available.'), 'danger')
+        return redirect(url_for('ops.customers_edit', customer_id=customer_id))
+    return redirect(path)
 
 
 @ops_bp.route('/customers/<int:customer_id>/delete', methods=['POST'])
@@ -1293,24 +1621,30 @@ def cars_status():
                 continue
             container_val = (request.form.get(f'container_{vid}') or '').strip()
             booking_val = (request.form.get(f'booking_{vid}') or '').strip()
+            tracking_val = (request.form.get(f'tracking_{vid}') or '').strip()
+            tracking_present = f'tracking_{vid}' in request.form
             target_idx = stage_index_from_status(target_status)
             requires_shipping_fields = target_idx >= shipping_idx
             existing_container = (v.container_number or '').strip()
             existing_booking = (v.booking_number or '').strip()
+            existing_tracking = (v.shipping_tracking_url or '').strip()
             if requires_shipping_fields:
                 if not (container_val or existing_container):
                     errors.append(_('Container number is required for %(vin)s', vin=v.vin or vid))
                 if not (booking_val or existing_booking):
                     errors.append(_('Booking number is required for %(vin)s', vin=v.vin or vid))
-            pending.append((v, target_status, container_val, booking_val))
+                if not (tracking_val or existing_tracking):
+                    errors.append(_('Tracking link is required for %(vin)s', vin=v.vin or vid))
+            pending.append((v, target_status, container_val, booking_val, tracking_val, tracking_present))
 
         if errors:
             db.session.rollback()
             return jsonify({'errors': errors}), 400
 
-        for v, target_status, container_val, booking_val in pending:
+        for v, target_status, container_val, booking_val, tracking_val, tracking_present in pending:
             existing_container = (v.container_number or '').strip()
             existing_booking = (v.booking_number or '').strip()
+            existing_tracking = (v.shipping_tracking_url or '').strip()
             fields_changed = False
             if container_val and container_val != existing_container:
                 v.container_number = container_val
@@ -1318,6 +1652,12 @@ def cars_status():
             if booking_val and booking_val != existing_booking:
                 v.booking_number = booking_val
                 fields_changed = True
+            if tracking_present:
+                new_tracking = tracking_val or None
+                normalized_existing = existing_tracking or None
+                if new_tracking != normalized_existing:
+                    v.shipping_tracking_url = new_tracking
+                    fields_changed = True
             if advance_vehicle_status(v, target_status):
                 updated += 1
             elif fields_changed:

@@ -18,6 +18,7 @@
         <tr>
           <th class="py-3 px-4 text-left font-semibold">{{ _('Shipment No') }}</th>
           <th class="py-3 px-4 text-left font-semibold">{{ _('Type') }}</th>
+          <th class="py-3 px-4 text-left font-semibold">{{ _('Origin Warehouse') }}</th>
           <th class="py-3 px-4 text-left font-semibold">{{ _('Port From') }}</th>
           <th class="py-3 px-4 text-left font-semibold">{{ _('Port To') }}</th>
           <th class="py-3 px-4 text-left font-semibold">{{ _('Departure') }}</th>
@@ -31,6 +32,7 @@
         <tr class="hover:bg-blue-50 transition border-b">
           <td class="py-3 px-4 font-medium text-blue-800">{{ s.shipment_number }}</td>
           <td class="py-3 px-4">{{ s.type }}</td>
+          <td class="py-3 px-4">{{ s.origin_warehouse.name if s.origin_warehouse else '-' }}</td>
           <td class="py-3 px-4">{{ s.origin_port }}</td>
           <td class="py-3 px-4">{{ s.destination_port }}</td>
           <td class="py-3 px-4">{{ s.departure_date.strftime('%Y-%m-%d') if s.departure_date else '-' }}</td>

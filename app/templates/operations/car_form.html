@@ -221,6 +221,67 @@
     </div>
 
     <div>
+      <label>{{ _('Warehouse') }}</label>
+      <select name="warehouse_id">
+        <option value="">{{ _('Unassigned') }}</option>
+        {% for wh in warehouses or [] %}
+          <option value="{{ wh.id }}" {% if vehicle and vehicle.warehouse_id==wh.id %}selected{% endif %}>{{ wh.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label>{{ _('Warehouse arrival date') }}</label>
+      <input type="date" name="warehouse_arrived_at" value="{{ vehicle.warehouse_arrived_at.strftime('%Y-%m-%d') if vehicle and vehicle.warehouse_arrived_at else '' }}">
+    </div>
+
+    <div>
+      <label class="block">{{ _('Keys received in warehouse') }}</label>
+      <div class="flex items-center gap-3">
+        <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+          <input type="checkbox" name="warehouse_has_keys" value="1" {% if vehicle and vehicle.warehouse_has_keys %}checked{% endif %}>
+          <span>{{ _('Keys on hand') }}</span>
+        </label>
+        <div>
+          <span class="text-xs text-slate-500 block mb-1">{{ _('Key count') }}</span>
+          <input type="number" min="0" name="warehouse_key_count" value="{{ vehicle.warehouse_key_count if vehicle and vehicle.warehouse_key_count is not none else '' }}" class="w-24">
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <label class="block">{{ _('Warehouse title documents') }}</label>
+      <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+        <input type="checkbox" name="warehouse_title_received" value="1" {% if vehicle and vehicle.warehouse_title_received %}checked{% endif %}>
+        <span>{{ _('Title documents received') }}</span>
+      </label>
+      <div class="mt-2">
+        <span class="text-xs text-slate-500 block mb-1">{{ _('Title received date') }}</span>
+        <input type="date" name="warehouse_title_received_at" value="{{ vehicle.warehouse_title_received_at.strftime('%Y-%m-%d') if vehicle and vehicle.warehouse_title_received_at else '' }}">
+      </div>
+    </div>
+
+    <div>
+      <label class="inline-flex items-center gap-2">
+        <input type="checkbox" name="has_title" value="1" {% if vehicle and vehicle.has_title %}checked{% endif %}>
+        <span>{{ _('Title on hand') }}</span>
+      </label>
+      <p class="text-xs text-slate-500 mt-1">{{ _('Mark if the original title document has been received for this vehicle.') }}</p>
+    </div>
+
+    <div>
+      <label>{{ _('Title tracking number') }}</label>
+      <input name="title_tracking_number" value="{{ vehicle.title_tracking_number if vehicle else '' }}" placeholder="مثال: DHL123456789" class="w-full">
+      <p class="text-xs text-slate-500 mt-1">{{ _('Add the courier tracking number if the title is still in transit.') }}</p>
+    </div>
+
+    <div>
+      <label>{{ _('Shipping tracking link') }}</label>
+      <input type="url" name="shipping_tracking_url" value="{{ vehicle.shipping_tracking_url if vehicle else '' }}" placeholder="https://example.com/tracking" class="w-full">
+      <p class="text-xs text-slate-500 mt-1">{{ _('Add the carrier-provided tracking URL once the vehicle is shipped to share with customers.') }}</p>
+    </div>
+
+    <div>
       <label>رقم الحاوية</label>
       <input name="container_number" value="{{ vehicle.container_number if vehicle else '' }}" placeholder="{{ _('رقم الحاوية') }}">
     </div>
@@ -448,3 +509,4 @@
 })();
 </script>
 {% endblock %}
+

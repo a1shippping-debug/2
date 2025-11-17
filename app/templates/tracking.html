@@ -61,6 +61,21 @@
     </div>
   </div>
 
+  {% if vehicle and vehicle.shipping_tracking_url %}
+  <div class="max-w-4xl mx-auto px-2 mt-6">
+    <div class="bg-white rounded-2xl shadow-lg p-5 border border-blue-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <div class="text-sm uppercase tracking-widest text-blue-600">{{ _('Carrier Tracking') }}</div>
+        <p class="text-gray-600 text-sm mt-1">{{ _('Use the carrier link below for live shipment updates from the shipping company.') }}</p>
+      </div>
+      <a href="{{ vehicle.shipping_tracking_url }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-full bg-[#004C97] px-5 py-2 text-white text-sm font-semibold hover:bg-[#00346b] transition">
+        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+        {{ _('Open tracking link') }}
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Details panel -->
   <div class="max-w-3xl mx-auto mt-12">
     <div id="details-panel" class="bg-white rounded-2xl shadow-lg p-6">
@@ -85,6 +100,24 @@
 
 </section>
 
+<!-- Stage Modal -->
+<div id="stage-modal" class="fixed inset-0 z-40 hidden items-center justify-center bg-black/60 px-4 py-10">
+  <div class="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+    <button type="button" data-stage-modal-close class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+    <div class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-[#004C97]">
+      <i class="fa-solid fa-truck-fast"></i>
+      <span>{{ _('Stage Details') }}</span>
+    </div>
+    <h3 id="stage-modal-title" class="mt-2 text-2xl font-bold text-[#0B1E3F]">{{ _('Stage') }}</h3>
+    <div id="stage-modal-body" class="mt-4 space-y-2 text-sm text-gray-600">
+      {{ _('Details will appear here.') }}
+    </div>
+    <div class="mt-6 flex justify-end">
+      <button type="button" data-stage-modal-close class="rounded-xl bg-[#004C97] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00346b] transition">{{ _('Close') }}</button>
+    </div>
+  </div>
+</div>
+
 <style>
 @keyframes fadeIn { from {opacity:0; transform:translateY(15px);} to {opacity:1; transform:translateY(0);} }
 @keyframes slideUp { from {opacity:0; transform:translateY(30px);} to {opacity:1; transform:translateY(0);} }
@@ -104,22 +137,75 @@
   const timelineSteps = document.querySelectorAll('.flex-1');
   const titleEl = document.getElementById('details-title');
   const contentEl = document.getElementById('details-content');
+  const modalEl = document.getElementById('stage-modal');
+  const modalTitleEl = document.getElementById('stage-modal-title');
+  const modalBodyEl = document.getElementById('stage-modal-body');
+  const bodyEl = document.body;
+  const closeButtons = document.querySelectorAll('[data-stage-modal-close]');
+
+  function rowsHtml(stageName) {
+    return (stageDetails[stageName] || [])
+      .map(item => {
+        return `<div class="flex justify-between py-1 border-b border-slate-100 last:border-none">
+                  <span class="text-gray-400 text-sm">${item.label || '-'}</span>
+                  <span class="font-semibold text-[#0B1E3F]">${item.value || '-'}</span>
+                </div>`;
+      })
+      .join('');
+  }
+
+  function renderStage(stepEl, showModal = true) {
+    if (!stepEl) return;
+    const stageName = (stepEl.querySelector('p')?.innerText || '').trim();
+    if (!stageName) return;
+    const html = rowsHtml(stageName) || '<div class="text-gray-400">No details available.</div>';
+    titleEl.innerText = stageName;
+    contentEl.innerHTML = html;
+    if (showModal) {
+      openModal(stageName, html);
+    }
+  }
+
+  function openModal(stageName, html) {
+    modalTitleEl.innerText = stageName;
+    modalBodyEl.innerHTML = html;
+    modalEl.classList.remove('hidden');
+    modalEl.classList.add('flex');
+    bodyEl.classList.add('overflow-hidden');
+  }
+
+  function closeModal() {
+    modalEl.classList.add('hidden');
+    modalEl.classList.remove('flex');
+    bodyEl.classList.remove('overflow-hidden');
+  }
 
   timelineSteps.forEach(step=>{
     step.addEventListener('click', ()=>{
-      const stageName = step.querySelector('p').innerText;
-      titleEl.innerText = stageName;
-      const rows = (stageDetails[stageName]||[]).map(item=>{
-        return `<div class="flex justify-between py-1"><span class="text-gray-400 text-sm">${item.label||'-'}</span><span class="font-semibold">${item.value||'-'}</span></div>`;
-      }).join('');
-      contentEl.innerHTML = rows || '<div class="text-gray-400">No details available.</div>';
+      renderStage(step, true);
     });
+  });
+
+  closeButtons.forEach(btn=>{
+    btn.addEventListener('click', closeModal);
+  });
+
+  modalEl.addEventListener('click', (ev)=>{
+    if (ev.target === modalEl) {
+      closeModal();
+    }
+  });
+
+  window.addEventListener('keydown', (ev)=>{
+    if (ev.key === 'Escape') {
+      closeModal();
+    }
   });
 
   // Auto-select latest completed stage
   const completedSteps = Array.from(timelineSteps).filter(s=>s.querySelector('div').classList.contains('bg-[#004C97]'));
   const defaultStep = completedSteps.at(-1) || timelineSteps[0];
-  if(defaultStep) defaultStep.click();
+  if(defaultStep) renderStage(defaultStep, false);
 })();
 </script>
 {% endblock %}

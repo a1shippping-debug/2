@@ -85,6 +85,7 @@
     font-weight: 600;
   }
 </style>
+{% set doc_list = documents or [] %}
 
 <div class="page-header">
   <h1>{{ customer and _('تعديل بيانات العميل') or _('إضافة عميل جديد') }}</h1>
@@ -92,7 +93,7 @@
 </div>
 
 <div class="card">
-  <form method="post" class="grid-form">
+  <form method="post" enctype="multipart/form-data" class="grid-form">
     
 
     <div>
@@ -141,6 +142,17 @@
       <input type="password" name="password_confirm" placeholder="{{ _('Confirm Password') }}" {% if not customer %}required{% endif %}>
     </div>
 
+    <div class="md:col-span-2">
+      <label>{{ _('ID card / passport copy') }}</label>
+      <input type="file" name="id_card" accept="image/*,application/pdf">
+      <p class="text-xs text-gray-500 mt-1">{{ _('Upload a clear scan or photo of the client ID card or passport (PDF / JPG / PNG).') }}</p>
+    </div>
+
+    <div class="md:col-span-2">
+      <label>{{ _('Customer contract') }}</label>
+      <input type="file" name="contract" accept="application/pdf,image/*">
+      <p class="text-xs text-gray-500 mt-1">{{ _('Attach the signed customer contract or authorization letter.') }}</p>
+    </div>
     {% if customer %}
     <div class="md:col-span-2">
       <label>{{ _('العنوان') }}</label>
@@ -159,5 +171,36 @@
   {% if saved %}
   <div class="success-box">{{ _('تم حفظ بيانات العميل بنجاح') }}</div>
   {% endif %}
+
+  {% if customer and doc_list %}
+  <div class="mt-8">
+    <h2 class="text-lg font-semibold text-blue-900 mb-3">{{ _('Customer Documents') }}</h2>
+    <div class="overflow-x-auto rounded-2xl border border-slate-200">
+      <table class="min-w-full divide-y divide-slate-100 text-sm">
+        <thead class="bg-blue-50 text-blue-900">
+          <tr>
+            <th class="px-4 py-2 text-left font-semibold">{{ _('Type') }}</th>
+            <th class="px-4 py-2 text-left font-semibold">{{ _('Uploaded at') }}</th>
+            <th class="px-4 py-2 text-center font-semibold">{{ _('Actions') }}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for doc in doc_list %}
+          <tr class="hover:bg-blue-50/40">
+            <td class="px-4 py-2 font-semibold text-blue-900">{{ doc.doc_type or '-' }}</td>
+            <td class="px-4 py-2">{{ doc.created_at.strftime('%Y-%m-%d %H:%M') if doc.created_at else '-' }}</td>
+            <td class="px-4 py-2 text-center">
+              <a href="{{ url_for('ops.customers_document_download', customer_id=customer.id, doc_id=doc.id) }}" class="text-blue-700 hover:underline" target="_blank">{{ _('Download') }}</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}
+
+
+

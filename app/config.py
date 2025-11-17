@@ -4,26 +4,20 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def _default_sqlite_uri() -> str:
-    """Build an absolute SQLite URI pointing to instance/cartrade.db.
-
-    Using an absolute path avoids accidental creation of a new DB in the
-    current working directory when running CLIs or tests from different CWDs.
-    """
-    base_dir = os.path.dirname(os.path.abspath(__file__))  # /path/to/app
-    db_path = os.path.abspath(os.path.join(base_dir, "..", "instance", "cartrade.db"))
-    return f"sqlite:///{db_path}"
+def _database_url() -> str:
+    raw_url = os.getenv("DATABASE_URL", "").strip()
+    if not raw_url:
+        raise RuntimeError("DATABASE_URL must be set to connect to PostgreSQL.")
+    if raw_url.startswith("postgres://"):
+        raw_url = raw_url.replace("postgres://", "postgresql://", 1)
+    return raw_url
 
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "devkey")
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", _default_sqlite_uri())
+    SQLALCHEMY_DATABASE_URI = _database_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    # Use an absolute path for uploads to avoid CWD-related issues across OSes
-    UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER") or os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "static", "uploads"
-    )
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", 50 * 1024 * 1024))
     # Default site language is Arabic; English is the secondary translation
     BABEL_DEFAULT_LOCALE = os.getenv("BABEL_DEFAULT_LOCALE", "ar")
     # Keep Arabic first to reflect primary UI language
@@ -33,3 +27,8 @@ class Config:
     MAIL_USERNAME = os.getenv("MAIL_USERNAME")
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
     OMR_EXCHANGE_RATE = float(os.getenv("OMR_EXCHANGE_RATE", 0.385))
+    B2_BUCKET_NAME = os.getenv("B2_BUCKET_NAME")
+    B2_ENDPOINT = os.getenv("B2_ENDPOINT")
+    B2_KEY_ID = os.getenv("B2_KEY_ID")
+    B2_APPLICATION_KEY = os.getenv("B2_APPLICATION_KEY")
+    B2_PUBLIC_URL = os.getenv("B2_PUBLIC_URL")
