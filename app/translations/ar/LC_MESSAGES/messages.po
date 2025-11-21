@@ -1129,7 +1129,7 @@ msgid "call_support"
 msgstr "اتصل بالدعم"
 
 msgid "request_shipment_quote"
-msgstr "اطلب عرض سعر لشحنة جديدة"
+msgstr "اطلب عرض سعر  "
 
 msgid "track_another_vehicle"
 msgstr "تتبع مركبة أخرى"

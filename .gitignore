@@ -1,0 +1,29 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Flask
+instance/
+*.db
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Flutter / Dart
+build/
+.dart_tool/
+packages/
+pub-cache/
+
+# Android
+android/.gradle/
+android/build/
+*.iml
+
+# iOS
+ios/Pods/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec

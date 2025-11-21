@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% block title %}{{ _('Edit Car') if vehicle else _('Add Car') }}{% endblock %}
 {% block content %}
+
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
 
@@ -12,88 +13,77 @@
 
   .car-form-container {
     max-width: 1100px;
-    margin: 0 auto;
-    padding: 3rem 1rem;
+    margin: auto;
+    padding: 2.5rem 1rem;
   }
 
   .car-form-header {
-    margin-bottom: 2rem;
     text-align: center;
+    margin-bottom: 2rem;
   }
 
   .car-form-header h1 {
     font-size: 2rem;
     font-weight: 700;
-    color: #1E2BA0;
-    margin-bottom: 0.4rem;
+    margin-bottom: 6px;
   }
 
   .car-form-header p {
     color: #64748b;
   }
 
-  form.car-form {
+  /* ---------- Form Layout ---------- */
+  form.car-form,
+  .upload-docs-form {
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 1rem;
     padding: 2rem;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1rem 1.2rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
   }
 
-  .car-form input,
-  .car-form select {
+  form.car-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 1.2rem;
+  }
+
+  label {
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    display: block;
+  }
+
+  input,
+  select {
+    width: 100%;
     border: 1px solid #cbd5e1;
     border-radius: 0.6rem;
     padding: 0.7rem 0.9rem;
     font-size: 0.95rem;
-    width: 100%;
-    transition: border 0.3s ease;
   }
 
-  .car-form input:focus,
-  .car-form select:focus {
+  input:focus,
+  select:focus {
     border-color: #1E2BA0;
     outline: none;
   }
 
-  .car-form label {
-    display: block;
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-bottom: 0.4rem;
-    color: #1E2BA0;
-  }
-
+  /* ---------- Submit Button ---------- */
   .submit-btn {
     grid-column: 1 / -1;
+    padding: 1rem;
     background-color: #1E2BA0;
     color: white;
-    font-weight: 600;
-    padding: 0.9rem 1.4rem;
-    border-radius: 0.6rem;
     border: none;
+    border-radius: 0.6rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.3s ease;
+    transition: .3s ease;
   }
+  .submit-btn:hover { background-color: #2734c2; }
 
-  .submit-btn:hover {
-    background-color: #2734c2;
-  }
-
-  /* Searchable dropdown styles for region selector */
-  .searchable-dropdown { position: relative; }
-  .searchable-dropdown .results {
-    position: absolute; inset-inline-start: 0; inset-inline-end: 0;
-    z-index: 40; background: #fff; border: 1px solid #e2e8f0; border-radius: 0.6rem;
-    margin-top: 0.25rem; max-height: 260px; overflow-y: auto; box-shadow: 0 8px 24px rgba(2,6,23,0.08);
-  }
-  .searchable-dropdown .item { padding: 0.55rem 0.75rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
-  .searchable-dropdown .item:hover, .searchable-dropdown .item.active { background: #eef2ff; }
-  .searchable-dropdown .item .meta { color: #64748b; font-size: 0.85rem; margin-inline-start: 0.5rem; }
-
+  /* ---------- Upload Section ---------- */
   .upload-section {
     grid-column: 1 / -1;
     background-color: #f8fafc;
@@ -102,47 +92,52 @@
     padding: 1.2rem;
   }
 
-  .upload-section label {
-    color: #475569;
-  }
+  .upload-section input { margin-top: 0.5rem; }
 
-  .upload-section input {
-    margin-top: 0.5rem;
-  }
-
-  .upload-docs-form {
-    background: #fff;
+  /* ---------- Searchable Dropdown ---------- */
+  .searchable-dropdown { position: relative; }
+  .results {
+    position: absolute;
+    left: 0; right: 0;
+    top: calc(100% + 4px);
+    background: white;
     border: 1px solid #e2e8f0;
-    border-radius: 1rem;
-    padding: 2rem;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
-    margin-top: 2rem;
+    border-radius: 0.6rem;
+    max-height: 260px;
+    overflow-y: auto;
+    z-index: 30;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
   }
-
-  .upload-docs-form button {
-    background-color: #1E2BA0;
-    color: white;
-    padding: 0.7rem 1.3rem;
-    border-radius: 0.5rem;
-    border: none;
+  .item {
+    padding: 0.6rem;
     cursor: pointer;
+    display: flex;
+    justify-content: space-between;
   }
-
-  .upload-docs-form button:hover {
-    background-color: #2734c2;
+  .item:hover,
+  .item.active {
+    background: #eef2ff;
   }
+  .meta { color: #64748b; font-size: 0.85rem; }
 </style>
 
 <div class="car-form-container">
+
+  <!-- Header -->
   <div class="car-form-header">
     <h1>{{ _('Edit Car') if vehicle else _('Add Car') }}</h1>
     <p>قم بإدخال بيانات السيارة بدقة لتحديث السجلات.</p>
   </div>
 
+  <!-- MAIN FORM -->
   <form id="car_form" method="post" enctype="multipart/form-data" class="car-form">
+
+    <!-- VIN -->
     <div>
       <label>رقم الشاصي (VIN)</label>
-      <input name="vin" placeholder="مثال: 1HGCM82633A123456" value="{{ vehicle.vin if vehicle else '' }}" {% if vehicle %}readonly{% endif %}>
+      <input name="vin" placeholder="مثال: 1HGCM82633A123456"
+             value="{{ vehicle.vin if vehicle else '' }}"
+             {% if vehicle %}readonly{% endif %}>
     </div>
 
     <div><label>الشركة المصنعة</label><input name="make" value="{{ vehicle.make if vehicle else '' }}"></div>
@@ -151,22 +146,34 @@
 
     <div><label>رقم اللوت</label><input name="lot_number" value="{{ vehicle.auction.lot_number if vehicle and vehicle.auction else '' }}"></div>
 
+    <!-- Auction Type -->
     <div>
       <label>نوع المزاد</label>
       <select name="auction_type">
         <option value="">اختر نوع المزاد</option>
         {% for a in ['Copart','IAAI'] %}
-        <option value="{{ a }}" {% if vehicle and vehicle.auction and vehicle.auction.provider==a %}selected{% endif %}>{{ a }}</option>
+        <option value="{{ a }}" {% if vehicle and vehicle.auction and vehicle.auction.provider==a %}selected{% endif %}>
+          {{ a }}
+        </option>
         {% endfor %}
       </select>
     </div>
 
     <div><label>الموقع الحالي</label><input name="current_location" value="{{ vehicle.current_location if vehicle else '' }}"></div>
-    <div><label>تاريخ الشراء</label><input type="date" name="purchase_date"></div>
+
+    <div>
+      <label>تاريخ الشراء</label>
+      <input type="date" name="purchase_date"
+             value="{{ vehicle.purchase_date.strftime('%Y-%m-%d') if vehicle and vehicle.purchase_date else '' }}">
+    </div>
+
     <div>
       <label>سعر المزاد شامل الرسوم (USD)</label>
-      <input name="auction_total_usd" id="auction_total_usd" inputmode="decimal" value="{{ vehicle.purchase_price_usd if vehicle else '' }}">
+      <input name="auction_total_usd" id="auction_total_usd"
+             value="{{ vehicle.purchase_price_usd if vehicle else '' }}">
     </div>
+
+    <!-- Region Select -->
     <div>
       <label>المنطقة (المستودع/الوجهة)</label>
       <div class="searchable-dropdown" id="region_selector">
@@ -181,115 +188,146 @@
       <input name="shipping_price_omr" id="shipping_price_omr" readonly>
     </div>
 
+    <!-- Clients -->
     <div>
       <label>العميل</label>
-      <input id="client_search" list="customers_datalist" placeholder="ابحث باسم العميل" value="{{ (vehicle.owner.display_name) if (vehicle and vehicle.owner) else '' }}">
+
+      <input id="client_search" list="customers_datalist" placeholder="ابحث باسم العميل"
+             value="{{ vehicle.owner.display_name if vehicle and vehicle.owner else '' }}">
+
       <datalist id="customers_datalist">
         {% for c in customers %}
-          <option value="{{ c.display_name }}" data-id="{{ c.id }}" data-category="{{ c.price_category }}"></option>
+        <option value="{{ c.display_name }}" data-id="{{ c.id }}" data-category="{{ c.price_category }}"></option>
         {% endfor %}
       </datalist>
+
       <select name="client_id" id="client_select" class="mt-2">
         <option value="">اختر العميل</option>
         {% for c in customers %}
-          <option value="{{ c.id }}" data-category="{{ c.price_category }}" {% if vehicle and vehicle.owner_customer_id==c.id %}selected{% endif %}>{{ c.display_name }}</option>
+        <option value="{{ c.id }}" data-category="{{ c.price_category }}"
+                {% if vehicle and vehicle.owner_customer_id==c.id %}selected{% endif %}>
+          {{ c.display_name }}
+        </option>
         {% endfor %}
       </select>
-      <input type="hidden" id="price_category_active" value="{{ (vehicle.owner.price_category if vehicle and vehicle.owner else '') }}">
+
+      <input type="hidden" id="price_category_active"
+             value="{{ vehicle.owner.price_category if vehicle and vehicle.owner else '' }}">
     </div>
 
+    <!-- Buyer -->
     <div>
       <label>الباير</label>
       <select name="buyer_id" id="buyer_select">
         <option value="">اختر الباير</option>
         {% for b in buyers or [] %}
-          <option value="{{ b.id }}" {% if vehicle and vehicle.auction and vehicle.auction.buyer_id==b.id %}selected{% endif %}>
-            {{ b.name }}{% if b.buyer_number %} — {{ b.buyer_number }}{% endif %}
-          </option>
+        <option value="{{ b.id }}"
+                {% if vehicle and vehicle.auction and vehicle.auction.buyer_id==b.id %}selected{% endif %}>
+          {{ b.name }} {% if b.buyer_number %} — {{ b.buyer_number }}{% endif %}
+        </option>
         {% endfor %}
       </select>
-      <small class="text-slate-500">يربط رقم الباير بهذا العميل في المزاد.</small>
     </div>
 
+    <!-- Status -->
     <div>
       <label>الحالة</label>
       <select name="status">
-        {% for s in ['New car','Cashier Payment','Auction Payment','Posted','Towing','Warehouse','Loading','Shipping','Port','On way','Arrived','Delivered'] %}
+        {% for s in [
+          'New car','Cashier Payment','Auction Payment','Posted','Towing','Warehouse',
+          'Loading','Shipping','Port','On way','Arrived','Delivered'] %}
         <option value="{{ s }}" {% if vehicle and vehicle.status==s %}selected{% endif %}>{{ s }}</option>
         {% endfor %}
       </select>
     </div>
 
+    <!-- Warehouse -->
     <div>
       <label>{{ _('Warehouse') }}</label>
       <select name="warehouse_id">
         <option value="">{{ _('Unassigned') }}</option>
         {% for wh in warehouses or [] %}
-          <option value="{{ wh.id }}" {% if vehicle and vehicle.warehouse_id==wh.id %}selected{% endif %}>{{ wh.name }}</option>
+        <option value="{{ wh.id }}" {% if vehicle and vehicle.warehouse_id==wh.id %}selected{% endif %}>
+          {{ wh.name }}
+        </option>
         {% endfor %}
       </select>
     </div>
 
+    <!-- Warehouse arrival -->
     <div>
       <label>{{ _('Warehouse arrival date') }}</label>
-      <input type="date" name="warehouse_arrived_at" value="{{ vehicle.warehouse_arrived_at.strftime('%Y-%m-%d') if vehicle and vehicle.warehouse_arrived_at else '' }}">
+      <input type="date" name="warehouse_arrived_at"
+             value="{{ vehicle.warehouse_arrived_at.strftime('%Y-%m-%d') if vehicle and vehicle.warehouse_arrived_at else '' }}">
     </div>
 
+    <!-- Keys -->
     <div>
       <label class="block">{{ _('Keys received in warehouse') }}</label>
       <div class="flex items-center gap-3">
         <label class="inline-flex items-center gap-2 text-sm text-slate-600">
-          <input type="checkbox" name="warehouse_has_keys" value="1" {% if vehicle and vehicle.warehouse_has_keys %}checked{% endif %}>
+          <input type="checkbox" name="warehouse_has_keys" value="1"
+                 {% if vehicle and vehicle.warehouse_has_keys %}checked{% endif %}>
           <span>{{ _('Keys on hand') }}</span>
         </label>
+
         <div>
           <span class="text-xs text-slate-500 block mb-1">{{ _('Key count') }}</span>
-          <input type="number" min="0" name="warehouse_key_count" value="{{ vehicle.warehouse_key_count if vehicle and vehicle.warehouse_key_count is not none else '' }}" class="w-24">
+          <input type="number" min="0" name="warehouse_key_count"
+                 value="{{ vehicle.warehouse_key_count if vehicle and vehicle.warehouse_key_count is not none else '' }}"
+                 class="w-24">
         </div>
       </div>
     </div>
 
+    <!-- Title Documents -->
     <div>
       <label class="block">{{ _('Warehouse title documents') }}</label>
       <label class="inline-flex items-center gap-2 text-sm text-slate-600">
-        <input type="checkbox" name="warehouse_title_received" value="1" {% if vehicle and vehicle.warehouse_title_received %}checked{% endif %}>
+        <input type="checkbox" name="warehouse_title_received" value="1"
+               {% if vehicle and vehicle.warehouse_title_received %}checked{% endif %}>
         <span>{{ _('Title documents received') }}</span>
       </label>
+
       <div class="mt-2">
         <span class="text-xs text-slate-500 block mb-1">{{ _('Title received date') }}</span>
-        <input type="date" name="warehouse_title_received_at" value="{{ vehicle.warehouse_title_received_at.strftime('%Y-%m-%d') if vehicle and vehicle.warehouse_title_received_at else '' }}">
+        <input type="date" name="warehouse_title_received_at"
+               value="{{ vehicle.warehouse_title_received_at.strftime('%Y-%m-%d') if vehicle and vehicle.warehouse_title_received_at else '' }}">
       </div>
     </div>
 
+    <!-- Title on hand -->
     <div>
       <label class="inline-flex items-center gap-2">
-        <input type="checkbox" name="has_title" value="1" {% if vehicle and vehicle.has_title %}checked{% endif %}>
+        <input type="checkbox" name="has_title" value="1"
+               {% if vehicle and vehicle.has_title %}checked{% endif %}>
         <span>{{ _('Title on hand') }}</span>
       </label>
-      <p class="text-xs text-slate-500 mt-1">{{ _('Mark if the original title document has been received for this vehicle.') }}</p>
+      <p class="text-xs text-slate-500 mt-1">
+        {{ _('Mark if the original title document has been received for this vehicle.') }}
+      </p>
     </div>
 
+    <!-- Tracking -->
     <div>
       <label>{{ _('Title tracking number') }}</label>
-      <input name="title_tracking_number" value="{{ vehicle.title_tracking_number if vehicle else '' }}" placeholder="مثال: DHL123456789" class="w-full">
-      <p class="text-xs text-slate-500 mt-1">{{ _('Add the courier tracking number if the title is still in transit.') }}</p>
+      <input name="title_tracking_number"
+             value="{{ vehicle.title_tracking_number if vehicle else '' }}"
+             placeholder="مثال: DHL123456789">
     </div>
 
     <div>
       <label>{{ _('Shipping tracking link') }}</label>
-      <input type="url" name="shipping_tracking_url" value="{{ vehicle.shipping_tracking_url if vehicle else '' }}" placeholder="https://example.com/tracking" class="w-full">
-      <p class="text-xs text-slate-500 mt-1">{{ _('Add the carrier-provided tracking URL once the vehicle is shipped to share with customers.') }}</p>
+      <input type="url" name="shipping_tracking_url"
+             value="{{ vehicle.shipping_tracking_url if vehicle else '' }}"
+             placeholder="https://example.com/tracking">
     </div>
 
-    <div>
-      <label>رقم الحاوية</label>
-      <input name="container_number" value="{{ vehicle.container_number if vehicle else '' }}" placeholder="{{ _('رقم الحاوية') }}">
-    </div>
+    <div><label>رقم الحاوية</label><input name="container_number"
+             value="{{ vehicle.container_number if vehicle else '' }}"></div>
 
-    <div>
-      <label>رقم الحجز</label>
-      <input name="booking_number" value="{{ vehicle.booking_number if vehicle else '' }}" placeholder="{{ _('رقم الحجز') }}">
-    </div>
+    <div><label>رقم الحجز</label><input name="booking_number"
+             value="{{ vehicle.booking_number if vehicle else '' }}"></div>
 
     {% if not vehicle %}
     <div class="upload-section">
@@ -298,16 +336,19 @@
     </div>
 
     <div class="upload-section">
-      <label>إرفاق فاتورة المزاد (PDF/صور)</label>
+      <label>إرفاق فاتورة المزاد</label>
       <input type="file" name="auction_invoice" accept="application/pdf,image/*">
     </div>
     {% endif %}
 
     <button class="submit-btn">{{ _('Save') }}</button>
+
   </form>
 
   {% if vehicle %}
-  <form action="{{ url_for('ops.cars_upload', vehicle_id=vehicle.id) }}" method="post" enctype="multipart/form-data" class="upload-docs-form">
+  <form action="{{ url_for('ops.cars_upload', vehicle_id=vehicle.id) }}"
+        method="post" enctype="multipart/form-data"
+        class="upload-docs-form mt-4">
     <label class="block mb-2 text-slate-600">رفع مستندات إضافية</label>
     <input type="file" name="files" multiple class="border p-2 rounded w-full mb-3">
     <button>{{ _('Upload') }}</button>
@@ -315,7 +356,9 @@
   {% endif %}
 </div>
 
+<!-- ===== JavaScript (unchanged logic - only formatted) ===== -->
 <script>
+/* ------ Client Search Logic ------ */
 (function() {
   const input = document.getElementById('client_search');
   const select = document.getElementById('client_select');
@@ -326,187 +369,126 @@
   function updateCategory(cat) {
     const normalized = (cat || '').trim().toLowerCase();
     if (categoryField) categoryField.value = normalized;
-    try {
-      window.dispatchEvent(new CustomEvent('price-category-change', { detail: { category: normalized } }));
-    } catch (_) {
-      // ignore if CustomEvent unsupported
-    }
-  }
-
-  function findOptionById(id) {
-    return Array.from(datalist.options || []).find(o => (o.dataset && o.dataset.id) === id);
+    window.dispatchEvent(new CustomEvent('price-category-change', { detail: { category: normalized } }));
   }
 
   function findOptionByName(name) {
-    return Array.from(datalist.options || []).find(o => (o.value || '').trim().toLowerCase() === (name || '').trim().toLowerCase());
+    return Array.from(datalist.options).find(o =>
+      o.value.trim().toLowerCase() === name.trim().toLowerCase()
+    );
   }
 
   function applyOption(option) {
-    if (!option) {
-      updateCategory('');
-      return;
-    }
-    if (option.dataset && option.dataset.id) {
-      select.value = option.dataset.id;
-    }
-    updateCategory(option.dataset ? option.dataset.category : '');
-  }
-
-  function syncFromSelect() {
-    const opt = select.selectedOptions && select.selectedOptions.length ? select.selectedOptions[0] : null;
-    if (opt && opt.dataset) {
-      updateCategory(opt.dataset.category);
-      const dlOpt = findOptionById(opt.value);
-      if (dlOpt) input.value = dlOpt.value;
-    } else {
-      updateCategory('');
-    }
+    if (!option) return updateCategory('');
+    select.value = option.dataset.id;
+    updateCategory(option.dataset.category);
   }
 
   input.addEventListener('change', () => {
-    const match = findOptionByName(input.value);
-    applyOption(match);
+    applyOption(findOptionByName(input.value));
   });
 
   select.addEventListener('change', () => {
-    syncFromSelect();
+    const opt = select.selectedOptions[0];
+    updateCategory(opt.dataset.category);
+    input.value = opt.textContent;
   });
 
-  // Initialize on load
   if (select.value) {
-    syncFromSelect();
-  } else if (input.value) {
-    const match = findOptionByName(input.value);
-    applyOption(match);
-  } else {
-    updateCategory(categoryField ? categoryField.value : '');
+    const opt = select.selectedOptions[0];
+    updateCategory(opt.dataset.category);
+    input.value = findOptionByName(opt.textContent)?.value || '';
   }
 })();
 
-// Searchable dropdown + auto-fill shipping price
+/* ------ Region Selector + Auto Price ------ */
 (function() {
-  const root = document.getElementById('region_selector');
   const input = document.getElementById('region_input');
   const list = document.getElementById('region_results');
   const hidden = document.getElementById('region_hidden');
   const priceField = document.getElementById('shipping_price_omr');
-  if (!root || !input || !list || !priceField) return;
+
+  if (!input || !list || !priceField) return;
 
   let items = [];
   let activeIndex = -1;
   let lastQuery = '';
-  let fetchTimeout = null;
+  let fetchTimeout;
+
+  async function fetchSuggestions(q) {
+    const cat = document.getElementById('price_category_active').value;
+    let url = `{{ url_for('ops.shipping_regions_suggest') }}?q=${encodeURIComponent(q)}&limit=12`;
+    if (cat) url += '&category=' + encodeURIComponent(cat);
+
+    const resp = await fetch(url);
+    items = resp.ok ? await resp.json() : [];
+    activeIndex = items.length ? 0 : -1;
+    render();
+  }
+
+  async function fetchPrice(val) {
+    if (!val) return;
+    const cat = document.getElementById('price_category_active').value;
+
+    let url = `{{ url_for('ops.shipping_region_price') }}?q=${encodeURIComponent(val)}`;
+    if (cat) url += '&category=' + encodeURIComponent(cat);
+
+    const resp = await fetch(url);
+    if (!resp.ok) return priceField.value = '';
+
+    const data = await resp.json();
+    if (data.found) {
+      priceField.value = data.price_omr;
+      hidden.value = data.region_code;
+    }
+  }
 
   function render() {
     list.innerHTML = '';
-    if (!items.length) {
-      list.hidden = true;
-      return;
-    }
+    if (!items.length) return list.hidden = true;
+
     items.forEach((it, idx) => {
       const div = document.createElement('div');
       div.className = 'item' + (idx === activeIndex ? ' active' : '');
-      const left = document.createElement('div');
-      left.textContent = it.region_code;
-      const right = document.createElement('div');
-      right.className = 'meta';
-      right.textContent = `${it.region_name || ''} · ${Number(it.price_omr || 0).toFixed(3)} OMR`;
-      div.appendChild(left); div.appendChild(right);
-      div.addEventListener('mousedown', (e) => {
-        // mousedown to select before input loses focus
+      div.innerHTML = `
+        <span>${it.region_code}</span>
+        <span class="meta">${it.region_name} · ${Number(it.price_omr).toFixed(3)} OMR</span>
+      `;
+      div.addEventListener('mousedown', e => {
         e.preventDefault();
         choose(idx);
       });
       list.appendChild(div);
     });
+
     list.hidden = false;
   }
 
-  function getCategory() {
-    const field = document.getElementById('price_category_active');
-    return (field && field.value ? field.value.trim().toLowerCase() : '');
-  }
-
-  async function fetchSuggestions(q) {
-    const cat = getCategory();
-    let url = `{{ url_for('ops.shipping_regions_suggest') }}?q=` + encodeURIComponent(q) + '&limit=12';
-    if (cat) url += '&category=' + encodeURIComponent(cat);
-    const resp = await fetch(url);
-    if (!resp.ok) { items = []; render(); return; }
-    items = await resp.json();
-    activeIndex = items.length ? 0 : -1;
-    render();
-  }
-
-  async function fetchPriceBy(anyText) {
-    if (!anyText || !anyText.trim()) return;
-    try {
-      const cat = getCategory();
-      let url = `{{ url_for('ops.shipping_region_price') }}?q=` + encodeURIComponent(anyText.trim());
-      if (cat) url += '&category=' + encodeURIComponent(cat);
-      const resp = await fetch(url);
-      if (!resp.ok) { priceField.value = ''; return; }
-      const data = await resp.json();
-      if (data && data.found) {
-        priceField.value = (data.price_omr ?? '').toString();
-        hidden.value = data.region_code || anyText;
-      } else {
-        priceField.value = '';
-      }
-    } catch (_) {
-      priceField.value = '';
-    }
-  }
-
-  function choose(idx) {
-    if (idx < 0 || idx >= items.length) return;
-    const it = items[idx];
+  function choose(i) {
+    const it = items[i];
     input.value = it.region_code;
     hidden.value = it.region_code;
-    priceField.value = Number(it.price_omr || 0).toString();
+    priceField.value = it.price_omr;
     list.hidden = true;
   }
 
-  function onInput() {
+  input.addEventListener('input', () => {
     const q = input.value.trim();
     if (q === lastQuery) return;
     lastQuery = q;
-    if (fetchTimeout) window.clearTimeout(fetchTimeout);
-    if (!q) { items = []; render(); return; }
-    fetchTimeout = window.setTimeout(() => fetchSuggestions(q), 150);
-  }
 
-  function onKeydown(e) {
-    if (list.hidden) return;
-    if (e.key === 'ArrowDown') { e.preventDefault(); activeIndex = Math.min(items.length - 1, activeIndex + 1); render(); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); activeIndex = Math.max(0, activeIndex - 1); render(); }
-    else if (e.key === 'Enter') { if (activeIndex >= 0) { e.preventDefault(); choose(activeIndex); } }
-    else if (e.key === 'Escape') { list.hidden = true; }
-  }
+    if (!q) return (items = [], render());
+    clearTimeout(fetchTimeout);
+    fetchTimeout = setTimeout(() => fetchSuggestions(q), 160);
+  });
 
-  function onBlur() {
-    // Slight delay to allow mousedown selection
-    setTimeout(() => { list.hidden = true; fetchPriceBy(input.value); }, 100);
-  }
-
-  input.addEventListener('input', onInput);
-  input.addEventListener('keydown', onKeydown);
-  input.addEventListener('blur', onBlur);
-  input.addEventListener('focus', () => { if (items.length) list.hidden = false; });
-
-  window.addEventListener('price-category-change', () => {
-    lastQuery = '';
-    const current = input.value.trim();
-    if (current) {
-      fetchSuggestions(current);
-      fetchPriceBy(hidden.value || current);
-    } else {
-      priceField.value = '';
-      items = [];
-      render();
-    }
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      list.hidden = true;
+      fetchPrice(input.value);
+    }, 120);
   });
 })();
 </script>
-{% endblock %}
 
+{% endblock %}

@@ -51,7 +51,8 @@
 {% set user_label = current_user.name if current_user.is_authenticated and current_user.name else role_name.capitalize() %}
 
 <!-- ========== NAVBAR ========== -->
-<nav class="fixed top-0 inset-x-0 z-50 bg-gradient-to-b from-[#0B1E3F] to-[#123055] text-white shadow-md">
+<nav class="fixed top-0 inset-x-0 z-50 bg-gradient-to-b from-[#0B1E3F] to-[#123055] text-white shadow-md"
+     style="direction:{{ 'ltr' if language_switch_label == 'English' else 'rtl' }};">
 
   <div class="max-w-7xl mx-auto px-4"
        x-data="{ open:false, menu:false }"
@@ -61,7 +62,7 @@
 
       <!-- LOGO -->
       <a href="/" class="flex items-center gap-2 text-lg font-bold hover:opacity-90">
-        <img src="{{ url_for('static', filename='logo.jpeg') }}" class="h-8 w-8 rounded-full object-cover">
+        <img src="{{ url_for('static', filename='logo.png') }}" class="h-8 w-8 rounded-full object-cover">
       </a>
 
       <!-- DESKTOP MENU -->
@@ -75,15 +76,7 @@
           {{ language_switch_label }}
         </a>
 
-        {% if can_search %}
-        <form id="vin-search" class="relative hidden lg:block">
-          <input type="search" id="vin-input" placeholder="VIN" dir="ltr"
-            class="w-52 rounded-full bg-white/10 placeholder-white/70 px-3 py-1.5 text-sm focus:bg-white/20 focus:ring-2 focus:ring-[#FFB838] outline-none">
-          <button class="absolute right-3 top-2 text-white/70" type="submit">
-            <i class="fa-solid fa-magnifying-glass"></i>
-          </button>
-        </form>
-        {% endif %}
+
 
         <!-- USER AREA -->
         {% if current_user.is_authenticated %}

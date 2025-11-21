@@ -170,7 +170,7 @@
 
     <!-- اللوجو -->
     <div class="login-logo-box">
-      <img src="{{ url_for('static', filename='logo.jpeg') }}" class="login-logo" alt="logo">
+      <img src="{{ url_for('static', filename='logo.png') }}" class="login-logo" alt="logo">
     </div>
 
     <!-- نموذج تسجيل الدخول -->
@@ -194,11 +194,7 @@
           </button>
         </form>
 
-        <div class="login-info">
-          {{ _('Use') }} <strong>admin@example.com</strong> / <strong>admin123</strong><br>
-          {{ _('after visiting') }}
-          <a href="{{ url_for('auth.init_sample') }}">/auth/init</a>
-        </div>
+       
       </div>
     </div>
 
