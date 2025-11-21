@@ -1,7 +1,9 @@
 Flask==3.0.3
 Flask-SQLAlchemy==3.0.4
-# Skip psycopg2-binary on Python 3.13+ (no prebuilt wheels)
+
+# PostgreSQL driver (يعمل فقط على Python أقل من 3.13)
 psycopg2-binary==2.9.7; python_version < "3.13"
+
 Flask-Migrate==4.0.4
 Flask-Login==0.6.3
 Flask-Babel==4.0.0
@@ -10,6 +12,7 @@ WTForms==3.0.1
 Flask-Mail==0.9.1
 python-dotenv==1.0.0
 Flask-Uploads==0.2.1
+
 boto3==1.34.76
 marshmallow==3.19.0
 WeasyPrint==57.2
@@ -22,3 +25,8 @@ requests==2.32.3
 beautifulsoup4==4.12.3
 lxml==5.3.0
 pdfplumber==0.11.4
+
+# --------------------------------------------------------
+# 🔥 مهم جداً لتشغيل السيرفر على Render
+gunicorn==22.0.0
+# --------------------------------------------------------
