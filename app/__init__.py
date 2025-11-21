@@ -370,17 +370,38 @@ def create_app():
         identifier = (vin or "").strip()
         identifier_lower = identifier.lower()
 
-        vehicle = (
+        base_query = (
             db.session.query(Vehicle)
             .join(Auction, Vehicle.auction_id == Auction.id, isouter=True)
-            .filter(
-                db.or_(
-                    db.func.lower(Vehicle.vin) == identifier_lower,
-                    db.func.lower(Auction.lot_number) == identifier_lower,
-                )
-            )
-            .first()
         )
+
+        vehicle = None
+        if identifier_lower:
+            vehicle = (
+                base_query.filter(
+                    db.or_(
+                        db.func.lower(Vehicle.vin) == identifier_lower,
+                        db.func.lower(Auction.lot_number) == identifier_lower,
+                    )
+                )
+                .order_by(Vehicle.created_at.desc())
+                .first()
+            )
+
+            if not vehicle:
+                wildcard = f"%{identifier_lower}%"
+                vehicle = (
+                    base_query.filter(
+                        db.or_(
+                            db.func.lower(Vehicle.vin).like(wildcard),
+                            db.func.lower(Auction.lot_number).like(wildcard),
+                        )
+                    )
+                    .order_by(Vehicle.created_at.desc())
+                    .first()
+                )
+        else:
+            vehicle = base_query.order_by(Vehicle.created_at.desc()).first()
 
         stages = []
         stage_details = {}
